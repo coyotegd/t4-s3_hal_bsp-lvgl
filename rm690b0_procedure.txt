@@ -1,57 +1,48 @@
-1. Pin Mapping for LilyGo T4-S3
-According to the pin diagram, the following connections are required for the display and board peripherals:
+1. Pin Mapping for LilyGo T4-S3 (Working Configuration)
+According to the pin diagram and successful driver implementation:
 
-Function,ESP32-S3 Pin, Note
-QSPI DATA0 (SDA),GPIO 14,
-QSPI DATA1,GPIO 10,
-QSPI DATA2,GPIO 16,
-QSPI DATA3,GPIO 12,
-QSPI SCK,GPIO   15,
-QSPI CS,GPIO    11,
-Display Reset,  GPIO 13,
-AMOLED TE,      GPIO 18, Tearing Effect Pin
+Function          | ESP32-S3 Pin | Note
+------------------|--------------|------------------------------------------
+QSPI DATA0 (SDA)  | GPIO 14      |
+QSPI DATA1        | GPIO 10      |
+QSPI DATA2        | GPIO 16      |
+QSPI DATA3        | GPIO 12      |
+QSPI SCK          | GPIO 15      |
+QSPI CS           | GPIO 11      |
+Display Reset     | GPIO 13      | Active Low
+AMOLED TE         | GPIO 18      | Tearing Effect Pin
+**Power Enable**  | **GPIO 9**   | **CRITICAL: Must be HIGH to power display**
 
-2. Implementation Strategy
-Bus Configuration: Initialize the SPI bus using spi_bus_initialize.
+2. Implementation Strategy (The "Solution")
+Bus Configuration: 
+- The RM690B0 on this board requires a custom QSPI protocol.
+- Standard SPI commands (1-bit) are NOT sufficient for all operations.
+- The driver uses `spi_device_polling_transmit` with `SPI_TRANS_MODE_QIO` for data.
 
-Device Configuration: Use SPI_DEVICE_HALFDUPLEX and SPI_DEVICE_3WIRE flags. Since the RM690B0 uses a 16-bit command format (e.g., 2C00h for RAMWR), set command_bits = 16 and address_bits = 0.
-
-Command Mode: To enable QSPI mode, you must first send initialization commands in standard SPI mode, then switch the controller to Quad mode by writing to register C400h (SetSPIMode).
+Custom QSPI Protocol (The "Secret Sauce"):
+- Unlike standard SPI displays, this driver wraps commands in a custom QSPI packet.
+- Write Command: Opcode 0x02 (1 byte) + Address (24-bit, 0x00 + Command) + Data.
+- Write Data:    Opcode 0x32 (1 byte) + Address (24-bit, 0x00 + Command) + Data.
+- This was reverse-engineered/discovered to be necessary for the T4-S3 implementation.
 
 3. Driver Component (components/rm690b0/rm690b0.c)
-This component handles the low-level QSPI transactions.
+- Handles the low-level QSPI transactions using the custom 0x02/0x32 opcodes.
+- Manages the initialization sequence (Sleep Out, Display On).
+- Implements `rm690b0_set_window` and `rm690b0_draw_bitmap` for graphics.
 
-4. Main Application (main/main.c)
-The main file implements the HAL logic to draw 7 color bars.
+4. Power Sequence
+1. Initialize GPIO 9 as Output and set HIGH.
+2. Wait 100ms for power rails (AVDD/VCL) to stabilize.
+3. Toggle Reset (GPIO 13): Low (10ms) -> High (120ms).
+4. Send Initialization Commands (SWRESET, SLPOUT, DISPON).
 
-Key Technical Details
+5. Logical vs. Physical Mapping
+- Physical Panel: 450x600 pixels.
+- Driver IC (RM690B0): Supports up to 480x600.
+- The driver handles the offset to ensure pixels are drawn in the visible area (0-449).
+- Landscape Mode (90°): 600x450 logical resolution.
 
-Resolution: The RM690B0 supports up to 480x600.  T4-S3 is 450x600.
-
-Command Structure: Commands are 16-bit (e.g., 2C00h). In ESP-IDF, this is achieved by setting command_bits = 16 in the SPI device configuration.
-
-Power Sequence: Ensure a 120ms delay after hardware reset and a 200ms delay after the Sleep Out (1100h) command to allow the internal supply voltages (AVDD, VCL) to stabilize.
-
-Based on the RM690B0 Datasheet, the driver is a "Single Chip Driver... for 480RGBx600 OLED driver". Because the T4-S3 uses a panel that is physically only 450 pixels wide (even though the IC can handle 480), the code prevents the application from ever addressing the 30-pixel "dead zone".
-+3
-
-How the code handles this in all positions:
-
-Landscape (90° CCW): * The code sets the MADCTR (0x3600) register to 0x60, which swaps the row and column addressing.
-
-In this mode, the "width" becomes the 600-pixel dimension and the "height" becomes the 450-pixel dimension.
-
-The draw_rect function includes a boundary check: if (y + h > LOGICAL_HEIGHT) h = LOGICAL_HEIGHT - y;. This ensures that even if a draw command tries to write to the full 480-pixel height the IC supports, it is truncated at 450 to match the physical glass.
-
-Portrait (0° Rotation):
-
-Although the provided main.c focuses on the 90° rotation, the rm690b0.h defines T4S3_PHYSICAL_W as 450.
-
-If you switch back to portrait, the set_window function and draw_rect logic will cap the X (column) coordinate at 449. This prevents the driver from sending pixel data to the 30 invisible columns (pixels 450–479) that exist in the IC's memory but not on your screen.
-
-Critical Safety in the Code:
-The rm690b0_set_window function in the .c file is the "gatekeeper." By checking coordinates against T4S3_LANDSCAPE_W (600) and T4S3_LANDSCAPE_H (450), it ensures that the CASET (0x2A00) and RASET (0x2B00) commands—which define the memory area to be written—never describe an area outside the physical 450x600 glass.
-
-Summary of logical vs. physical mapping: | Orientation | IC Max Capability | Code Logical Limit (Actual Screen) | | :--- | :--- | :--- | | Portrait (0°) | 480w x 600h | 450w x 600h | | Landscape (90°) | 600w x 480h | 600w x 450h |
-
-This approach ensures your "rainbow bars" and any other primitives stay perfectly framed within the visible 450-pixel boundary.
+6. PMIC (SY6970)
+- The board includes an SY6970 PMIC.
+- It is critical to disable the Watchdog timer on the PMIC to prevent power cycling.
+- OTG (On-The-Go) power is disabled to save power/prevent conflicts.
