@@ -65,20 +65,23 @@ void sy6970_init(void) {
     sy6970_write_reg(0x07, reg07);
     ESP_LOGI(TAG, "Watchdog Disabled (Reg 0x07: 0x%02X)", reg07);
 
-    // Disable OTG (Reg 0x03, Bit 5) - Matches LilyGo implementation
+    // Disable OTG (Reg 0x03, Bit 5) and Set SYS_MIN to 3.3V (Bits 1-3 = 011)
     uint8_t reg03 = 0;
     sy6970_read_reg(0x03, &reg03);
-    reg03 &= ~(1 << 5); // Clear Bit 5
+    reg03 &= ~(1 << 5); // Clear Bit 5 (Disable OTG)
+    reg03 &= ~0x0E;     // Clear Bits 1-3 (SYS_MIN)
+    reg03 |= (0x03 << 1); // Set Bits 1-3 to 011 (3.3V)
     sy6970_write_reg(0x03, reg03);
-    ESP_LOGI(TAG, "OTG Disabled (Reg 0x03: 0x%02X)", reg03);
+    ESP_LOGI(TAG, "OTG Disabled, SYS_MIN=3.3V (Reg 0x03: 0x%02X)", reg03);
 
-    // Set Input Current Limit to Max (Reg 0x00)
+    // Set Input Current Limit to Max (Reg 0x00) and Disable ILIM Pin
     uint8_t reg00 = 0;
     sy6970_read_reg(0x00, &reg00);
     reg00 |= 0x3F; // Set bits 0-5 to 1 (Max current)
-    reg00 &= ~(1 << 7); // Clear Bit 7 (Enable ILIM)
+    reg00 &= ~(1 << 7); // Clear Bit 7 (Enable HIZ)
+    reg00 &= ~(1 << 6); // Clear Bit 6 (Disable ILIM Pin)
     sy6970_write_reg(0x00, reg00);
-    ESP_LOGI(TAG, "Input Current Limit Max (Reg 0x00: 0x%02X)", reg00);
+    ESP_LOGI(TAG, "Input Current Limit Max, ILIM Pin Disabled (Reg 0x00: 0x%02X)", reg00);
     
     // Dump Registers for Debugging
     ESP_LOGI(TAG, "--- SY6970 Register Dump ---");
