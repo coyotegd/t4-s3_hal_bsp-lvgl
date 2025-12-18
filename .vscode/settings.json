@@ -13,7 +13,9 @@
   "clangd.path": "/home/kenneth/.espressif/tools/tools/esp-clang/esp-19.1.2_20250312/esp-clang/bin/clangd",
   "clangd.arguments": [
     "--background-index",
-    "--query-driver=/home/kenneth/.espressif/tools/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32-elf-gcc",
-    "--compile-commands-dir=${workspaceFolder}/platforms/tab5/build"
-  ]
+    "--query-driver=/home/kenneth/.espressif/tools/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc",
+    "--compile-commands-dir=/home/kenneth/Documents/PlatformIO/PIOesp-idf/rm690b0_dvr/build"
+  ],
+  "idf.flashType": "JTAG",
+  "idf.buildPath": "${workspaceFolder}/build"
 }
