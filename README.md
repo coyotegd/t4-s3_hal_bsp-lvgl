@@ -12,7 +12,7 @@ Most SPI/8080 displays use a **D/C (Data/Command)** pin to distinguish between r
 - **Discovery:** By analyzing the Arduino `LilyGo-AMOLED-Series` library, we discovered a custom QSPI wrapper protocol is required.
 - **The Protocol:**
     - **Commands:** Sent using SPI Opcode `0x02` (Page Program). The actual command byte is shifted into the **Address Phase** (24-bit).
-    - **Pixel Data:** Sent using SPI Opcode `0x32` (Quad Page Program). The Address is fixed to `0x002C00` (RAMWR command).
+    - **Pixel Data:** Sent using SPI Opcode `0x32` (Quad Page Program). The Address is **0x003C00** (See "The Addressing Anomaly" below).
 
 ### 2. The Power Enable (GPIO 9)
 Even with the correct protocol, the display remained black.
@@ -47,3 +47,10 @@ The board uses an SY6970 PMIC which has a default watchdog enabled.
 idf.py build
 idf.py -p /dev/ttyACM0 flash monitor
 ```
+
+### 4. The Addressing Anomaly (0x2C00 vs 0x3C00)
+During the integration of the BSP, we encountered a persistent "Black Screen" issue despite correct initialization.
+- **Standard Behavior:** The RM690B0 datasheet specifies `0x2C` (RAMWR) as the command to write memory. In a standard SPI implementation, you would send command `0x2C` and then stream data.
+- **The Anomaly:** In this specific QSPI implementation (Opcode `0x32`), the controller **ignores** data sent to address `0x002C00`.
+- **The Fix:** Analysis of the working Arduino library revealed that while the `RAMWR` command (0x2C) is sent first to prepare the display, the actual pixel data stream **MUST** be directed to address **`0x003C00`**.
+- **Why?** This is likely an internal memory map offset or a specific configuration of the QSPI interface on this module. Changing the address from `0x002C00` to `0x003C00` immediately fixed the display.
