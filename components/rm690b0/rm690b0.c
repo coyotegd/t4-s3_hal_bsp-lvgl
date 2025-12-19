@@ -42,12 +42,12 @@ void rm690b0_send_cmd(uint8_t cmd, const uint8_t *data, size_t len) {
 
 void rm690b0_send_pixels(const uint8_t *data, size_t len) {
     // Pixel Data uses Opcode 0x32 and Quad Mode (QOUT: 1-bit Cmd, 1-bit Addr, 4-bit Data)
-    // Address is 0x003C00 (RAMWR_CONTINUE) - Matches Arduino_ESP32QSPI.cpp
+    // Address is fixed 0x002C00 (RAMWR) - Matches LilyGo_AMOLED.cpp
     spi_transaction_ext_t t = {
         .base = {
             .flags = SPI_TRANS_VARIABLE_CMD | SPI_TRANS_VARIABLE_ADDR | SPI_TRANS_MODE_QIO,
             .cmd = 0x32,
-            .addr = 0x003C00,
+            .addr = 0x002C00,
             .length = len * 8,
             .tx_buffer = data,
         },
