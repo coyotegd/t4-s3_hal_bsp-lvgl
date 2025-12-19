@@ -54,7 +54,7 @@ void draw_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color) {
         uint16_t current_h = (current_y + CHUNK_HEIGHT > y + h) ? (y + h - current_y) : CHUNK_HEIGHT;
         
         rm690b0_set_window(x, current_y, x + w - 1, current_y + current_h - 1);
-        rm690b0_send_cmd(RM690B0_RAMWR, NULL, 0);
+        // rm690b0_send_cmd(RM690B0_RAMWR, NULL, 0); // Removed: send_pixels handles the write command
         rm690b0_send_pixels((uint8_t *)buf, w * current_h * 2);
     }
     free(buf);
@@ -83,7 +83,16 @@ void app_main(void) {
 
     int count = 0;
     while (1) {
-        ESP_LOGI(TAG, "Heartbeat %d", count++);
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        ESP_LOGI(TAG, "Heartbeat %d", count);
+
+        // Blinking black box 1/2 size in the middle of the white square
+        if (count % 2 == 0) {
+            draw_rect(275, 200, 50, 50, 0x0000); // Black
+        } else {
+            draw_rect(275, 200, 50, 50, 0xFFFF); // White
+        }
+
+        count++;
+        vTaskDelay(pdMS_TO_TICKS(3000));
     }
 }
