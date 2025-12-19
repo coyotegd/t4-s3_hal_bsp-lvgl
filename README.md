@@ -43,10 +43,33 @@ The board uses an SY6970 PMIC which has a default watchdog enabled.
 
 ## Build & Flash
 
+### 1. Set up the Environment
+**Crucial Step:** You must load the ESP-IDF environment variables in your terminal before building. This is a common reason for "command not found" errors.
+
+```bash
+# Default installation path (adjust if yours is different, e.g., ~/esp/v5.5/esp-idf/export.sh)
+. $HOME/esp/esp-idf/export.sh
+```
+
+### 2. Build and Flash
+Once the environment is loaded:
+
 ```bash
 idf.py build
 idf.py -p /dev/ttyACM0 flash monitor
 ```
+
+## Troubleshooting
+
+### "idf.py: command not found"
+If you see this error, it means you haven't run the export script in your current terminal session. See step 1 above.
+
+### VS Code "Red Squiggles" (Undefined Identifiers)
+If VS Code shows errors like `CONFIG_LOG_MAXIMUM_LEVEL is undefined` but the project builds fine:
+1.  Ensure you have built the project at least once (`idf.py build`).
+2.  The `sdkconfig.h` file is generated in `build/config/`.
+3.  Check `.vscode/settings.json` and ensure `compile-commands-dir` uses `${workspaceFolder}/build` instead of a hardcoded absolute path from another machine.
+
 
 ### 4. The Addressing Anomaly (0x2C00 vs 0x3C00)
 During the integration of the BSP, we encountered a persistent "Black Screen" issue despite correct initialization.
