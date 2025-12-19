@@ -41,38 +41,20 @@ void rm690b0_send_cmd(uint8_t cmd, const uint8_t *data, size_t len) {
 }
 
 void rm690b0_send_pixels(const uint8_t *data, size_t len) {
-    // Split transaction using Standard SPI (1-1-1)
-    // 1. Send Command (0x02) and Address (0x002C00)
-    // 2. Send Data
-    
-    spi_device_acquire_bus(spi_handle, portMAX_DELAY);
-
-    spi_transaction_ext_t t_addr = {
+    // Pixel Data uses Opcode 0x32 and Quad Mode (QOUT: 1-bit Cmd, 1-bit Addr, 4-bit Data)
+    // Address is fixed 0x002C00 (RAMWR) - Matches LilyGo_AMOLED.cpp
+    spi_transaction_ext_t t = {
         .base = {
-            .flags = SPI_TRANS_VARIABLE_CMD | SPI_TRANS_VARIABLE_ADDR | SPI_TRANS_CS_KEEP_ACTIVE,
-            .cmd = 0x02,
+            .flags = SPI_TRANS_VARIABLE_CMD | SPI_TRANS_VARIABLE_ADDR | SPI_TRANS_MODE_QIO,
+            .cmd = 0x32,
             .addr = 0x002C00,
-            .length = 0,
+            .length = len * 8,
+            .tx_buffer = data,
         },
         .command_bits = 8,
         .address_bits = 24,
     };
-    spi_device_polling_transmit(spi_handle, (spi_transaction_t *)&t_addr);
-
-    spi_transaction_ext_t t_data = {
-        .base = {
-            .flags = SPI_TRANS_VARIABLE_CMD | SPI_TRANS_VARIABLE_ADDR,
-            .cmd = 0, // No command phase for data part
-            .addr = 0, // No address phase
-            .length = len * 8,
-            .tx_buffer = data,
-        },
-        .command_bits = 0,
-        .address_bits = 0,
-    };
-    spi_device_polling_transmit(spi_handle, (spi_transaction_t *)&t_data);
-
-    spi_device_release_bus(spi_handle);
+    spi_device_polling_transmit(spi_handle, (spi_transaction_t *)&t);
 }
 
 void rm690b0_read_id(uint8_t *id) {
@@ -148,11 +130,11 @@ void rm690b0_init(void) {
 
     spi_device_interface_config_t devcfg = {
         .command_bits = 8,
-        .clock_speed_hz = 10 * 1000 * 1000, // Reduced to 10MHz for stability
+        .clock_speed_hz = 20 * 1000 * 1000, // 20MHz
         .mode = 0,
         .spics_io_num = PIN_NUM_QSPI_CS,
         .queue_size = 10,
-        .flags = SPI_DEVICE_HALFDUPLEX,
+        .flags = SPI_DEVICE_HALFDUPLEX, // Removed 3WIRE
     };
     spi_bus_add_device(SPI2_HOST, &devcfg, &spi_handle);
 
