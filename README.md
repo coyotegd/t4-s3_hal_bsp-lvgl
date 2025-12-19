@@ -43,21 +43,26 @@ The board uses an SY6970 PMIC which has a default watchdog enabled.
 
 ## Build & Flash
 
-### 1. Set up the Environment
-**Crucial Step:** You must load the ESP-IDF environment variables in your terminal before building. This is a common reason for "command not found" errors.
+### Option A: VS Code (Recommended)
+If you are using the **ESP-IDF Extension** in VS Code:
+1.  Open the project folder in VS Code.
+2.  Use the **Build**, **Flash**, and **Monitor** icons in the bottom status bar (lightning bolt, flame, monitor icons).
+    *   *Note:* The extension automatically handles the environment variables for you. You do **not** need to run `export.sh` manually when using these buttons.
 
-```bash
-# Default installation path (adjust if yours is different, e.g., ~/esp/v5.5/esp-idf/export.sh)
-. $HOME/esp/esp-idf/export.sh
-```
+### Option B: Command Line (CLI)
+If you prefer the terminal, you **must** load the environment variables first.
 
-### 2. Build and Flash
-Once the environment is loaded:
+1.  **Set up the Environment (Crucial Step):**
+    ```bash
+    # Default installation path (adjust if yours is different, e.g., ~/esp/v5.5/esp-idf/export.sh)
+    . $HOME/esp/esp-idf/export.sh
+    ```
 
-```bash
-idf.py build
-idf.py -p /dev/ttyACM0 flash monitor
-```
+2.  **Build and Flash:**
+    ```bash
+    idf.py build
+    idf.py -p /dev/ttyACM0 flash monitor
+    ```
 
 ## Troubleshooting
 

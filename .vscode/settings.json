@@ -16,6 +16,6 @@
     "--query-driver=/home/kenneth/.espressif/tools/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc",
     "--compile-commands-dir=${workspaceFolder}/build"
   ],
-  "idf.flashType": "JTAG",
+  "idf.flashType": "UART",
   "idf.buildPath": "${workspaceFolder}/build"
 }
