@@ -41,20 +41,76 @@ void rm690b0_send_cmd(uint8_t cmd, const uint8_t *data, size_t len) {
 }
 
 void rm690b0_send_pixels(const uint8_t *data, size_t len) {
-    // Pixel Data uses Opcode 0x32 and Quad Mode (QOUT: 1-bit Cmd, 1-bit Addr, 4-bit Data)
-    // Address is fixed 0x002C00 (RAMWR) - Matches LilyGo_AMOLED.cpp
-    spi_transaction_ext_t t = {
+    // Pixel Data uses Opcode 0x32
+    // Use SPI_TRANS_MODE_QIO: Command (1-bit), Address (4-bit), Data (4-bit)
+    // But we want 1-bit address.
+    // ESP-IDF SPI Master driver defines:
+    // SPI_TRANS_MODE_DIO/QIO: Address and Data are sent in 2/4-bit mode.
+    // SPI_TRANS_MODE_DIOQIO_ADDR: Address is sent in 2/4-bit mode (if DIO/QIO flag is set).
+    // If we want 1-bit address and 4-bit data, we should NOT use SPI_TRANS_MODE_QIO.
+    // Instead, we use SPI_DEVICE_HALFDUPLEX (set in devcfg) and set flags=0 for transaction (default 1-bit cmd/addr).
+    // BUT, we need 4-bit DATA.
+    // There is no explicit SPI_TRANS_MODE_QOUT flag in older IDF versions or it might be named differently.
+    // However, we can use the 'flags' field in spi_transaction_ext_t.
+    // Actually, to send data in Quad mode but address in 1-bit, we just need to NOT set SPI_TRANS_MODE_QIO,
+    // but we DO need to tell the driver to use Quad for data.
+    // Wait, standard SPI driver doesn't support mixed modes easily in one transaction unless using specific flags.
+    // Let's check if SPI_TRANS_MODE_QOUT exists. It seems it does NOT.
+    // The correct way is to use SPI_TRANS_MODE_QIO but set address_bits to 0 and send address as part of command or manually? No.
+    
+    // Let's revert to QIO but try to fix the address phase.
+    // If the display expects 1-bit address, but we send 4-bit address (QIO), it receives 6 clocks instead of 24.
+    // We can simulate 1-bit address by sending it as data or command?
+    // Or we can use the fact that 0x32 command usually implies Quad Data.
+    
+    // Alternative: Use SPI_TRANS_MODE_QIO but pad the address?
+    // No, let's look at how others do it.
+    // If SPI_TRANS_MODE_QOUT is missing, we might need to use the 'flags' in devcfg or just use QIO and accept it might be wrong if display expects 1-bit.
+    // BUT, the error says 'SPI_TRANS_MODE_QOUT' undeclared.
+    
+    // Let's try to use SPI_TRANS_MODE_QIO again but maybe the address needs to be adjusted?
+    // Actually, if we look at the datasheet for RM690B0 (or similar), 0x32 is "Write Memory Continue" in Quad.
+    // It usually expects: Cmd(1) -> Addr(1) -> Data(4).
+    // ESP32 SPI with SPI_TRANS_MODE_QIO sends: Cmd(1) -> Addr(4) -> Data(4).
+    // This is the mismatch.
+    
+    // To achieve Cmd(1) -> Addr(1) -> Data(4), we can:
+    // 1. Send Cmd + Addr as a single "Command" phase (if supported) or just standard SPI transaction for Cmd+Addr.
+    // 2. Then send Data in a separate transaction using QIO (but with 0 address bits).
+    // However, CS must stay active.
+    // We can use SPI_TRANS_CS_KEEP_ACTIVE.
+    
+    // Let's try splitting the transaction.
+    
+    // Transaction 1: Command 0x32 + Address 0x002C00 (Standard SPI, 1-bit)
+    spi_transaction_ext_t t1_ext = {
         .base = {
-            .flags = SPI_TRANS_VARIABLE_CMD | SPI_TRANS_VARIABLE_ADDR | SPI_TRANS_MODE_QIO,
+            .flags = SPI_TRANS_VARIABLE_CMD | SPI_TRANS_VARIABLE_ADDR | SPI_TRANS_CS_KEEP_ACTIVE,
             .cmd = 0x32,
             .addr = 0x002C00,
-            .length = len * 8,
-            .tx_buffer = data,
+            .length = 0,
         },
         .command_bits = 8,
         .address_bits = 24,
     };
-    spi_device_polling_transmit(spi_handle, (spi_transaction_t *)&t);
+    
+    // Transaction 2: Data (Quad Mode, No Cmd, No Addr)
+    spi_transaction_ext_t t2_ext = {
+        .base = {
+            .flags = SPI_TRANS_VARIABLE_CMD | SPI_TRANS_VARIABLE_ADDR | SPI_TRANS_MODE_QIO,
+            .cmd = 0, // No cmd
+            .addr = 0, // No addr
+            .length = len * 8,
+            .tx_buffer = data,
+        },
+        .command_bits = 0,
+        .address_bits = 0,
+    };
+    
+    spi_device_acquire_bus(spi_handle, portMAX_DELAY);
+    spi_device_polling_transmit(spi_handle, (spi_transaction_t *)&t1_ext);
+    spi_device_polling_transmit(spi_handle, (spi_transaction_t *)&t2_ext);
+    spi_device_release_bus(spi_handle);
 }
 
 void rm690b0_read_id(uint8_t *id) {
