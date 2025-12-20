@@ -83,6 +83,8 @@ static uint8_t current_rotation = 0;
 void cycle_rotation(void) {
     current_rotation = (current_rotation + 1) % 4;
     rm690b0_set_rotation(current_rotation);
+    // Update touch max coordinates to match new display orientation
+    cst226se_set_max_coordinates(rm690b0_get_width(), rm690b0_get_height());
     cst226se_set_rotation(current_rotation);
     ESP_LOGI(TAG, "Rotation changed to: %d", current_rotation);
 }
@@ -125,6 +127,10 @@ void app_main(void) {
 
     rm690b0_init();
     rm690b0_set_rotation(RM690B0_ROTATION_0);
+    // Ensure touch mapping matches display logical resolution
+    cst226se_set_max_coordinates(rm690b0_get_width(), rm690b0_get_height());
+    // Re-apply rotation so transforms use the correct max coordinates
+    cst226se_set_rotation((cst226se_rotation_t)0);
     
     // Reduce brightness to ~50% to prevent brownouts/USB disconnects
     rm690b0_set_brightness(128);
