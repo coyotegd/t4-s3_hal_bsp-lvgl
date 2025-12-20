@@ -4,6 +4,7 @@
 #include <esp_err.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include "driver/i2c_master.h"
 
 #define SY6970_I2C_ADDR 0x6A
 #define SY6970_SDA_PIN  6
@@ -71,6 +72,10 @@ typedef enum {
 
 // API Functions
 void sy6970_init(void);
+
+// Return the I2C bus handle created by `sy6970_init()` so other components
+// can share the same I2C bus. Returns NULL if the bus hasn't been created.
+i2c_master_bus_handle_t sy6970_get_bus_handle(void);
 
 // Power Control
 esp_err_t sy6970_set_input_current_limit(uint16_t current_ma);

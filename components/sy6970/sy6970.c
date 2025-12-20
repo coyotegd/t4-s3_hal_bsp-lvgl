@@ -86,6 +86,11 @@ void sy6970_init(void) {
     sy6970_update_reg(SY6970_REG_02, 0xC0, 0xC0);
 }
 
+i2c_master_bus_handle_t sy6970_get_bus_handle(void)
+{
+    return bus_handle;
+}
+
 esp_err_t sy6970_set_input_current_limit(uint16_t current_ma) {
     if (current_ma < 100) current_ma = 100;
     if (current_ma > 3250) current_ma = 3250;
