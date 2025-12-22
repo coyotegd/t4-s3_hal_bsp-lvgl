@@ -53,9 +53,10 @@ void app_main(void) {
     // Draw initial screen
     redraw_screen();
 
-    // Touch handling loop via HAL
+    // Touch and button handling loop
     while (1) {
         hal_handle_touch();
+        hal_button_poll();
         vTaskDelay(pdMS_TO_TICKS(20));
     }
 }

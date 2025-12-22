@@ -10,6 +10,54 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
+#include "include/button.h"
+
+static const char *TAG = "hal_mgr";
+static uint8_t prev_brightness = 128;
+static bool display_asleep = false;
+static bool display_dimmed = false;
+static TimerHandle_t sleep_timer = NULL;
+static volatile bool display_sleep_pending = false;
+
+// HAL display control wrappers
+void hal_display_power(bool on) {
+    rm690b0_display_power(on);
+}
+
+void hal_display_sleep(bool sleep) {
+    rm690b0_sleep_mode(sleep);
+}
+
+void hal_display_set_brightness(uint8_t brightness) {
+    rm690b0_set_brightness(brightness);
+}
+
+void hal_button_poll(void) {
+    if (display_sleep_pending) {
+    ESP_LOGI(TAG, "Display entering sleep mode after inactivity");
+    hal_display_set_brightness(0);
+    hal_display_sleep(true);
+    hal_display_power(false);
+    display_asleep = true;
+    display_dimmed = false;
+    display_sleep_pending = false;
+    }
+    button_poll();
+    button_event_t event = button_get_event();
+    switch (event) {
+        case BUTTON_EVENT_PRESS:
+            hal_button_press();
+            break;
+        case BUTTON_EVENT_DOUBLE_PRESS:
+            hal_button_double_press();
+            break;
+        case BUTTON_EVENT_LONG_PRESS:
+            hal_button_long_press();
+            break;
+        default:
+            break;
+    }
+}
 
 // Forward declaration to avoid implicit declaration warning
 void hal_draw_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);
@@ -58,7 +106,39 @@ static void hal_redraw_blinking_box(void) {
     hal_draw_rect(red_box_x, red_box_y, red_box_size, red_box_size, color);
 }
 
-static const char *TAG = "hal_mgr";
+// --- Button event stubs ---
+void hal_button_press(void) {
+    // ...code...
+}
+
+static void display_sleep_cb(TimerHandle_t xTimer) {
+    display_sleep_pending = true;
+}
+
+void hal_button_double_press(void) {
+    ESP_LOGI(TAG, "Double press detected: Dimming screen to 0");
+    // Save current brightness
+    prev_brightness = 128; // Default, or track actual if adjustable elsewhere
+    // Smoothly dim to 0
+    for (int b = prev_brightness; b >= 0; b -= 8) {
+        hal_display_set_brightness((uint8_t)b);
+        vTaskDelay(pdMS_TO_TICKS(30));
+    }
+    hal_display_set_brightness(0);
+    ESP_LOGI(TAG, "Screen dimmed to 0. Scheduling sleep in 1 minute.");
+    // Start/restart 1 minute timer for sleep
+    if (!sleep_timer) {
+        sleep_timer = xTimerCreate("sleep_timer", pdMS_TO_TICKS(60000), pdFALSE, NULL, display_sleep_cb);
+    }
+    xTimerStop(sleep_timer, 0);
+    xTimerStart(sleep_timer, 0);
+    display_dimmed = true;
+}
+
+void hal_button_long_press(void) {
+    // ...existing code...
+}
+
 
 static uint8_t current_rotation = 0;
 
@@ -66,6 +146,7 @@ void hal_init(void) {
     sy6970_init();
     cst226se_init();
     rm690b0_init();
+    button_init();
     current_rotation = 0;
     rm690b0_set_rotation(current_rotation);
     cst226se_set_rotation(current_rotation);
@@ -130,7 +211,7 @@ void hal_redraw_screen(void) {
 }
 
 void hal_set_brightness(uint8_t brightness) {
-    rm690b0_set_brightness(brightness);
+    hal_display_set_brightness(brightness);
 }
 
 uint16_t hal_get_display_width(void) {
@@ -151,7 +232,7 @@ void hal_draw_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t colo
     size_t max_chunk_pixels = w * CHUNK_HEIGHT;
     uint16_t *buf = heap_caps_malloc(max_chunk_pixels * 2, MALLOC_CAP_SPIRAM);
     if (!buf) buf = malloc(max_chunk_pixels * 2);
-    if (!buf) { printf("Malloc failed\n"); return; }
+    if (!buf) { return; }
     uint16_t color_be = (color << 8) | (color >> 8);
     for (size_t i = 0; i < max_chunk_pixels; i++) buf[i] = color_be;
     for (uint16_t current_y = y; current_y < y + h; current_y += CHUNK_HEIGHT) {
@@ -179,6 +260,23 @@ bool hal_handle_touch(void) {
         touch_data.y = td.y;
         touch_data.pressed = td.pressed;
         if (touch_data.pressed) {
+            // Wake display if asleep or dimmed
+            if (display_asleep || display_dimmed) {
+                ESP_LOGI(TAG, "Touch detected: Waking display and restoring brightness");
+                hal_display_power(true);
+                hal_display_sleep(false);
+                if (display_asleep) {
+                    vTaskDelay(pdMS_TO_TICKS(120)); 
+                    hal_display_set_brightness(prev_brightness);
+                } else {
+                    hal_display_set_brightness(prev_brightness);
+                }
+                display_asleep = false;
+                display_dimmed = false;
+                hal_redraw_screen();
+                if (sleep_timer) xTimerStop(sleep_timer, 0);
+                return true;
+            }
             uint16_t disp_w = hal_get_display_width();
             uint16_t disp_h = hal_get_display_height();
             if (touch_data.x >= disp_w) touch_data.x = disp_w - 1;

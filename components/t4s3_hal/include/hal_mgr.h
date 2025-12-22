@@ -1,3 +1,5 @@
+// Button access through HAL
+void hal_button_poll(void);
 
 #ifndef HAL_MGR_H
 #define HAL_MGR_H
@@ -30,5 +32,15 @@ void hal_draw_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t colo
 void hal_clear_full_display(uint16_t color);
 void hal_cycle_rotation(void);
 bool hal_handle_touch(void);
+
+// HAL display control wrappers
+void hal_display_power(bool on);
+void hal_display_sleep(bool sleep);
+void hal_display_set_brightness(uint8_t brightness);
+
+// Button event stubs
+void hal_button_press(void);
+void hal_button_double_press(void);
+void hal_button_long_press(void);
 
 #endif // HAL_MGR_H

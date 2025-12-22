@@ -5,4 +5,4 @@
 cmake_minimum_required(VERSION 3.5)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(rm690b0_cst226se_PMIC)
+project(t4-s3_hal)
