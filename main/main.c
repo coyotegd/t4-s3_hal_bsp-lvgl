@@ -21,13 +21,6 @@ const uint16_t rainbow[] = {
     0xA81F  // Violet
 };
 
-// App Dimensions (Dynamic based on rotation)
-#define APP_DISP_WIDTH  450
-#define APP_DISP_HEIGHT 600
-
-// Current rotation state
-static uint8_t current_rotation = 0;
-
 // Get current dimensions from display driver
 static inline uint16_t get_display_width(void) {
     return hal_get_display_width();
@@ -42,9 +35,8 @@ void draw_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color) {
 }
 
 void cycle_rotation(void) {
-    current_rotation = (current_rotation + 1) % 4;
     hal_cycle_rotation();
-    ESP_LOGI(TAG, "Rotation changed to: %d", current_rotation);
+    ESP_LOGI(TAG, "Rotation cycled via HAL");
 }
 
 void redraw_screen(void) {
