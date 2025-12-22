@@ -1,0 +1,42 @@
+Pin Diagram
+
+DATAO 1014 SDA 1006
+DATA 1010 SCL 1007
+DATA2 1016 IRQ 1008
+DATA3 1012 Reset 1017
+SCK 1015 Touch
+cs 1011
+D reset 1013
+AMOLED TE 1018 Pitch PIN Connect
+
+BXD (1044)
+Flash: TXD (1043)
+
+PSRAM: 2 = GND
+
+Main Chip : -
+ESP32-S3 : USB Type-C
+
+SCL (1007)
+SDA (i006)
+IPEX External GND
+Antenna Holder Quwiic JST-SH 1.0mm.
+
+3D Antenna > Boot Button
+
+Reset Button
+Mos! 1002
+
+MISO 1004 v \ Battery Switch
+SCK 1003 }
+
+cs 1001
+MicroSD Card
+
+JST-GH 1.25mm
+
+LILYGO T4-S3-2.41 PINMAP
+
+ESP32-S3 + 2.41-inch AMOLED + Qwiic + MicroSD Card
+
+Qwiic JST-SH 1.0mm.

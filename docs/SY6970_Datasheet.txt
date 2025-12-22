@@ -1,0 +1,3739 @@
+Application Note: AN_SY6970
+5A, Single Cell Li-Ion DC/DC Switching Charger with
+I2C Control, USB Detection and OTG
+JEITA Compliant, Power Path Management
+Advanced Design Specification
+
+General Description
+The SY6970 is a fully-integrated switching battery
+charger with system power path management
+devices for single cell Li-Ion and Li-polymer battery
+in a wide range of tablet and other portable devices.
+Its low impedance power path optimizes switching
+conversion efficiency, reduces battery charging time
+and extends battery life during the discharging mode.
+The I2C serial interface with charging and system
+settings makes the device a truly flexible solution.
+The device supports a wide range of input sources,
+including standard USB host port, USB charging
+port and non-standard DC adapter. The SY6970
+takes the result from the internal USB port
+identification circuit thru DP/DM compliant with
+BC1.2. The SY6970 can be compliant with USB 2.0
+and USB 3.0 power spec with input current and
+voltage regulation. Meanwhile, the SY6970 meets
+USB On-the-go operation power rating specification
+by supplying 5V on BUS with current limit up to
+2.4A.
+
+constant voltage. At the end of the charging cycle,
+the charger will automatically be terminated when
+the charge current is below a preset limit in the
+constant voltage phase. When the full battery falls
+below the recharge threshold, the charger will
+automatically start another charging cycle. The
+SY6970 can be compliant with JEITA spec for the
+Li-Ion battery.
+The device provides various safety features for
+battery charging and system operation, including
+negative thermistor monitoring, charging safety
+timer and over-voltage/over-current protections. The
+thermal regulation reduces charge current when the
+junction temperature exceeds 120°C(programmable).
+The STAT output reports the charging status and
+any fault conditions. The INT immediately notifies
+the host when a fault occurs.
+The SY6970 is available in QFN4x4-24 package.
+
+Ordering Information
+The power path management regulates the system
+voltage slightly above battery voltage but does not
+drop below 3.5V minimum system voltage. With
+this feature, the switching converter will keep
+working to support the system load even when the
+battery is completely depleted or removed. When the
+input current limit or voltage limit is reached, the
+power path management will reduce the charging
+current to zero firstly. If the system load continues to
+increase, the power path will discharge the battery to
+provide the power required by system. This
+supplement mode operation prevents overloading the
+input source.
+
+SY6970 □(□□)□
+Temperature Code
+Package Code
+Optional Spec Code
+
+Ordering Number
+SY6970QCC
+
+Package type
+
+Note
+
+QFN4x4-24
+
+The device initiates and completes a charging cycle
+without software control. It automatically detects the
+battery voltage and charges the battery in three
+phases: preconditioning, constant current and
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+1
+All Rights Reserved.
+
+SY6970
+•
+
+Features
+
+–
+
+Up to 2.4A OTG Current Limit on BUS
+
+High Efficiency 5A 1.5MHz Buck Mode
+Charger
+
+–
+
+±1% Output Regulation in Boost Mode
+
+•
+
+Battery Monitor for Voltage, Temperature and
+Charge Current Measurements
+
+•
+
+Full BATFET Control to Support Shipping
+Mode, Wake Up, and System Reset
+
+•
+
+Up to 9A Battery Discharge Current
+
+•
+
+Safety
+
+– Support 3.9V-14V Input Voltage Range
+– Programmable IDPM/VDPM to Support
+the USB and Adapter
+– Support USB SDP/DCP/CDP and NonStandard Adapter Detection
+– 3.84-4.608V Adjustable Charge Voltage
+– Support Narrow VDC Power Path
+Management
+
+–
+
+Battery Temperature Sensing
+Charge and Boost Mode
+
+–
+
+Battery Charging Safety Timer
+
+–
+
+Thermal Regulation
+Shutdown
+
+–
+
+Input/System Over-voltage Protection
+
+–
+
+MOSFET Over-current Protection
+
+– JEITA Compliance
+– ±0.5% Charge Voltage Regulation
+– ±7% Charge Current Regulation
+– Accelerate Charge Time by Battery
+Path Impedance Compensation.
+– Charge Status Outputs for LED or Host
+Processor
+•
+
+Maximum 2.4A 500KHz/1.5MHz Boost OTG
+Current
+– 4.55-5.51V Adjustable OTG Output
+Voltage
+– Selectable OTG Output Current Limit
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+and
+
+for
+
+Thermal
+
+•
+
+Low Battery Leakage Current and Support
+Shipping Mode
+
+•
+
+4mm x 4mm QFN-24 Package
+
+Applications
+•
+
+Smart Phone
+
+•
+
+Tablet PC
+
+•
+
+Power Bank
+
+•
+
+Portable Internet Devices
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+2
+All Rights Reserved.
+
+SY6970
+Typical Applications
+3.9V-14V
+USB
+
+SY6970
+
+BUS
+
+PMID
+
+1uF
+
+6.8uF
+DSEL
+DM
+DP
+
+PGND
+
+1uH
+
+SYSTEM
+
+LX
+47nF
+
+10uF
+
+10uF
+
+BST
+SYS
+
+VBIAS
+
+Host
+
+BAT
+
+SDA
+
+10uF
+
+SCL
+INT
+
+RILIM
+ILIM
+
+OTG
+/CE
+SYS
+
+Battery
+
+REGN
+4.7uF
+
+STAT
+/QON
+
+5.52k
+NTC
+
+Power Pad
+
+10k
+(103-AT)
+
+31.23k
+
+Figure 1. Schematic Diagram
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+3
+All Rights Reserved.
+
+SY6970
+DSEL
+
+PMID
+
+REGN
+
+BST
+
+LX
+
+LX
+
+Pinout (top view)
+24
+
+23
+
+22
+
+21
+
+20
+
+19
+
+BUS
+
+1
+
+18
+
+PGND
+
+DP
+
+2
+
+17
+
+PGND
+
+DM
+
+3
+
+16
+
+SYS
+
+SY6970
+
+6
+
+13
+
+BAT
+
+7
+
+8
+
+9
+
+10
+
+11
+
+12
+
+NTC
+
+SDA
+
+/QON
+
+BAT
+
+ILIM
+
+SYS
+
+14
+
+/CE
+
+15
+
+5
+
+INT
+
+4
+
+SCL
+
+OTG
+
+STAT
+
+Top Mark: CDDxyz(device code: CDD, x=year code, y=week code, z= lot number code)
+
+Pin Description
+Pin Name
+
+Pin Number
+
+Pin Description
+
+BUS
+
+1
+
+Charger power input pin. Connect a 1μF ceramic capacitor from BUS to PGND
+as close as possible to the IC.
+
+DP
+
+2
+
+DM
+
+3
+
+STAT
+
+4
+
+USB identification port. USB detection strategy is compliant with BC1.2. SDP,
+CDP, DCP and adapter port can be identified according to the detection results
+thru DP/DM pins.
+Open drain charge status indication pin. Pull up to a logic rail via 10kΩ resistor.
+STAT pin low indicates charge in progress; high indicates charge done or
+charge disabled. When any charge fault occurs, STAT pin blinks at 1Hz.
+The stat pin function can be disabled by setting STAT_DIS bit.
+
+SCL
+
+5
+
+I2C Interface clock pin. Pull up to a logic rail via 10kΩ resistor.
+
+SDA
+
+6
+
+I2C Interface data pin. Pull up to a logic rail via 10kΩ resistor.
+
+INT
+
+7
+
+Open-drain Interrupt Output. Pull up to a logic rail via 10kΩ resistor. The INT
+pin generates active low, 256us pulse to notify the host about charge status and
+charge fault.
+
+OTG
+
+8
+
+/CE
+
+9
+
+ILIM
+
+10
+
+Boost mode active high enable pin.
+Boost mode is enabled when REG03[5]=1 and OTG pin is high.
+Charge mode active low enable pin. Battery charging is enabled when
+REG03[4]=1 and /CE pin =Low. /CE pin must be pulled high or low.
+ILIM pin sets the maximum input current limit. A resistor is connected from
+ILIM pin to ground to set the maximum limit as IINMAX= KILIM /RILIM. The
+actual input current limit is the lower one set by ILIM and by I2C REG00[5:0].
+The ILIM pin function can be disabled by setting EN_ILIM bit to 0
+
+NTC
+
+11
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Connect a resistor divider from REGN to NTC to GND to achieve battery
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+4
+All Rights Reserved.
+
+SY6970
+thermal protection. Charge or discharge suspends when NTC pin is out of
+range.
+Recommend 103AT-2 thermistor.
+BATFET enables control in shipping mode and BATFET reset function.
+
+/QON
+
+12
+
+When BATFET is in shipping mode, logic high to low transition on this pin
+with minimum of TQON_1 low level turns on BATFET to exit shipping mode.
+This pin is internally pulled up to maintain default high logic.
+When BUS is not plugged-in, a logic low of TQON_RST(typical 10s) resets
+system power by turning BATFET off for TBATFET_RST(typical 3s) and then reenable BATFET.
+
+13,14
+
+Battery voltage sense pin. Used as battery constant voltage control and battery
+voltage protections. Connect at least 10uF ceramic capacitor to the BAT pin.
+
+SYS
+
+15,16
+
+System connection point. The internal BATFET is connected between BAT and
+SYS. When the battery falls below the minimum system voltages, switch-mode
+converter will keep SYS above the minimum system voltage.
+
+PGND
+
+17,18
+
+Power ground connection. On PCB layout, connect this pin directly to ground
+connection of input and output capacitors.
+
+LX
+
+19,20
+
+Switching node pin. Connect this pin to external inductor.
+
+BST
+
+21
+
+HSFET driver positive supply. Connect a 47nF bootstrap capacitor between LX
+and BST.
+
+22
+
+LSFET driver positive supply. Connect a 4.7μF ceramic capacitor between
+REGN and analog GND. The capacitor should be placed closely to the IC.
+REGN also serves as bias rail of NTC pin.
+
+23
+
+Connect this pin to the drain of the reverse blocking MOSFET and the drain of
+HSFET. Connect a 6.8µF capacitor between PMID and PGND. The capacitor
+should be placed closely to the IC.
+
+DSEL
+
+24
+
+Open-drain DP/DM multiplexer selection control. Pull up to a logic rail via
+10kΩ resistor. During input source type detection, the pin outputs low to
+indicate DP/DM detection is in progress. When detection is done, the pin keeps
+low if HVDCP is detected. The pin returns to float and pulls high by resistor
+when other input source type is detected.
+
+Exposed
+pad
+
+-
+
+Exposed pad beneath the IC for heat dissipation. Always solder exposed pad to
+the board, and have vias on the power pad plane star-connecting to PGND and
+ground plane for high-current power converter.
+
+BAT
+
+REGN
+
+PMID
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+5
+All Rights Reserved.
+
+SY6970
+Absolute Maximum Ratings (Note 1)
+BUS, PMID, LX ---------------------------------------------------------------------------------------------- -0.3V to +18V
+Others ------------------------------------------------------------------------------------------------------------ -0.3V to +6V
+Package Thermal Resistance (Notes 2)
+QFN4x4-24 θJA ----------------------------------------------------------------------------------------- 33.3 °C/W
+QFN4x4-24 θJC ----------------------------------------------------------------------------------------- 29.7 °C/W
+Junction Temperature Range ----------------------------------------------------------------------------- -40°C to +150°C
+Operating Temperature Range --------------------------------------------------------------------------- -40°C to +100°C
+Storage Temperature -------------------------------------------------------------------------------------- -65°C to +150°C
+Lead Temperature (Soldering, 10s) -------------------------------------------------------------------------------- +300°C
+ESD Susceptibility
+HBM (Human Body Mode) --------------------------------------------------------------------------------------------- 2kV
+MM (Machine Mode) --------------------------------------------------------------------------------------------------- 200V
+
+Recommended Operating Conditions (Note 3)
+BUS, PMID, LX ------------------------------------------------------------------------------------------------- 0V to +16V
+Others ------------------------------------------------------------------------------------------------------------- 0V to +5.5V
+Junction Temperature Range ------------------------------------------------------------------------------ -40°C to 125°C
+Ambient Temperature Range ------------------------------------------------------------------------------- -40°C to 85°C
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+6
+All Rights Reserved.
+
+SY6970
+Electrical Characteristics
+(VBUS_UVLOZ<VBUS<VACOV and VBUS>VBAT+VSLEEP, TA=25°C for typical values unless other noted.)
+Parameter
+
+Symbol
+
+Test Conditions
+
+Min
+
+Typ
+
+Max
+
+Unit
+
+QUIESCENT CURRENTS
+
+Battery Discharge Current (BAT)
+
+Input Supply Current in High-Z
+Mode
+
+Input Supply Current (BUS)
+
+Battery Discharge Current in
+Boost Mode
+
+IBAT
+
+IBUS_HIZ
+
+IBUS
+
+IOTGBOOST
+
+VBUS<VBUS_UVLOZ, VBAT=4.2 V,
+leakage between BAT and BUS
+
+5
+
+µA
+
+High-Z Mode, no BUS, battery
+monitor disabled, BATFET
+disabled, TJ<85°C
+
+12
+
+µA
+
+High-Z Mode, no BUS, battery
+monitor disabled, BATFT
+enabled, TJ=–40°C to 85°C
+
+32
+
+µA
+
+VBUS=5V, battery monitor
+disabled, no battery, High-Z mode
+enabled
+
+15
+
+µA
+
+VBUS=12V, battery monitor
+disabled, no battery, High-Z mode
+enabled
+
+25
+
+µA
+
+VBUS>VBUS_UVLOZ, VBUS>VBAT,
+converter not switching
+
+1.5
+
+VBUS> VBUS_UVLOZ, VBUS>VBAT,
+converter switching, VBAT=3.2V,
+ISYS=0A
+
+3
+
+mA
+
+VBUS> VBUS_UVLOZ, VBUS>VBAT,
+converter switching, charge
+disabled, VBAT=3.8V, ISYS=0A
+
+3
+
+mA
+
+VBAT=4.2V, Boost mode,
+IBUS=0A, converter switching
+
+3.5
+
+mA
+
+3
+
+mA
+
+BUS/BAT POWER UP
+BUS Operating Range
+
+VBUS_OP
+
+3.9
+
+14
+
+V
+
+3.6
+
+V
+
+2
+
+BUS for Active IC and I C, No
+Battery
+
+VBUS_UVLOZ
+
+VBUS rising
+
+Sleep Mode Falling Threshold
+
+VSLEEP
+
+VBUS falling, VBUS-VBAT
+
+65
+
+mV
+
+Sleep Mode Rising Threshold
+
+VSLEEPZ
+
+VBUS rising, VBUS-VBAT
+
+250
+
+mV
+
+BUS Over-voltage Rising
+Threshold
+
+VACOV
+
+VBUS rising
+
+14.3
+
+V
+
+BUS Over-voltage Recovery
+Threshold
+
+VACOV_RC
+
+VBUS falling
+
+300
+
+mV
+
+Battery Depletion Threshold
+
+VBAT_DPL
+
+VBAT falling
+
+2.3
+
+V
+
+Battery Depletion Recovery
+Threshold
+
+VBAT_DPLZ
+
+VBAT rising
+
+2.5
+
+V
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+7
+All Rights Reserved.
+
+SY6970
+POWER PATH MANAGEMENT
+System Regulation Voltage
+
+VSYS_MAX
+
+ISYS = 0A, VBAT>VSYSMIN, Q4 off,
+VBAT up to 4.35V,
+VSYS=VBAT+50mV
+
+System Voltage Output
+
+VSYS_MIN
+
+ISYS=0A, VBAT<VSYSMIN=3.5V, Q4
+off, VSYS=VBAT+150mV
+
+Internal High-side Reverse
+Blocking MOSFET On-resistance
+
+RON(RBFET)
+
+Internal High-side Switching
+MOSFET On-resistance Between
+PMID and LX
+Internal Low-side Switching
+MOSFET On-resistance Between
+LX and PGND
+
+4.4
+
+V
+
+3.65
+
+V
+
+TJ=–40°C to 85°C
+
+25
+
+mΩ
+
+RON(HSFET)
+
+TJ=–40°C to 85°C
+
+25
+
+mΩ
+
+RON(LSFET)
+
+TJ=–40°C to 85°C
+
+15
+
+mΩ
+
+Charge Voltage Regulation
+Accuracy
+
+VBAT_REG_ACC
+
+VBAT = 4.208V and 4.112V
+
+-0.5%
+
+0.5%
+
+Fast Charge Current Regulation
+Accuracy
+
+IICHG_REG_ACC
+
+VBAT = 3.8V, ICHG = 1792mA, TJ
+= 25°C
+
+-5%
+
+5%
+
+Battery LOWV Falling Threshold
+
+VBATLOWV
+
+Fast charge to precharge,
+BATLOWV bit=1 VBAT falling
+
+2.6
+
+3.5
+
+BATTERY CHARGER
+
+2.9
+
+V
+
+ST
+
+Precharge to fast charge,
+BATLOWV bit=1 VBAT rising
+
+Termination Current Accuracy
+
+ITERM_ACC
+
+ITERM = 256mA, ICHG = 960mA
+
+Battery Short Voltage
+
+VSHORT
+
+VBAT falling
+
+2.0
+
+V
+
+Battery Short Voltage Hysteresis
+
+VSHORT_HYST
+
+VBAT rising
+
+200
+
+mV
+
+Battery Short Current
+
+ISHORT
+
+VBAT<2.2V
+
+100
+
+mA
+
+Recharge Threshold Below
+VBAT_REG
+
+VRECHG
+
+VBAT falling, VRECHG bit=0
+
+100
+
+mV
+
+Recharge Deglitch Time
+
+tRECHG
+
+VBAT falling, VRECHG bit=0
+
+20
+
+mS
+
+SYS-BAT MOSFET Onresistance
+
+RON_BATFET
+
+10
+
+mΩ
+
+Battery LOWV Rising Threshold
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+VBATLOWV_HY
+
+2.8
+3.0
+
+-20%
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+V
+20%
+
+8
+All Rights Reserved.
+
+SY6970
+INPUT VOLTAGE/CURRENT REGULATION
+Absolute Input Voltage
+Regulation Accuracy
+
+VINDPM_REG_A
+
+Input Current Limit Range
+
+IINDPM_RANGE
+
+-2%
+
+2%
+
+100
+
+3250
+
+mA
+
+CC
+
+USB Input Current Regulation
+Limit, BUS=5V, Current Drawn
+from LX
+
+IUSB_DPM
+
+USB100
+
+90
+
+100
+
+mA
+
+USB150
+
+130
+
+150
+
+mA
+
+USB500
+
+450
+
+500
+
+mA
+
+USB900
+
+800
+
+900
+
+mA
+
+Input Current Regulation
+Accuracy
+
+IADPT_DPM
+
+I2C Set input current limit above
+900mA
+
+IIN = KILIM/RILIM
+
+KILIM
+
+IINDPM = 1.5A
+
+-20%
+
+0%
+AΩ
+
+360
+
+DP/DM DETECTION
+DP/DM Voltage source
+
+VDP_SRC,
+VDM_SRC
+
+0.5
+
+Data Detect Voltage
+
+VDAT_REF
+
+250
+
+0.6
+
+0.7
+
+V
+
+400
+
+mV
+
+BAT OVER-VOLTAGE PROTECTION
+Battery Over-voltage Threshold
+
+VBATOVP
+
+VBAT rising, as percentage of
+VBAT_REG
+
+104%
+
+Battery Over-voltage Hysteresis
+
+VBATOVP_HYST
+
+VBAT falling, as percentage of
+VBAT_REG
+
+2%
+
+BAT DISCHARGE OVER-CURRENT PROTECTION
+BATFET Discharge Over-current
+Threshold
+
+IBATFET_OCP
+
+9
+
+A
+
+THERMAL REGULATION AND THERMAL SHUTDOWN
+Junction Temperature Regulation
+Accuracy
+
+TJunction_REG
+
+TREG bits=11
+
+120
+
+°C
+
+Thermal Shutdown Rising
+Temperature
+
+TTSD
+
+Temperature increasing
+
+160
+
+°C
+
+Thermal Shutdown Hysteresis
+
+TTSD_HYS
+
+30
+
+°C
+
+JEITA THERMISTER Comparator
+T1(0℃) threshold, charge
+suspended below this temp
+
+VT1
+
+VNTC rising, as percentage to
+VREGN, JEITA_ISET=0
+
+73.25
+
+%
+
+Charge back to ICHG/2 and VREG
+above this temp
+
+VT1_HYS
+
+Hysteresis, VNTC falling,
+JEITA_ISET=0
+
+1.25
+
+%
+
+T2(10℃) threshold, Charge Back
+to ICHG/2 and VREG below this
+Temp
+
+VT2
+
+VNTC rising, as percentage to
+VREGN, JEITA_ISET=0
+
+68.25
+
+%
+
+Charge back to ICHG and VREG
+above this temp
+
+VT2_HYS
+
+Hysteresis, VNTC falling,
+JEITA_ISET=0
+
+1.25
+
+%
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+9
+All Rights Reserved.
+
+SY6970
+T3(45℃) threshold, Charge back
+to ICHG and VREG-150mV above
+This temp
+
+VT3
+
+VNTC falling, as percentage to
+VREGN, JEITA_VSET=0
+
+44.75
+
+%
+
+Charge back to ICHG and VREG
+below this temp
+
+VT3_HYS
+
+Hysteresis, VNTC rising,
+JEITA_VSET=0
+
+1.2
+
+%
+
+T5(60℃) threshold, charge
+suspended above this temp
+
+VT5
+
+VNTC falling, as percentage to
+VREGN, JEITA_VSET=0
+
+34.375
+
+%
+
+Charge back to ICHG and VREG150mV below this temp
+
+VT5_HYS
+
+Hysteresis, VNTC rising,
+JEITA_VSET=0
+
+1.2
+
+%
+
+77
+
+%
+
+1.25
+
+%
+
+80
+
+%
+
+1.25
+
+%
+
+37.75
+
+%
+
+1.2
+
+%
+
+34.37
+
+%
+
+1.2
+
+%
+
+31.25
+
+%
+
+1.2
+
+%
+
+BOOST MODE THERMISTER COMPARATOR
+Cold Temperature Threshold 0,
+NTC Pin Voltage Rising
+Threshold
+
+VBCOLD0
+
+Falling Hysteresis
+
+VBCOLD0_HYS
+
+Cold Temperature Threshold 1,
+NTC Pin Voltage Rising
+Threshold
+
+VBCOLD1
+
+Falling Hysteresis
+
+VBCOLD1_HYS
+
+Hot Temperature Threshold 0,
+NTC pin Voltage Falling
+Threshold
+
+VBHOT0
+
+Rising Hysteresis
+
+VBHOT0_HYS
+
+Hot Temperature Threshold 1,
+NTC pin Voltage Falling
+Threshold
+
+VBHOT1
+
+Rising Hysteresis
+
+VBHOT1_HYS
+
+Hot Temperature Threshold 2,
+NTC Pin Voltage Falling
+Threshold
+
+VBHOT2
+
+Rising Hysteresis
+
+VBHOT2_HYS
+
+As Percentage to VREGN
+(Approx. -10℃ w/ 103AT)
+(Approx. 1℃ w/ 103AT)
+As Percentage to VREGN
+(Approx. -20℃ w/ 103AT)
+(Approx. 1℃ w/ 103AT)
+As Percentage to VREGN
+(Approx. 55℃ w/ 103AT)
+(Approx. 3℃ w/ 103AT)
+As Percentage to VREGN
+(Approx. 60℃ w/ 103AT)
+(Approx. 3℃ w/ 103AT)
+As Percentage to VREGN
+(Approx. 65℃ w/ 103AT)
+(Approx. 3℃ w/ 103AT)
+
+BUCK MODE OPERATIONS
+HSFET Cycle-by-cycle current
+limit
+
+IHSFET_OCP
+
+8
+
+A
+
+PWM Switching Frequency
+
+FSW
+
+1500
+
+kHz
+
+BOOST MODE OPERATIONS
+PWM Switching Frequency
+
+FSW_BOOST1
+
+VBAT=3.2V, VBUS=5V,
+IBUS=1A,
+BOOST_FREQ=1.5M
+
+1500
+
+kHz
+
+PWM Switching Frequency
+
+FSW_BOOST2
+
+VBAT=3.2V, VBUS=5V,
+IBUS=1A, BOOST_FREQ=0.5M
+
+500
+
+kHz
+
+OTG output Voltage
+
+VOTG_REG
+
+IBUS=0
+
+4.5
+
+5.5
+
+OTG output Voltage Accuracy
+
+VOTG_REG_ACC
+
+IBUS=0
+
+-2%
+
+2%
+
+Battery Voltage Exiting Boost
+Mode
+
+VOTG_BAT
+
+BAT falling
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+2.8
+
+V
+
+V
+
+10
+All Rights Reserved.
+
+SY6970
+OTG Mode Output Current Limit
+
+IOTG_OCP
+
+BOOST_LIM≥1.2A
+
++100%
+
++115%
+
+OTG Over-voltage Threshold
+
+VOTG_OVP
+
+6
+
+V
+
+OTG Over-voltage Threshold
+Hysteresis
+
+VOTG_OVP
+
+300
+
+mV
+
+LSFET Cycle-by-cycle Current
+Limit
+
+VOTG_ILIM
+
+7
+
+A
+
+4.8
+
+V
+
+REGN LDO
+REGN LDO Output Voltage
+
+VREGN
+
+VBUS = 5V, IREGN = 20mA
+
+REGN LDO Current Limit
+
+IREGN
+
+VBUS = 5V, VREGN = 3.8V
+
+50
+
+mA
+
+BATTERY MONITOR
+Resolution
+
+RES
+
+7
+
+bits
+
+/QON TIMING
+/QON Low Time to Turn on
+BATFET and Exit Ship Mode
+
+TQON_LOW
+
+1.25
+
+2.25
+
+s
+
+/QON Low Time to Reset
+BATFET
+
+TQON_RST
+
+12
+
+18
+
+s
+
+Reset Duration(BATFET Off
+time)
+
+TBATFET_RST
+
+0.35
+
+0.55
+
+s
+
+tSM_DLY
+
+Enter
+ship
+mode delay
+
+10
+
+15
+
+s
+
+0.4
+
+V
+
+LOGIC I/O PIN CHARACTERISTICS (OTG, /CE, STAT, /QON, DSEL)
+Input Low Threshold
+
+VILOW
+
+Input High Threshold
+
+VIHGH
+
+Output Low Saturation voltage
+
+VOUT_LOW
+
+1.3
+
+V
+
+Sink current = 5 mA
+
+0.4
+
+V
+
+I2C INTERFACE (SDA, SCL, INT)
+Input High Threshold Level
+
+VIH
+
+VPULL-UP = 1.8V, SDA and SCL
+
+1.3
+
+V
+
+Input Low Threshold Level
+
+VIL
+
+VPULL-UP = 1.8V, SDA and SCL
+
+0.4
+
+V
+
+Output Low Threshold Level
+
+VOL
+
+Sink current = 5mA
+
+0.4
+
+V
+
+SCL Clock Frequency
+
+fSCL
+
+400
+
+kHz
+
+DIGITAL CLOCK AND WATCHDOG TIMER
+WATCHDOG=11
+
+tWDT
+
+100
+
+160
+
+s
+
+Note 1: Stresses beyond the “Absolute Maximum Ratings” may cause permanent damage to the device. These are
+stress ratings only. Functional operation of the device at these or any other conditions beyond those indicated in the
+operational sections of the specification is not implied. Exposure to absolute maximum rating conditions for
+extended periods may affect device reliability.
+
+Note 2: θJA is measured in the natural convection at TA = 25°C on a low effective four layer thermal
+conductivity test board of JEDEC 51-3 thermal measurement standard.
+Note 3: The device is not guaranteed to function outside its operating conditions.
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+11
+All Rights Reserved.
+
+SY6970
+I2CRegisters
+Address: 6AH
+REG00
+BIT
+
+Name
+
+POR
+
+DESCRIPTION
+
+7
+
+EN_HIZ
+
+0
+
+Enable HIZ Mode:
+0–Disable, 1–Enable
+
+6
+
+EN_ILIM
+
+1
+
+Enable ILIM Pin:
+0–Disable, 1–Enable
+
+5:0
+
+IINLIM[5:0]
+
+001000
+
+Input current limit:
+(Actual input current limit is the lower of I2C or ILIM pin)
+IINLIM=100mA+50mA*[IINLIM]
+Range:100ma(000000)-3.25A(111111)
+000000=100mA
+000001=150mA
+…
+001000=500mA(Default)
+…
+111111=3.25A
+IINLIM will be changed according to the adapter type after input
+DP/DM detection is done.
+USB Host SDP=500mA with OTG=High
+USB Host SDP=100mA with OTG=Low
+USB CDP=1.5A
+USB DCP=3.25A
+
+REG01
+BIT
+
+Name
+
+POR
+
+DESCRIPTION
+
+7:6
+
+BHOT[1:0]
+
+00
+
+BOOST mode Hot Temperature Monitor Threshold:
+00-VBHOT0 Threshold (Typ. 37.75%)
+01-VBHOT1 Threshold (Typ. 34.37%)
+10/11-VBHOT2 Threshold (Typ. 31.25%)
+
+5
+
+BCOLD
+
+0
+
+BOOST mode Cold Temperature Monitor Threshold:
+0-VBCOLD0 Threshold (Typ. 77%)
+1-VBCOLD1 Threshold (Typ. 80%)
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+12
+All Rights Reserved.
+
+SY6970
+4:0
+
+VINDPM_OS[4:0]
+
+00110
+
+Input Voltage Limit Offset:
+VINDPM_OS=100mV*[VINDPM_OS]
+Range:0mV-3100mV
+00000=0mV
+00001=100mV
+…
+00110=600mV(Default)
+…
+11111=3100mV
+Final minimum VINDPM threshold is clamped at 3.9V
+When VBUS@no load is ≤6V The VINDPM_OS is used for
+calculating VINDPM value.
+When VBUS@no load is ＞6V The VINDPM_OS*2 is used for
+calculating VINDPM value.
+
+REG02
+BIT
+
+Name
+
+POR
+
+DESCRIPTION
+
+7
+
+CONV_START
+
+0
+
+ADC Conversion Start Control:
+0-ADC not active
+1-Start ADC Conversion
+
+6
+
+CONV_RATE
+
+0
+
+This bit is read-only when CONV_RATE=1. The bit stays high
+during ADC conversion or pending ADC conversion during
+input source detection.
+ADC Conversion Rate Selection:
+0-One Short ADC Conversion
+1-Start 1s continuous Conversion
+When CONV_RATE=0, CONV_START requires to be set to
+start conversion.
+
+5
+
+BOOST_FREQ
+
+0
+
+When CONV_RATE=1, ADC conversion starts automatically
+and CONV_START is set during conversion.
+Boost Mode Frequency Selection:
+0-1.5MHZ
+1-500KHZ
+Write to this bit is ignored when OTG_CONFIG is enabled.
+
+4
+
+AICL_EN
+
+1
+
+Adaptive Input Current Limit Enable:
+0-Disable
+1-Enable
+
+3
+
+HVDCP_EN
+
+1
+
+HVDCP Enable:
+0-Disable HVDCP handshake
+1-Enable HVDCP handshake
+
+2
+
+HV_TYPE
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+1
+
+Higher Voltage Types can be Requested:
+0-9V
+1-12V
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+13
+All Rights Reserved.
+
+SY6970
+1
+
+FORCE_DPDM
+
+0
+
+Force DP/DM detection:
+0-Not in DP/DM detection
+1-Force DP/DM detection
+
+0
+
+AUTO_DPDM_EN
+
+1
+
+Automatic DP/DM detection Enable:
+0-Disable DPDM detection when BUS is plugged-in.
+1-Enable DPDM detection when BUS is plugged-in.
+
+REG03
+BIT
+
+Name
+
+POR
+
+DESCRIPTION
+
+7
+
+BAT_LOAD_EN
+
+0
+
+Battery Load (10mA) Enable:
+0-Disable
+
+6
+
+5
+
+4
+
+3:1
+
+WD_RST
+
+0
+
+OTG_CONFIG
+
+CHG_CONFIG
+
+SYS_MIN[2:0]
+
+0
+
+1
+
+101
+
+1-Enable
+I2C Watchdog Timer Reset:
+0-Normal
+1-Reset
+Back to 0 after timer reset.
+Boost (OTG)Mode Configuration:
+0-OTG Disable
+1-OTG Enable
+Charge Enable Configuration:
+0-Charge Disable
+1-Charge Enable
+Minimum System Voltage Limit:
+SYS_MIN=3.0V+[SYS_MIN]*0.1V
+Range:3.0V-3.7V
+000=3.0V
+001=3.1V
+…
+101=3.5V(Default)
+…
+111=3.7V
+
+0
+
+Reserved
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+0
+
+Reserved
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+14
+All Rights Reserved.
+
+SY6970
+REG04
+BIT
+
+Name
+
+POR
+
+DESCRIPTION
+
+7
+
+EN_PUMPX
+
+0
+
+6:0
+
+ICHG[6:0]
+
+01000
+00
+
+Fast Charge Current Limit:
+ICHG=[ICHG]*64mA
+Range:0mA(0000000)-5056mA(1001111)
+0000000=0mA(Disable Charge)
+0000001=64mA
+…
+0100000=2048mA(Default)
+…
+1001111~1111111=5056mA
+
+BIT
+
+Name
+
+POR
+
+DESCRIPTION
+
+7:4
+
+IPRECHG [3:0]
+
+0001
+
+Precharge Current Limit:
+IPRECHG=64mA+[IPRECHG]*64mA
+Range:64mA-1024mA
+0000=64mA
+
+REG05
+
+0001=128mA(Default)
+…
+3:0
+
+ITERM [3:0]
+
+0011
+
+1111=1024mA
+Termination Current Limit:
+ITERM=64mA+[ITERM]*64mA
+Range:64mA-1024mA
+0000=64mA
+0001=128mA
+…
+0011=256mA(Default)
+…
+1111=1024mA
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+15
+All Rights Reserved.
+
+SY6970
+REG06
+BIT
+
+Name
+
+POR
+
+DESCRIPTION
+
+7:2
+
+VREG[5:0]
+
+01011
+1
+
+1
+
+BATLOWV
+
+1
+
+0
+
+VRECHG
+
+0
+
+Charge Voltage Limit:
+VREG=3.840V+[VREG]*16mV
+Range:3.840V-4.608V(110000)
+000000=3.840V
+000001=3.856V
+…
+010111=4.208V(Default)
+…
+110000~111111=4.608V
+Battery Precharge to Fast Charge Threshold:
+0-2.8V
+1-3.0V
+Battery Recharge Threshold Offset:
+0-100mV
+1-200mV
+
+BIT
+
+Name
+
+POR
+
+DESCRIPTION
+
+7
+
+EN_TERM
+
+1
+
+Charging Termination Enable:
+0-Disable
+
+REG07
+
+1-Enable
+6
+
+STAT_DIS
+
+0
+
+5:4
+
+WATCHDOG[
+1:0]
+
+01
+
+3
+
+EN_TIMER
+
+1
+
+STAT pin Disable:
+0-Enable
+1-Disable
+I2C Watchdog Timer Setting:
+00-Disable timer
+01-40s
+10-80s
+11-160s
+Charging Safety Timer Enable:
+0-Disable
+1-Enable
+
+2:1
+
+CHG_TIMER[1
+:0]
+
+10
+
+Fast Charge Timer Setting:
+00-5 hrs
+01-8 hrs
+10-12 hrs
+
+0
+
+JEITA_ISET
+(0℃-10℃)
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+1
+
+11-20 hrs
+JEITA Low Temperature Current Setting
+Percentage with respect to ICHG register REG04[6:0]
+0-50%
+1-20%
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+16
+All Rights Reserved.
+
+SY6970
+REG08
+BIT
+
+Name
+
+POR
+
+DESCRIPTION
+
+7:5
+
+BAT_COMP[2:
+0]
+
+000
+
+4:2
+
+VCLAMP[2:0]
+
+000
+
+1:0
+
+TREG[1:0]
+
+11
+
+IR Compensation Resistor Setting:
+BAT_COMP=[BAT_COMP]*20mohm
+Range:0-140mohm
+000=0mohm(Default)
+001=20mohm
+…
+111=140mohm
+IR Compensation Voltage Clamp:
+VCLAMP= [VCLAMP]*32mV.
+The regulation voltage is clamped at VREG+VCLAMP.
+Range:0-224mV
+000=0(Default)
+001=32mV
+…
+111=224mV
+Thermal Regulation Threshold:
+00-60°C
+01-80°C
+10-100°C
+11-120°C (Default)
+
+BIT
+
+Name
+
+POR
+
+DESCRIPTION
+
+7
+
+FORCE_AICL
+
+0
+
+Force Start Adaptive Input Current Limit:
+0-Do not force
+
+REG09
+
+6
+
+5
+
+4
+
+TMR2X_EN
+
+1
+
+BATFET_DIS
+
+0
+
+JEITA_VSET
+
+0
+
+(45℃-60℃)
+3
+
+BATFET_DLY
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+0
+
+1-Force
+Safety Timer Setting during Input DPM and Thermal
+Regulation:
+0-Safety timer not slowed by 2X during input DPM or thermal
+regulation.
+1-Safety timer slowed by 2X during input DPM or thermal
+regulation.
+Force BATFET Off:
+0-Allow Q4 turn on
+1-Turn off Q4
+JEITA High Temperature Voltage Setting:
+0-VREG-150mV,
+1-VREG
+BATFET turn off delay control:
+0-Turn off BATFET immediately when BATFET_DIS is set.
+1-Turn off BATFET with the delay tSM_DLY when BATFET_DIS
+is set.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+17
+All Rights Reserved.
+
+SY6970
+BATFET Reset Enable:
+0-Disable BATFET reset function
+1-Enable BATFET reset function
+Current pulse control to request higher voltage:
+0-Disable
+1-Enable
+Current pulse control to request lower voltage:
+0-Disable
+1-Enable
+
+2
+
+BATFET_RST
+_EN
+
+1
+
+1
+
+PUMPX_UP
+
+0
+
+1
+
+PUMPX_DN
+
+0
+
+BIT
+
+Name
+
+POR
+
+DESCRIPTION
+
+7:4
+
+BOOSTV[3:0]
+
+0111
+
+Boost Mode Voltage Regulation:
+VBOOST=4.55V+[BOOSTV]*64mV
+Range:4.55V-5.51V
+0000=4.55V
+0001=4.614V
+…
+0111=4.998V(Default)
+…
+1001=5.126V
+
+REG0A
+
+…
+1111=5.51V
+3
+
+Reserved
+
+0
+
+2:0
+
+BOOST_LIM[2
+:0]
+
+011
+
+Boost Mode Current Limit:
+000=0.5A
+001=0.75A
+010=1.2A
+011=1.4A
+100=1.65A
+101=1.875A
+110=2.15A
+111=2.45A
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+18
+All Rights Reserved.
+
+SY6970
+REG0B(Read only)
+BIT
+
+Name
+
+POR
+
+DESCRIPTION
+
+7:5
+
+BUS_STAT[2:0
+]
+
+NA
+
+4:3
+
+CHRG_STAT[
+1:0]
+
+NA
+
+BUS Status register:
+000:No input
+001:USB Host SDP
+010:USB CDP
+011:USB DCP
+100:HVDCP
+101:Unknown Adapter
+110:Non-Standard Adapter
+111:OTG
+Charging status:
+00-Not Charging
+01-Pre-charge (<VBATLOWV)
+10-Fast Charging
+
+2
+
+PG_STAT
+
+NA
+
+1
+
+SDP_STAT
+
+NA
+
+0
+
+VSYS_STAT
+
+NA
+
+11-Charge Termination Done
+Power Good Status:
+0-Not Power Good
+1-Power Good
+USB Input Status:
+0-USB100 input is detected
+1-USB500 input is detected
+This bit always read 1 when BUS_STAT is not “001”.
+VSYS Regulation Status:
+0-Not in VSYSMIN regulation (BAT>VSYSMIN)
+1-In VSYSMIN regulation (BAT<VSYSMIN)
+
+REG0C (Read only)
+BIT
+
+Name
+
+POR
+
+DESCRIPTION
+
+7
+
+WATCHDOG_F
+AULT
+
+NA
+
+6
+
+BOOST_FAULT
+
+NA
+
+5:4
+
+CHRG_FAULT[
+1:0]
+
+NA
+
+Watchdog Fault status:
+0-Normal
+1-Watchdog timer expiration
+Boost Mode Fault Status:
+0-Normal
+1-BUS overloaded in OTG, or BUS OVP, or battery is too low
+Charge Mode Fault Status:
+00-Normal
+01-Input fault (BUS OVP or VBAT<BUS<3.8V)
+10-Thermal shutdown
+11-Charge Safety Timer Expiration
+
+3
+
+BAT_FAULT
+
+NA
+
+Battery Fault Status:
+0-Normal
+1-BATOVP
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+19
+All Rights Reserved.
+
+SY6970
+2:0
+
+NTC_FAULT[2:
+0]
+
+NA
+
+NTC Fault Status:
+Buck Mode
+000-Normal
+010-NTC Warm
+011-NTC Cool
+101-NTC Cold
+110-NTC Hot
+Boost Mode
+000-NTC Normal
+101-NTC Cold
+110-NTC Hot
+
+REG0D
+BIT
+
+Name
+
+POR
+
+DESCRIPTION
+
+7
+
+VINDPM_MO
+DE
+
+0
+
+VINDPM Threshold Setting Method:
+0-Run Relative VINDPM Threshold
+
+6:0
+
+VINDPM[6:0]
+
+00100
+10
+
+1-Run Absolute VINDPM Threshold
+Absolute VINDPM Threshold:
+VINDPM=2.6V+[VINDPM]*100mV
+Range:3.9V(0001101)-15.3V(1111111)
+0000000~0001101=3.9V
+0001110=4.0V
+…
+0010010=4.4V(Default)
+…
+1111111=15.3V
+
+REG0E (Read only)
+BIT
+
+Name
+
+POR
+
+DESCRIPTION
+
+7
+
+THERM_STAT
+
+NA
+
+Thermal Regulation Status:
+0-Normal
+
+6:0
+
+BATV[6:0]
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+NA
+
+1-In Thermal Regulation
+ADC Conversion of Battery Voltage(BATV):
+BATV=2.304V+[BATV]*20mV
+Range: 2.304V(0000000)-4.844V(1111111)
+0000000=2.304V(Default)
+0000001=2.324V
+…
+1111111=4.844V
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+20
+All Rights Reserved.
+
+SY6970
+REG0F (Read only)
+BIT
+
+Name
+
+POR
+
+DESCRIPTION
+
+7
+
+Reserved
+
+0
+
+0
+
+6:0
+
+SYSV[6:0]
+
+NA
+
+ADC Conversion of System Voltage(SYSV):
+SYSV=2.304V+[SYSV]*20mV
+Range: 2.304V(0000000)-4.844V(1111111)
+0000000=2.304V(Default)
+0000001=2.324V
+…
+1111111=4.844V
+
+REG10 (Read only)
+BIT
+
+Name
+
+POR
+
+DESCRIPTION
+
+7
+
+Reserved
+
+0
+
+0
+
+6:0
+
+NTCPCT[6:0]
+
+NA
+
+ADC Conversion of NTC Voltage (NTC) as percentage of
+REGN:
+NTC/REGN=21%+[NTCPCT]*0.465%
+Range:21%(0000000)-80.055%(1111111)
+0000000=21%(Default)
+0000001=21.465%
+…
+1111111=80.055%
+
+REG11 (Read only)
+BIT
+
+Name
+
+POR
+
+DESCRIPTION
+
+7
+
+BUS_GD
+
+NA
+
+BUS GOOD Status:
+0-No BUS attached
+
+6:0
+
+BUSV [6:0]
+
+NA
+
+1-BUS attached
+ADC Conversion of BUS Voltage(VBUS):
+VBUS=2.6V+[BUSV]*100mV
+Range:2.6V(0000000)-15.3V(1111111)
+0000000=2.6V(Default)
+0000001=2.7V
+…
+1111111=15.3V
+
+REG12(Read only)
+BIT
+
+Name
+
+POR
+
+7
+
+Reserved
+
+0
+
+6:0
+
+ICHGR[6:0]
+
+NA
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+DESCRIPTION
+ADC Conversion of Charge current(ICHG)
+VBAT>VBATSHORT:
+ICHG=[ICHGR]*50mA
+Range:0mA(0000000)-6350mA(1111111)
+0000000=0mA(Default)
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+for
+
+21
+All Rights Reserved.
+
+SY6970
+0000001=50mA
+…
+1111111=6350mA
+Note: For VBAT<VBATSHORT, this register returns 0000000.
+REG13(Read only)
+BIT
+
+Name
+
+POR
+
+DESCRIPTION
+
+7
+
+VDPM_STAT
+
+NA
+
+VINDPM Status:
+0-Not in VINDPM
+1-In VINDPM
+
+6
+
+IDPM_STAT
+
+NA
+
+IINDPM Status:
+0-Not in IINDPM
+1-In IINDPM
+Current Input Current Limit setting:
+IDPM_LIM=100mA+[IDPM_LIM]*50mA
+Range:100mA(000000)-3.25A(111111)
+000000=100mA(Default)
+000001=150mA
+…
+111111=3250mA
+
+IDPM_LIM[5:0
+]
+
+NA
+
+BIT
+
+Name
+
+POR
+
+DESCRIPTION
+
+7
+
+REG_RST
+
+0
+
+Register Reset:
+0-Keep current register setting(Default)
+1-Reset to default register value and reset safety timer
+
+5:0
+
+REG14
+
+Reset to 0 after register reset is completed
+6
+
+AICL_OPTIMI
+ZED
+
+NA
+
+Adaptive Input Current Limit Status:
+0-Detection in process
+1-Maximum input current detected
+
+5:3
+
+PN[2:0]
+
+NA
+
+2
+
+NTC_PROFILE
+
+NA
+
+1:0
+
+DEV_REV[1:0]
+
+NA
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Device Configuration:
+001
+Temperature profile:
+0-Cold/Hot window
+1-JEITA
+Device Revision:
+Start from 00
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+22
+All Rights Reserved.
+
+SY6970
+Operation Principle
+SY6970 is a fully-integrated switching battery charger with system power path management devices for single
+cell Li-ion and Li-polymer battery in a wide range of tablet and other portable devices. It integrates the input
+reverse-blocking FET (RBFET, Q1), high-side switching FET (HSFET, Q2), low-side switching FET (LSFET,
+Q3), and BATFET (Q4) between system and battery. The extremely low RDSON achieves very high conversion
+efficiency up to 5.056A charging current. The device also integrates the bootstrap diode for the high-side gate
+drive.
+
+Power-On-Reset (POR)
+The internal bias circuits are powered from the higher voltage between BUS and BAT. When BUS or VBAT
+rises above UVLOZ, the sleep comparator, battery depletion comparator and BATFET driver will be active.
+I2C interface is ready for communication. The host can access all the registers after POR.
+
+Power Up from Battery without DC Source
+If only battery is present and the voltage is above depletion threshold (VBAT_DPLZ), the BATFET will turn on
+and provide power to system. The device in HIZ mode and the REGN LDO stays off to minimize the
+quiescent current. The low RDSON in BATFET and the low quiescent current on BAT minimize the
+conduction loss and maximize the battery run time. The device always monitors the discharge current through
+BATFET. When the system is overloaded or shorted, the device will immediately turn off BATFET and latch
+off until the input source plugs in again or one of the methods describe in section “BATFET Enable Mode” to
+re-enable BATFET.
+
+Power Up from DC Source
+When the DC source plugs in, the SY6970 will check the input source voltage to turn on REGN LDO
+and all the bias circuits. It will also check and set the input current limit before starting the Buck converter
+when AUTO_DPDM_EN bit is set.
+
+REGN LDO
+The REGN LDO supplies internal bias circuits as well as the HSFET and LSFET gate drive. The LDO also
+provides bias rail to NTC external resistors. The pull-up rail of STAT can be connected to REGN as well.
+When the device is in high impedance mode (HIZ) with REGN LDO off, the device will draw less than
+IBUS_HIZ from BUS during HIZ state. The battery will be powered up when the device is in HIZ mode.
+
+Blocking FET (Q1)
+After REGN LDO powers up, the SY6970 turns on the blocking FET to reduce the power loss.
+Input Source Qualification
+After REGN LDO powers up, SY6970 will check the current capability of the input source. The input source
+capability is qualified by the internal active detection circuit.
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+23
+All Rights Reserved.
+
+SY6970
+Once a good input source is present, the status register BUS_GD bit will go high. An INT is asserted to the
+host.
+Input Source Type Detection
+After the REGN LDO is powered, the charger device will run input source type detection when
+AUTO_DPDM_EN bit is set and a DC source plugs in.
+The SY6970 can set input current limit through DP/DM PINS. The SY6970 follows the USB battery charging
+specification 1.2 (BC1.2) and to detect input source (SDP/CDP/DCP) and non-standard (Apple/Samsung)
+adapter through USB DP/DM lines.
+The host can over-write IINLIM register to change the input current limit if necessary. The charger input
+current will always be limited by the IINLIM register or ILIM pin at all time regardless of adaptive input
+current limit (AICL) is enabled or disabled.
+When AUTO_DPDM_EN is disabled, the input source type detection will be bypassed.
+
+Force Input Current Limit Detection
+The host can force the charger device to run input current limit detection by setting FORCE_DPDM bit. After
+the detection is complete, FORCE_DPDM will return to 0 by itself and Input source type detection result will
+be updated.
+Input voltage limit setting
+The device supports wide range of input voltage limit (3.9V-14V) source and provides two methods to set
+input voltage limit (VINDPM) threshold to facilitate autonomous detection.
+1. Absolute VINDPM (Register VINDPM_MODE=1)
+By setting VINDPM_MODE bit to 1, the VINDPM threshold setting algorithm is disabled. Register VINDPM
+is writable and allows host to set the absolute threshold of VINDPM function.
+2. Relative VINDPM based on VINDPM_OS register (Register VINDPM_MODE=0)
+When VINDPM_MODE bit is 0 (default), the VINDPM threshold setting algorithm is enabled, the VINDPM
+register is read only and the charger controls the register by using VINDPM threshold setting algorithm. The
+algorithm allows a wide range of adapter (VBUS_OP) to be used with flexible VINDPM threshold.
+
+Converter Power-Up
+After the input current and voltage are set, the converter will be enabled and the HSFET and LSFET start
+switching. If battery charging is disabled, BATFET will turn off. Otherwise, BATFET will stay on to charge
+the battery.
+The SY6970 will provide soft-start when ramps up the system rail.
+As a battery charger, the SY6970 deploys a 1.5MHz Buck regulator. Internal compensation network allows
+minimizing the peripheral circuit design.
+In order to improve light-load efficiency, the device switches to PFM control at light load.
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+24
+All Rights Reserved.
+
+SY6970
+Adaptive Input current Limit (AICL)
+The SY6970 uses adaptive input current limit (AICL) to identify maximum power point of input source. The
+algorithm automatically identifies maximum input current limit of power source to avoid source overload.
+
+Boost Mode Operation from Battery
+The SY6970 can supply power from the battery to other portable devices on BUS input port. The SY6970
+employs a 500KHZ or 1.5MHz (selectable using BOOST_FREQ bit) Boost regulator.
+During Boost mode, the status register BUS_STAT is set to 111, the BUS output is 5V by default and the
+output current limit can reach up to 2.4A, selected via I2C (BOOST_LIM bits).
+
+Power Path Management
+The SY6970 accommodates a wide range of input sources from USB, wall adapter, or car battery. The device
+provides automatic power path selection to supply the system (SYS) from input source (BUS), battery (BAT),
+or both.
+
+Narrow VDC Architecture
+The device deploys Narrow VDC architecture (NVDC) with BATFET separating system from battery. The
+minimum system voltage is set by SYS_MIN bits. Even with a fully depleted battery the system is regulated
+above the minimum system voltage (default 3.5V)
+
+4.4
+
+VSYS_MIN
+
+4.3
+
+Charge enabled
+
+4.2
+
+Charge disabled
+
+4.1
+
+VSYS(V)
+
+4.0
+3.9
+3.8
+3.7
+3.6
+3.5
+3.4
+3.0
+
+3.1
+
+3.2
+
+3.3
+
+3.4
+
+3.5
+
+3.6
+
+3.7 3.8 3.9 4.0 4.1 4.2 4.3
+VBAT(V)
+
+The status register VSYS_STAT bit will go high when the system is in minimum system voltage regulation.
+
+Dynamic Power Management
+The SY6970 can management the input power limit very well. It has input VINDPM and IINDPM function to
+protect the input source from over loading.
+When input source is over-loaded, either the current will exceed the input current limit (IINDPM) or the
+voltage will fall below the input voltage limit (VINDPM). The device will reduce the charge current until the
+input current falls below the input current limit and the input voltage rises above the input voltage limit.
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+25
+All Rights Reserved.
+
+SY6970
+When the charge current is reduced to zero but the input source is still overloaded, the system voltage will start
+to drop. Once the system voltage falls below the battery voltage, the device will automatically enter the
+supplement mode where the BATFET turns on and battery starts discharging so that the system is supported
+from both the input source and battery.
+During DPM mode, the status register VDPM_STAT or IDPM_STAT will go high.
+
+Battery Charging Management
+The SY6970 charges 1-cell Li-Ion battery with up to 5.0A charge current for high capacity tablet battery. The
+10mohm BATFET improves charging efficiency and minimizes the voltage drop during discharging.
+
+Autonomous Charging Cycle
+With battery charging enabled at POR (CHG_CONFIG bit =1 and /CE pin is low), SY6970 can complete a
+charging cycle without host involvement. The device default charging parameters are listed below.
+Default Charging Setting
+VREG, Charge Voltage
+ICHG, Charge Current
+IPRECHG, Pre-charge Current
+ITERM, Termination Current
+CHG_TIMER, Fast Charge Timer
+
+4.208 V
+2.048 A
+128 mA
+256 mA
+12 hours
+
+The charger device automatically terminates the charging cycle when the charging current is below termination
+threshold and charge voltage is above recharge threshold. When a full battery voltage is discharged below
+recharge threshold (REG04[0]), the SY6970 will automatically start another charging cycle.
+The STAT output indicates the charging status of charging (LOW), charging completion or charge disable
+(HIGH) or charging fault (Blinking). The STAT output can be disabled by setting STAT_DIS bit. The status
+register CHRG_STAT indicates different charging phases: 00-charging disable, 01-precharge, 10-fast charge
+(constant current) and constant voltage mode, 11-charging done. Once a charging cycle is complete, an INT
+will be asserted to notify the host.
+The host can always control the charging operation and optimize the charging parameters by writing to the
+registers through I2C.
+
+Battery Charging Profile
+The device charges the battery in three phases: preconditioning, constant current and constant voltage. At the
+beginning of a charging cycle, the device checks the battery voltage and applies current.
+If the charger device is in DPM regulation or thermal regulation during charging, the actual charging current
+will be less than the programmed value. In this case, termination is temporarily disabled and the charging
+safety timer is counted at half the clock rate.
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+26
+All Rights Reserved.
+
+SY6970
+(3.84V - 4.5V)
+
+(128mA – 5056mA)
+
+Iprecharge (64mA – 1024mA)
+Itermination (64mA – 1024mA)
+
+Charging Termination
+When termination occurs, the CHRG_STAT is 11, and an INT is asserted to the host. Termination can be
+disabled by writing 0 to EN_TREM.
+Charging Safety Timer
+The SY6970 has safety timer to prevent extended charging cycle due to abnormal battery conditions.
+The device keeps charging the battery until the fast charging safety timer expired. The duration of safety timer
+can be set by the CHG_TIMER bits (default = 12 hours). Once the safety timer is expired, the fault register
+CHRG_FAULT bits will be set to 11 and an INT will be asserted to the host. The safety timer feature can be
+disabled by setting EN_TIMER bit.
+During input voltage/current regulation or thermal regulation, the safety timer counts at half clock rate. For
+example, if the charger is in input current regulation (IINDPM) throughout the whole charging cycle, and the
+safety time is set to 5 hours, the safety timer will expire in 10 hours. This feature can be disabled by writing 0
+to REG09[6].
+
+Host Mode and Default Mode
+The SY6970 can operate with or without host. In default mode, the SY6970 can be used as an autonomous
+charger with no host or with host in sleep.
+When the charger is in default mode, WATCHDOG_FAULT bit is high. When the charger is in host mode,
+WATCHDOG_FAULT is low.
+After power-on-reset, the device starts in default mode. The registers are in the default settings.
+Any host writing command to I2C transitions the device from default mode to host mode. To keep the device in
+host mode, the host has to reset the watchdog timer by writing 1 to WD_RST bit before the watchdog timer
+expires or disable watchdog timer by setting WATCHDOG bit to 0.
+When the watchdog timer is expired, the device gets back to the default mode.
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+27
+All Rights Reserved.
+
+SY6970
+Battery Monitor
+The device includes a battery monitor to provide fully measurements, including battery voltage, system voltage,
+thermistor voltage, BUS voltage, and charging current. The results are reported in Battery Monitor Register
+(REG0E-REG12). The battery monitor can be configured for two conversion modes, by setting CONV_RATE
+bit: one-shot conversion (default) and continuous conversion.
+For one-shot conversion, the CONV_START bit can be set to start one conversion. During the conversion, the
+CONV_START is set until the conversion is done. The conversion is done after Tconv (max 1s). When oneshot conversion is initiated during input source type detection, the CONV_START bit is set to indicate
+conversion is postponed until detection done and conversions is done.
+For continuous conversion, the CON_RATE bit can be set to start the conversion every 1 second automatically.
+During the conversion, the CONV_START is set to indicate conversion is in process. The battery monitor
+exits continuous conversion mode when CONV_RATE is cleared.
+
+Status Outputs (/PG STAT and INT)
+Power Good Indicator (/PG)
+In the SY6970, PG_STAT bit is set to indicate a good input source.
+Charging Status Indicator (STAT)
+The SY6970 indicates charging state on the open drain STAT pin. The STAT pin can drive LED as the
+application diagram shows.
+STAT Pin State
+CHARGING STATE
+
+STAT
+
+Charging in progress (including recharge)
+
+LOW
+
+Charging complete
+
+HIGH
+
+Sleep mode, charge disable
+
+HIGH
+
+Charge suspend or Boost Mode suspend
+
+blinking at 1Hz
+
+BATFET (Q4) Control
+BATFET Disable Mode (Shipping mode)
+To extend battery life and minimize power when system is powered off during system idle, shipping, or
+storage, the device can turn off BATFET so that the system voltage is zero to minimize the battery leakage
+current.
+When the host set BATFET_DIS bit, the charger can turn off BATFET.
+BATFET Enable Mode (Exit Shipping mode)
+When the BATFET is disabled (in shipping mode) and indicated by setting BATFET_DIS, Plugging in adapter
+or a logic high to low transition on /QON pin can enable BATFET to restore system power:
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+28
+All Rights Reserved.
+
+SY6970
+BATFET System Reset
+The BATFET functions as a load switch between battery and system when input source is not plugged-in. By
+changing the state of BATFET from OFF to ON, system connects to SYS can be effectively have a power-onreset.
+
+Protections
+Input Current Limit on ILIM
+For safe operation, the SY6970 has an additional hardware pin to limit maximum input current on ILIM pin.
+The input maximum current is set by a resistor from ILIM pin to ground as:
+
+I INMAX 
+
+K ILIM
+RILIM
+
+The actual input current limit is the lower value between ILIM setting and register setting IINLIM. If ILIM pin
+is open, the input current is limited to zero. If ILIM pin is short to ground, the input current limit will be set by
+the register.
+The ILIM pin function can be disabled by setting EN_ILIM bit to 0. When the pin is disabled, both input
+current limit function and monitoring will not be available.
+
+Thermal Regulation and Thermal Shutdown
+BUCK Mode
+
+The SY6970 monitors the internal junction temperature TJ to avoid overheat the chip and limits the IC surface
+temperature. When the internal junction temperature exceeds the preset limit (TREG bits), the device will
+lower down the charge current. The wide thermal regulation range from 60°C to 120°C allows the user to
+optimize the system thermal performance.
+During thermal regulation, the actual charging current is usually below the programmed battery charging
+current. Therefore, termination is disabled, the safety timer runs at half the clock rate, and the status register
+THERM_STAT goes high.
+Additionally, the device has thermal shutdown to turn off the converter and BATFET. The fault register
+CHRG_FAULT is 10 and an INT is asserted to the host. The BATFET and converter are enabled to recover
+when the IC temperature is below TTSD_HYS.
+BOOST Mode
+
+The device monitors the internal junction temperature to provide thermal shutdown during boost mode. When
+the IC junction temperature exceeds TSHUT, the boost mode will be disabled by setting OTG_CONFIG low and
+BATFET will be turned off. When the IC junction temperature is below TTSD_HYS, the BATFET will be
+enabled automatically to allow system to restore and the host will re-enable OTG_CONFIG bit to recover.
+
+Voltage and Current Monitoring in Buck Mode
+The SY6970 closely monitors the input and system voltage, as well as HSFET and LSFET current for safe
+buck mode operation.
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+29
+All Rights Reserved.
+
+SY6970
+Input Over-Voltage (ACOV)
+
+The maximum input voltage for buck mode operation is VBUS_OP. If BUS voltage exceeds VACOV, the device
+will stop switching immediately. During input over voltage (ACOV), the fault register CHRG_FAULT will be
+set to 01. An INT is asserted to the host.
+
+System Over-Voltage Protection (SYSOVP)
+The charger device monitors the voltage at SYS. When system over-voltage is detected, the converter will be
+stopped to protect components connected to SYS from high voltage damage.
+Voltage and Current Monitoring in Boost Mode
+The SY6970 closely monitors the BUS voltage, as well as HSFET and LSFET current to ensure safe boost
+mode operation.
+Over Current Protection
+
+The charge device closely monitors the RBFET(Q1), HSFET(Q2) and LSFET(Q3) current to ensure safe boost
+operation.
+During over-current condition when Boost output current exceeds (BOOST_LIM), the device will always
+operate in hiccup mode for protection. Once the over current condition is removed, the boost output will
+recover. The fault register bit BOOST_FAULT is set high to indicate fault in boost operation. An INT is also
+sent to the host.
+Over-Voltage Protection
+
+Once the BUS voltage exceeds VOTG_OVP, the SY6970 stops switching and clears OTG_CONFIG bit and exits
+boost mode. The fault register BOOST_FAULT is set high to indicate fault in boost operation. An INT is sent
+to the host.
+
+Battery Protection
+Battery Over-Voltage Protection (BATOVP)
+
+The battery over-voltage limit is clamped at 4% above the battery regulation voltage. When battery over
+voltage occurs, the charger device will immediately disable charge. The fault register BAT_FAULT will go
+high and an INT will be asserted to the host.
+Battery over Discharge Protection
+
+When battery voltage is discharged below VBAT_DPL, the BATFET will be turned off to protect battery from
+over discharge. To recover from over-discharge, an input source is required at BUS. When an input source is
+plugged in, the BATFET will turn on again.
+If the battery voltage falls below VSHORT, the charge current will be reduced to IBATSHORT or will recharge current
+for battery safety.
+System Over-Current Protection
+
+If the system is shorted or IBAT OCP occurs, the BATFET will be latched off. Section “BATFET Enable
+Mode” can reset the latch off condition and turn on BATFET.
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+30
+All Rights Reserved.
+
+SY6970
+Thermistor Temperature Window
+The SY6970 continuously monitors battery temperature by measuring the voltage between the NTC pin and
+ground, typically determined by a negative temperature coefficient thermistor and an external voltage divider.
+Charging JEITA Guideline Compliance
+JEITA recommends suspending the battery charging process when NTC pin voltage is out of the VT1 to VT5
+range, and recovering charging process once the NTC voltage is within the range. JEITA also recommends that
+the charge current to be reduced to at least half of the charge current or lower at cool temperature (T1–T2), and
+the charge voltage to be reduced less than nominal charge voltage at warm temperature (T3–T5).
+The SY6970 provides flexibility charge voltage/current settings beyond the JEITA requirement. REG09 bit[4]
+is used for setting the charge voltage to be same as or 150mV lower than the nominal charge voltage (REG06
+bit[7:2]) at warm temperature (T3–T5). REG07 bit[0] is used for setting the current setting to be 20% or 50%
+of fast charge current (REG07 bit[0]) at cool temperature (T1–T2).
+
+ICHG
+
+Cold
+
+Cool
+
+Normal
+
+Warm
+
+Hot
+
+Charging Voltage
+
+Charging Current
+
+0.5ICHG
+
+VREG
+VREG-150mV
+
+Cold
+
+-20
+
+-10
+
+Cool
+
+Normal
+
+Warm
+
+Hot
+
+0.2ICHG
+-20
+
+-10
+
+T1
+
+T2
+20
+30
+T3
+Battery temperature
+
+T5
+
+70℃
+
+T1
+
+T2
+20
+30
+T3
+Battery temperature
+
+T5
+
+70℃
+
+When the NTC fault occurs, the fault register NTC_FAULT will indicate the actual condition on NTC pin and
+an INT will be asserted to the host. The STAT pin will indicate the fault when charging is suspended.
+Discharging Cold/Hot Temperature Window
+The device will terminate the battery discharging process when NTC pin voltage is out of the VBCOLD to VHOT
+range. To allow the discharge, the battery temperature must be within this range. The threshold of VBCOLD and
+VHOT is selectable by setting REG01.
+IBAT_OC
+
+Normal
+
+Hot
+
+Discharging Voltage
+
+Discharging Current
+
+Cold
+
+VOTG_BAT
+Cold
+
+BCOLD
+
+20
+30
+Battery temperature
+
+BHOT
+
+BCOLD
+
+Normal
+
+Hot
+
+20
+30
+BHOT
+Battery temperature
+
+When the NTC fault occurs, the fault register NTC_FAULT will indicate the actual condition on NTC pin and
+an INT will be asserted to the host. The STAT pin will indicate the fault when discharging is suspended.
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+31
+All Rights Reserved.
+
+SY6970
+Serial Interface
+The SY6970 uses I2C compatible interface for flexible charging parameter programming and instantaneous
+device status reporting. Only two bus lines are required: a serial data line (SDA) and a serial clock line (SCL).
+Devices can be considered as masters or slaves when performing data transfers. A master is the device which
+initiates a data transfer on the bus and generates the clock signals to permit that transfer. At that time, any
+device addressed is considered a slave.
+The device operates as a slave device with address 6AH, receiving control inputs from the master device like
+micro controller or a digital signal processor. The I2C interface supports both standard mode (up to 100kbits),
+and fast mode (up to 400kbits).
+Both SDA and SCL are bi-directional lines, connecting to the positive supply voltage via a current source or
+pull- up resistor. When the bus is free, both lines will be high. The SDA and SCL pins are open drain.
+
+Data Validity
+The data on the SDA line must be stable during the HIGH period of the clock. The high or low state of the data
+line can only change when the clock signal on the SCL line is low. One clock pulse is generated for each data
+bit transferred.
+
+Figure 1. Bit Transfer on the I2C Bus
+START and STOP Conditions
+All transactions begin with a START (S) and can be terminated by a STOP (P). A high to low transition on the
+SDA line while SCl is high defines a START condition. A low to high transition on the SDA line when the
+SCL is high defines a STOP condition.
+START and STOP conditions are always generated by the master. The bus is considered busy after the START
+condition, and free after the STOP condition.
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+32
+All Rights Reserved.
+
+SY6970
+
+Figure 2. START and STOP conditions
+Byte Format
+Every byte on the SDA line must be 8 bits long. The number of bytes to be transmitted per transfer is
+unrestricted. Each byte has to be followed by an Acknowledge bit. Data is transferred with the Most
+Significant Bit (MSB) first. If a slave cannot receive or transmit another complete byte of data until it has
+performed some other function, it can hold the clock line SCL low to force the master into a wait state (clock
+stretching). Data transfer then continues when the slave is ready for another byte of data and release the clock
+line SCL.
+
+Figure 3. Data Transfer on the I2C Bus
+Acknowledge (ACK) and Not Acknowledge (NACK)
+The acknowledge takes place after every byte. The acknowledge bit allows the receiver to signal the
+transmitter that the byte was successfully received and another byte may be sent. All clock pulses, including
+the acknowledged 9th clock pulse, are generated by the master.
+The transmitter releases the SDA line during the acknowledge clock pulse so the receiver can pull the SDA
+line LOW and it remains stable LOW during the high period of this clock pulse.
+When SDA remains high during the 9th clock pulse, this is the Not Acknowledge signal. The master can then
+generate either a STOP to abort the transfer or a repeated START to start a new transfer.
+Slave Address and Data Direction Bit
+After the START, a slave address is sent. This address is 7 bits long followed by the eighth bit as a data
+direction bit (bit R/W). A zero indicates a transmission (WRITE) and a one indicates a request for data
+(READ).
+
+Figure 4. Complete Data Transfer
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+33
+All Rights Reserved.
+
+SY6970
+Single Read and Write
+
+Figure 5. Single Write
+
+Figure 6. Single Read
+If the register address is not defined, the charger IC send back NACK and go back to the idle state.
+Multi-Read and Multi-Write
+The charger device supports multi-read and multi-write on REG00 through REG08.
+
+Figure 7. Multi-Write
+
+Figure 8. Multi-Read
+The fault register REG09 locks the previous fault and only clears it after the register is read. For example, if
+charge safety timer expiration fault occurs but recovers later, the fault register REG09 will report the fault
+when it is read the first time, but will return to normal when it is read the second time. To verify real time fault,
+the fault register REG09 should be read twice to get the real condition. In addition, the fault register REG09
+does not support multi-read or multi-write.
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+34
+All Rights Reserved.
+
+SY6970
+Typical Performance Characteristics
+TA=25°C, VIN=5V, 1cell battery, unless otherwise specified.
+Adapter Plug-in in Default Mode
+(BAT=3.1V)
+
+SYS
+
+1V/div
+
+BAT
+
+1V/div
+
+VIN
+
+2V/div
+
+IL
+
+CV Mode Steady State
+(BAT=4.2V)
+
+IL
+
+0.5A/div
+
+LX
+
+2V/div
+
+1A/div
+
+IL
+
+LX
+
+Time (400ms/div)
+
+Time (400ns/div)
+
+CV Mode Steady State
+(BAT=3.7V)
+
+Charge Enable to Disable
+
+0.5A/div
+
+SYS
+
+2V/div
+
+BAT
+
+2V/div
+
+ICHG
+
+1A/div
+
+LX
+
+5V/div
+
+2V/div
+
+Time (400ns/div)
+
+Time (2ms/div)
+
+Boost Mode Steady State
+(ISYS=1.5A)
+
+IL
+
+1A/div
+
+LX
+
+2V/div
+
+Time (1µs/div)
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+35
+All Rights Reserved.
+
+SY6970
+Applications Information
+The following battery charger design refers to the
+“Application Schematic”. This section describes
+how to select the external components including
+the inductor, the input and output capacitors.
+
+Higher switching frequency allows the using of the
+smaller inductor and the capacitor values. The
+inductor saturation current should be higher than
+the load current (ILOAD) plus half of the ripple
+current (IRipple):
+
+1
+I SAT  I LOAD   I Ripple
+2
+The inductor ripple current depends on the input
+voltage (VIN), the duty cycle (D = VOUT/VIN), the
+switching frequency (FSW) and the inductance (L):
+
+VIN  D  1  D 
+FSW  L
+
+The maximum inductor ripple current happens
+with D = 0.5 or close to 0.5. Usually the inductor
+ripple is designed in the range of (20-40%)
+maximum charging current as a trade-off between
+the inductor size and efficiency for a practical
+design.
+
+Output Capacitor Selection
+The output capacitor in parallel with the battery is
+used for absorbing the high frequency switching
+ripple current and smoothing the output voltage.
+The RMS value of the output ripple current IRMS is
+calculated as follow:
+
+I RMS 
+
+VIN  D  1  D 
+12 L  FSW
+
+Where the duty cycle D is the ratio of the output
+voltage (battery voltage) over the input voltage for
+CCM mode which is the typical operation for the
+battery charger. During the battery charge period,
+the battery voltage varies from its initial battery
+voltage to the rated voltage. A typical 10μF
+ceramic capacitor is a good choice to absorb this
+current and also has a very small size.
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+The input capacitor absorbs input ripple current
+from the Buck converter, which is given by the
+below equation:
+
+I RMS 
+
+Inductor Selection
+
+I Ripple 
+
+Input Capacitor Selection
+
+VLOAD  VOUT  VIN  VOUT 
+VIN
+
+This RMS ripple current must be smaller than the
+rated RMS current in the capacitor datasheet. At
+the same time, the input capacitor is also as
+the output capacitor when Boost works. At this
+condition, the input capacitor can be calculated as
+below:
+
+CIN 
+
+I BUS  VBUS  VBAT 
+FSW  VBUS  VRIPPLE
+
+Usually VRIPPLE is designed less than 0.5% of the
+Boost output voltage. A typical 10μF ceramic
+capacitor is a good choice to absorb this current
+and also has a very small size. For best
+performance, VBUS should be decoupled to
+PGND with 1μF capacitance. The remaining input
+capacitor should be place on PMID.
+
+Layout Design:
+The layout design of the SY6970 regulator is
+relatively simple. For the best efficiency and to
+minimize noise problems, we should place the
+following components close to the IC: CPMID, CREGN
+and CBOOT.
+1) It is desirable to maximize the PCB copper area
+
+adjacent to PGND pin to achieve the best thermal
+and noise performance. If the board space allows,
+a ground plane is highly desirable.
+2) CPMID, CREGN and CBOOT must be close to the IC.
+3) The loop area formed by CPMID and PGND
+must be minimized.
+The PCB copper area
+adjacent to LX pin must be minimized to avoid the
+potential noise problem. The following picture is
+the recommended layout design of LX, CPMID and
+CBOOT.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+36
+All Rights Reserved.
+
+SY6970
+QFN4x4-24 Package outline & PCB Layout
+
+Top View
+
+PCB layout (Recommended)
+
+Side View
+
+Detail A
+
+Detail A
+Pin1 identifier: two options
+
+Bottom View
+Notes:
+
+All dimension in MM and exclude mold flash & metal burr
+
+SY6970 Rev.0.1
+© 2019 Silergy Corp.
+
+Silergy Corp. Confidential- Prepared for Customer Use Only
+
+37
+All Rights Reserved.
+
+

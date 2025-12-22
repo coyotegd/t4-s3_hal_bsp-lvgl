@@ -1,0 +1,18699 @@
+RM690B0 Data Sheet
+Rev：0.2
+
+瑞 鼎 科 技 股 份 有 限 公 司
+Raydium Semiconductor Corporation
+
+RM690B0 Data Sheet
+Single Chip Driver with 16.7M color
+for 480RGBx600 OLED driver
+
+Revision：0.2
+Date：Nov, 4 2020
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page1
+
+RM690B0 Data Sheet
+Rev：0.2
+
+Revision History
+Version
+No.
+0.1
+0.2
+
+Date
+2020/09/15
+2020/11/04
+
+Description
+
+Page
+
+First Release
+Revise register 0x6700/0xFE00, and power-on sequence
+
+P.95/109
+P.126/127
+
+Modified
+
+Checked
+
+By
+
+By
+
+SH.Chen
+
+SP.Hung
+
+SH.Chen
+
+SP.Hung
+
+2
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page2
+
+RM690B0 Data Sheet
+Rev：0.2
+
+TABLE OF CONTENTS
+TABLE OF CONTENTS ....................................................................................................................................................... 3
+1.
+General Description ......................................................................................................................................... 6
+2.
+Features............................................................................................................................................................ 7
+3.
+Block Diagram ............................................................................................................................................... 10
+4.
+Pin Description .............................................................................................................................................. 11
+4.1 Power Supply Pins ....................................................................................................................................................... 11
+4.2 Interface Pins ................................................................................................................................................................ 12
+4.3 MIPI Interface Pins ...................................................................................................................................................... 13
+4.4 Interface Logic Pins ..................................................................................................................................................... 14
+4.5 Driver Output Pins (Pins for Panel) ............................................................................................................................. 15
+4.6 DC/DC Convert Pins .................................................................................................................................................... 16
+4.7 Test Pins ....................................................................................................................................................................... 17
+5
+Function Description ..................................................................................................................................... 18
+5.1
+Interface Type Selection .................................................................................................................................. 18
+5.2
+MCU Interface ................................................................................................................................................ 19
+5.2.1
+Write Cycle and Sequence ..................................................................................................................... 19
+5.2.2
+Read Cycle and Sequence ...................................................................................................................... 21
+5.3
+SPI/DUAL-SPI Interface ................................................................................................................................ 22
+5.3.1
+3-wire / 4-wire SPI/DUAL-SPI Write Cycle and Sequence .................................................................. 22
+5.3.2
+3-wire / 4-wire SPI Read Cycle and Sequence ...................................................................................... 26
+5.4
+QUAD-SPI protocol ........................................................................................................................................ 28
+5.4.1
+QUAD-SPI command format ................................................................................................................ 28
+5.4.2
+QUAD-SPI pixel writing format ........................................................................................................... 29
+5.4.3
+QUAD-SPI pixel writing color format .................................................................................................. 30
+5.4.4
+QUAD-SPI Read Cycle and Sequence .................................................................................................. 33
+5.5
+Break and Pause Sequence .............................................................................................................................. 34
+5.6
+Display Serial Interface (DSI) ......................................................................................................................... 35
+5.7
+DSI Protocol .................................................................................................................................................... 36
+5.8
+Processor to Peripheral Transactions ............................................................................................................... 38
+5.9
+Peripheral-to-Processor LP Transmission ....................................................................................................... 41
+5.10
+Error Report Format ........................................................................................................................................ 42
+5.11
+Peripheral-to-Processor Transaction – Detail Format Description .................................................................. 43
+5.12
+DSI Video Mode Interface Timing .................................................................................................................. 44
+5.13
+Error Correction Code (ECC) ......................................................................................................................... 45
+5.14
+Notice .............................................................................................................................................................. 46
+5.15
+Tearing Effect Output ...................................................................................................................................... 47
+5.15.1
+Tearing Effect Line Mode ...................................................................................................................... 47
+5.15.2
+Tearing Effect Line Timing.................................................................................................................... 49
+6.
+Command ...................................................................................................................................................... 50
+6.1 Command List .............................................................................................................................................................. 50
+6.2 Command Description.................................................................................................................................................. 53
+NOP (0000h) ............................................................................................................................................................. 53
+SWRESET(0100h) : Software Reset ........................................................................................................................ 53
+RDDID(0400h~0402h) : Read Display ID ............................................................................................................... 54
+RDNUMED(0500h) : Read Number of Errors on DSI ............................................................................................. 55
+RDDPM (0A00h) : Read Display Power Mode ....................................................................................................... 56
+RDDMADCTR (0B00h): Read Display MADCTR ................................................................................................. 57
+RDDCOLMOD (0C00h): Read Display Pixel Format ............................................................................................. 58
+RDDIM (0D00h): Read Display Image Mode .......................................................................................................... 59
+RDDSM (0E00h): Read Display Signal Mode ......................................................................................................... 60
+RDDSDR (0F00h): Read Display Self-Diagnostic Result ....................................................................................... 61
+SLPIN (1000h): Sleep In .......................................................................................................................................... 62
+SLPOUT (1100h): Sleep Out .................................................................................................................................... 63
+PTLON (1200h): Partial Display Mode On .............................................................................................................. 64
+NORON (1300h): Normal Display Mode On ........................................................................................................... 65
+3
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page3
+
+RM690B0 Data Sheet
+Rev：0.2
+
+7.
+
+INVOFF (2000H): Display Inversion Off ................................................................................................................ 66
+INVON (2100H): Display Inversion On................................................................................................................... 67
+ALLPOFF (2200H): All Pixel Off ............................................................................................................................ 68
+ALLPON (2300H): All Pixel On .............................................................................................................................. 69
+DISPOFF (2800h): Display Off ................................................................................................................................ 70
+DISPON (2900h): Display On .................................................................................................................................. 71
+CASET(2A00h~2A03h) : Set Column Start Address ............................................................................................... 72
+RASET(2B00h~2B03h) : Set Row Start Address ..................................................................................................... 73
+RAMWR (2C00h): Memory Write ........................................................................................................................... 74
+PTLAR (3000h): Partial Area ................................................................................................................................... 75
+PTLAR (3100h): Vertical Partial Area ...................................................................................................................... 76
+TEOFF (3400h): Tearing Effect Line OFF ............................................................................................................... 78
+TEON (3500h): Tearing Effect Line ON .................................................................................................................. 79
+MADCTR (3600h): Scan Direction Control ............................................................................................................. 80
+IDMOFF (3800h): Idle Mode Off............................................................................................................................. 81
+IDMON (3900h): Enter_idle_mode .......................................................................................................................... 82
+COLMOD (3A00h): Interface Pixel Format ............................................................................................................. 83
+RAMWRC (3C00h): Memory Continuous Write ..................................................................................................... 84
+STESL(4400h) : Set_Tear_Scanline ......................................................................................................................... 85
+GSL (4500h) : Get_Scanline ..................................................................................................................................... 86
+DSTBON (4F00h): Deep Standby Mode On ............................................................................................................ 87
+WRDISBV (5100h): Write Display Brightness ........................................................................................................ 88
+RDDISBV (5200h): Read Display Brightness.......................................................................................................... 89
+WRCTRLD (5300h): Write Display Control ............................................................................................................ 90
+RDCTRLD (5400h): Read Display Control ............................................................................................................. 91
+WRRADACL (5500h): RAD_ACL Control............................................................................................................. 92
+COLORTEMP (5500h): Color Temperature Selection ............................................................................................. 92
+WRDISBV (6300h): Write HBM Display Brightness .............................................................................................. 93
+RDDISBV (6400h): Read HBM Display Brightness ............................................................................................... 93
+HBM_Mode (6600h) : Set_HBM_Mode .................................................................................................................. 94
+FR_LEVEL (6700h) : Frame Rate Level Control .................................................................................................. 95
+COLSET (7000~7F00h): Interface Pixel Format Set ............................................................................................... 96
+COLOPT (8000h): Interface Pixel Format Option ................................................................................................... 98
+RDDDBS(A100h) : Read_DDB_Start ................................................................................................................... 100
+RDDDBC(A800h) : Read DDB Continous ............................................................................................................ 101
+RDFCS(AA00h) : Read First Checksum ................................................................................................................ 102
+RDCCS(AF00h) : Read Continue Checksum ......................................................................................................... 103
+SetDISPMode (C200h) : set_DISP Mode ............................................................................................................... 104
+SetSPIMode (C400h) : set_SPI Mode .................................................................................................................... 105
+RDID1 (DA00h): ID1 Code ................................................................................................................................... 106
+RDID2 (DB00h): ID2 Code.................................................................................................................................... 107
+RDID3 (DC00h): ID3 Code.................................................................................................................................... 108
+(FE00h): CMD Mode Switch ............................................................................................................................... 109
+(FF00h): Read CMD Status ................................................................................................................................. 110
+Electrical Characteristics ..............................................................................................................................111
+7.1
+Absolute Maximum Ratings.......................................................................................................................... 111
+7.2
+ESD Protection Level .................................................................................................................................... 111
+7.3
+Latch-Up Protection Level ............................................................................................................................ 111
+7.4
+DC Characteristics ........................................................................................................................................ 112
+7.4.1
+Basic Characteristics ..................................................................................................................................... 112
+7.5
+MIPI Characteristics...................................................................................................................................... 113
+7.5.1
+High-Speed Receiver Specification ..................................................................................................... 113
+7.5.2
+Forward high speed transmissions ....................................................................................................... 114
+7.5.3
+Data to Clock Timing Definitions ........................................................................................................ 115
+7.5.4
+Low power transceiver specifications .................................................................................................. 116
+7.6
+AC Characteristics ........................................................................................................................................ 117
+7.6.1
+SPI/DUAL-SPI Characteristics ........................................................................................................... 117
+7.6.2
+QUAD-SPI Characteristics .................................................................................................................. 118
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page4
+
+RM690B0 Data Sheet
+Rev：0.2
+
+8.
+
+9.
+
+7.6.3
+DSI Timing Characteristics.................................................................................................................. 119
+7.6.4
+Reset Timing ........................................................................................................................................ 122
+Power Generation ........................................................................................................................................ 123
+8.1 Two Supply Power ( VDDI / VDD ) .......................................................................................................................... 123
+8.2 DC/DC Converter Circuit ........................................................................................................................................... 124
+8.3 External Components ................................................................................................................................................. 125
+8.4 Power on/off sequence and timing ............................................................................................................................. 126
+8.5 Power Level Modes .................................................................................................................................................... 128
+8.6 Maximum Series Resistance ...................................................................................................................................... 129
+Pad Diagram and Coordination ................................................................................................................... 130
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page5
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+1. General Description
+The RM690B0 device is a single-chip solution for LTPS AMOLED with resolution up to 480RGBx600. It
+includes a internal memory, a timing controller with glass interface level-shifters and a glass power supply
+circuit.
+The RM690B0 supports MIPI Interface, 8-bit system interfaces, serial peripheral interfaces (SPI), dual serial
+peripheral interfaces (DUAL-SPI) and quad serial peripheral interfaces (QUAD-SPI). The specified window
+area can be updated selectively, so that moving pictures can be displayed simultaneously independent of the
+still picture area.
+The RM690B0 is also able to make gamma correction settings separately for RGB dots to allow benign
+adjustments to panel characteristics, resulting in higher display qualities. The IC support 16.77M-color images
+up to 480RGBx600 and a deep standby mode for lower power consumption.
+This LSI is suitable for wearable device applications, including watch and smart band.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page6
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+2. Features
+
+
+Single chip AMOLED controller/driver with display RAM
+
+
+
+Display resolution option
+
+
+
+
+
+
+
+480RGB x 600
+
+
+
+480RGB x 480
+
+
+
+400RGB x 400
+
+
+
+360RGB x 480
+
+
+
+320RGB x 320
+
+
+
+320RGB x 480
+
+
+
+272RGB x 480
+
+
+
+240RGB x 240
+
+
+
+240RGB x 320
+
+
+
+180RGB x 360
+
+
+
+180RGB x 540
+
+
+
+128RGB x 432
+
+Display mode (Color mode)
+
+
+Normal mode: 16.7M-colors, 4096-colors, 8-colors
+
+
+
+Idle mode: 16.7M-colors, 4096-colors, 8-colors
+
+Interface
+
+
+8-bits 80-series MPU interface
+
+
+
+Serial peripheral interface (SPI)
+
+
+
+Dual serial peripheral interface (DUAL-SPI)
+
+
+
+Quad serial peripheral interface (QUAD-SPI)
+
+
+
+MIPI Display Serial Interface (1 clock and 2 data lane pairs)
+
+
+Support 1lane/2lane (1lane maximum: 550Mbps)
+
+
+
+Maximum total bit rate(sum of 2 data lanes) is 550Mbps in 24-bit data format,
+396Mbps in 18-bit data format, and
+352Mbps in 16-bit data format
+
+
+
+
+
+Interface pixel format
+
+
+MIPI: RGB888/ RGB666/ RGB565
+
+
+
+SPI: RGB888/ RGB666/ RGB565/ RGB332/ RGB111/ Gray 256.
+
+Abundant color display and drawing functions
+
+
+Programmable γ-correction function for 16.7 million color display
+
+
+
+Individual gamma correction setting for RGB dots
+
+
+
+Partial display function
+
+
+
+Support Low Frame Rate
+
+
+
+High Brightness Mode
+
+
+
+Color Gamut Mapping
+
+
+
+Build-in panel crack detection
+
+
+
+Self-Clock function for AOD mode
+
+
+
+Support Status Active Reporting function
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page7
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+
+
+Control power IC by one-wire interface
+
+
+
+On chip
+
+
+VREFP5/VREFN5 voltage generator for panel voltage
+
+
+
+VGHR/VGLR voltage for gate control signal
+
+
+
+Internal oscillator for display clock
+
+
+
+Source output MUX 1-6 with 240ch source output pins
+
+
+
+Supports gate control signals to gate driver in the panel
+
+
+
+Built-in OTP function to adjust panel setting
+
+
+
+Logic / interface power supply voltage VDDI = 1.65V ~ 3.3V
+
+
+
+Analog power supply voltage VDD = 2.7V ~ 3.6V
+
+
+
+Output voltage levels
+
+
+Positive gate driver voltage range for VGHR: 3 ~ 12V
+
+
+
+Negative gate driver voltage range for VGLR: -2V ~ -12V
+
+
+
+VREFP5 panel voltage range : 0.5 ~ 5V
+
+
+
+VREFN5 panel voltage range : -0.5 ~ -4.5V (Min>=VCL+0.3v)
+
+
+
+Step-up 1,2 output voltage range for AVDD: 4.5 ~ 6.5V, VCL: -3.5 ~ -5.0V
+
+
+
+Gamma high/low voltage range for VGMP: 2.0V ~ 6.3V (Max<=AVDD-0.2v) ,
+
+(Max<=VGH-0.3v)
+(Min>=VGL+0.3v)
+
+(Max<=AVDD-0.3v)
+
+VGSP: 0V, 0.2125V ~ 4.5V
+
+
+OVDD_INT/OVSS_INT voltage range for idle mode application:
+OVDD_INT : 2.0V ~ 6.0V (Max<=AVDD-0.3V)
+OVSS_INT : 0V, -0.4V ~ -4.7V (Min>=VCL+0.3V)
+
+
+
+Package: COF/COG
+
+
+
+Chip size evaluation: 8080um x 1186um (including scribe line)
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page8
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+
+
+Power Supply Specifications
+
+No.
+
+Item
+
+Description
+
+1
+
+Source Driver
+
+240 pins (480 x RGB)
+
+2
+
+gate control timing Level shift
+
+VGHR-VGLR
+
+3
+
+Input Voltage
+
+VDDI
+
+1.65 ~ 3.3V
+
+VCC
+
+Connect to VDDI or VDD(VCI)
+
+VDD
+
+2.70 ~ 3.60V
+
+(VDDA/VDDB/VDDR)
+4
+
+5
+
+OLED drive voltages
+
+Internal step-up
+circuits
+
+AVDD
+
+4.5V ~ 6.5V
+
+VGHR
+
+3V ~ 12V (Max<=VGH-0.3v)
+
+VGLR
+
+-2V ~ -12V (Min>=VGL+0.3v)
+
+VREFP5
+
+0V, 0.5V ~ 5V (Max<=AVDD-0.3v)
+
+VREFN5
+
+-0.5V ~ -4.5V (Min>=VCL+0.3v)
+
+OVDD_INT
+
+2.0~6.0v
+
+(Max<=AVDD-0.3v)
+
+OVSS_INT
+
+-0.4 ~ -4.7V
+
+(Min>=VCL+0.3v)
+
+AVDD
+
+VCI x2.0(dual), x3.0(single)
+
+VCL
+
+VCI x -1.0(dual), x-2.0(single)
+
+VGH
+
+VCI x2, x3, x4
+
+VGL
+
+VCI x-2, x-3, x-4
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page9
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+3. Block Diagram
+VCC
+VDDI
+VSSI
+VDDA,VDDB,VDDR
+VSSA,VSSB,VSSR
+AVSS
+DVSS
+HSSI_CLK_P/N
+HSSI_D0_P/N
+HSSI_D1_P/N
+DSWAP
+PSWAP
+
+VSSAM
+
+S1~S240
+Source Driver
+
+MIPI
+Interface
+
+MIPI
+Voltage Gen
+
+OSC
+
+OTP
+
+MCU
+SPI
+DAUL SPI
+QUAD SPI
+MIPI
+
+IM[1:0]
+RESX
+CSX
+WRX_SCL
+DCX
+SDI_RDX
+SDO
+D[ 7 :0]
+
+Gate level
+shifter
+Index
+Register(IR)
+
+Memory
+Controller
+
+( VGHR/ VGLR)
+
+Timing
+Controller
+
+VSR_L[14:1]
+VSR_R[14:1]
+
+Regulator
+
+VREF
+VGHR
+VGSP, VGMP
+VGLR
+VREFN5,VREFP5
+OVDD_INT
+OVSS_INT
+
+DVDD
+Regulator
+
+DVDD
+
+SRAM
+
+TE1
+TE
+
+PCD_L_AVSS
+PCD_R_AVDD
+
+WATCH_OSC_IN
+Charge Pump1
+
+Charge Pump2
+
+AVDD
+C12P/C12N
+C11P/C11N
+
+VCL
+C32P/C32N
+C31P/C31N
+
+Charge Pump3 & 4
+
+MTP_PWR
+
+SWIRE
+ERR
+
+VGH
+
+VGL
+
+C41P/C41N
+
+C51P/C51N
+
+Interface
+The RM690B0 supports MIPI DSI interface. MIPI DSI can access both internal command and display data.
+Grayscale Voltage Generating Circuit
+Grayscale voltage generating circuit generates a drive voltage, which corresponds to grayscale level set in the
+γ correction register. The RM690B0 displays 16.7M colors at the maximum.
+Power Supply Circuit
+The power supply circuit generates supply voltages to OLED panel, VGH, VGL.
+Timing Generating
+The timing controller generates timing signals for internal circuits such as the display timing.
+Oscillator
+The RM690B0 incorporates RC oscillator circuit. The frame frequency is changeable by command settings.
+Panel Driver Circuit
+The OLED display driver circuit consists of 240 source drivers (S1~S240). The gate signal consists of
+VSR_R/L[14:1] and outputs either VGHR or VGLR level.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page10
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+4. Pin Description
+4.1 Power Supply Pins
+Signal
+
+I/O
+
+Function
+
+VDDB
+
+P
+
+VDDA
+
+P
+
+VDDR
+
+P
+
+VDDI
+
+P
+
+Power supply for interface system except MIPI interface.
+
+VCC
+
+P
+
+Power supply for DVDD regulator
+
+VSSB
+
+P
+
+System ground for DC/DC converter
+
+VSSA
+
+P
+
+System ground for analog system
+
+VSSR
+
+P
+
+System ground for regulator system
+
+VSSAM
+
+P
+
+System ground for internal MIPI analog system
+
+VSSI
+
+P
+
+System ground for interface system except MIPI interface
+
+DVSS
+
+P
+
+System ground for internal digital system
+
+AVSS
+
+P
+
+System ground for source OP system.
+
+MTP_PWR
+
+P
+
+MTP programming power supply pin (6.0V typical)
+Must be left open or connected to DVSS in normal condition.
+
+Power supply for DC/DC converter
+VDDB, VDDA and VDDR should be the same input voltage level
+Power supply for analog system.
+VDDB, VDDA and VDDR should be the same input voltage level
+Power supply for regulator system
+VDDB, VDDA and VDDR should be the same input voltage level
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page11
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+4.2 Interface Pins
+Signal
+
+I/O
+
+Function
+
+CSX
+
+I
+
+WRX_SCL
+
+I
+
+D/CX
+
+I
+
+SDI_RDX
+
+I/O
+
+SDO
+
+O
+
+D[7:0]
+
+I/O
+
+Chip select input pin (“Low” enable) in 80-series MPU I/F and SPI I/F.
+If not used, please connect to VDDI.
+WRX : Writes strobe signal to write data when WRX is “Low” in 80-series MPU I/F.
+SCL: A synchronous clock signal in SPI I/F.
+If not used, please connect to VSSI.
+Display data / command selection in 80-series MPU I/F and 4-wire SPI I/F.
+D/CX = ”0” : Command
+D/CX = ”1” : Display data or Parameter
+If not used, please connect to VSSI.
+SDI: Serial input signal in SPI I/F. The data is input on the rising edge of the SCL signal.
+RDX: Reads strobe signal to write data when RDX is “Low” in 80-series MPU interface.
+If not used, please leave it Open.
+Serial output signal in SPI I/F. The data is output on the rising/falling edge of the SCL signal.
+If the host places the SDI line into high-impedance state during the read interval, the SDI and
+SDO can be tied together.
+If not used, please open this pin.
+8-bit bi-directional data bus for 80-series MPU I/F and 8-bit input data bus for RGB I/F.
+These pins are not used for SPI, MIPI, please leave it Open.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page12
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+4.3 MIPI Interface Pins
+Signal
+
+I/O
+
+Function
+
+HSSI_CLK_P
+HSSI_CLK_N
+
+I
+
+-These pins are DSI-CLK+/- differential clock signals if MIPI interface is used.
+-If not used, please connect these pins to VSSAM.
+
+HSSI_D0_P
+HSSI_D0_N
+
+I/O
+
+-These pins are DSI-D0+/- differential data signals if MIPI interface is used.
+-If not used, please connect these pins to VSSAM.
+
+HSSI_D1_P
+HSSI_D1_N
+
+I/O
+
+-These pins are DSI-D1+/- differential data signals if MIPI interface is used.
+-If not used, please connect these pins to VSSAM.
+Input pin to select HSSI_D0/D1 data lane sequence and polarity in high speed interface only.
+
+DSWAP
+PSWAP
+
+I
+
+HSSI_CLK_
+P
+
+Pin Name
+
+HSSI_D0_P
+
+HSSI_D0_N
+
+DSWAP=0
+PSWAP=0
+
+DSI
+
+DSI
+
+DSI
+
+D0+
+
+D0-
+
+CLK+
+
+DSI
+
+DSI
+
+DSI
+
+D0-
+
+D0+
+
+CLK-
+
+DSWAP=0
+PSWAP=1
+
+DSWAP=1
+PSWAP=0
+
+DSWAP=1
+PSWAP=1
+
+HSSI_CLK_
+N
+
+HSSI_D1_P
+
+HSSI_D1_N
+
+DSI
+
+DSI
+
+DSI
+
+CLK-
+
+D1+
+
+D1-
+
+DSI
+
+DSI
+
+DSI
+
+CLK+
+
+D1-
+
+D1+
+
+DSI
+
+DSI
+
+DSI
+
+DSI
+
+DSI
+
+DSI
+
+D1+
+
+D1-
+
+CLK+
+
+CLK-
+
+D0+
+
+D0-
+
+DSI
+
+DSI
+
+DSI
+
+DSI
+
+DSI
+
+DSI
+
+D1-
+
+D1+
+
+CLK-
+
+CLK+
+
+D0-
+
+D0+
+
+If not used, please connect to VSSI.
+
+NOTE: “1” = VDDI level, “0” = VSSI level.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page13
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+4.4 Interface Logic Pins
+Signal
+
+I/O
+
+Function
+
+RESX
+
+I
+
+This signal will reset the device and must be applied to properly initialize the chip.
+Signal is active low.
+
+IM[1:0]
+
+I
+
+Interface type selection. The connections of IM[1:0] which not shown in table are invalid.
+IM[1:0]
+Display Data
+Command
+00
+MIPI / 3-wire SPI
+MIPI / 3-wire SPI
+01
+MIPI / 4-wire SPI
+MIPI / 4-wire SPI
+10
+MIPI / QUAD-SPI
+MIPI / QUAD-SPI
+11
+MCU 8-bit
+MCU 8-bit
+
+TE
+
+O
+
+TE1
+
+O
+
+SWIRE
+
+O
+
+Swire protocol setting pin of Power IC, If not used, please open this pin.
+
+WATCH_
+OSC_IN
+
+I
+
+The oscillator input of self-clock function for AOD mode. (crystal oscillator= 32.768kHz)
+
+Tearing effect output pin to synchronize MCU to frame writing, activated by S/W command.
+When this pin is not activated, this pin is output low.
+If not used, please open this pin.
+1. Tearing effect output pin to synchronize MCU to frame writing, activated by S/W command.
+(Same as TE)
+2. IC Status active reporting pin.
+
+If not used, please connect to VSSI.
+ERR
+
+O
+
+Output pin used to monitor display driver state and err status of MIPI’s HSDT
+If not used, please open this pin.
+
+NOTE: “1” = VDDI level, “0” = VSSI level.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page14
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+4.5 Driver Output Pins (Pins for Panel)
+Signal
+
+I/O
+
+S1 ~ S240
+
+O
+
+Pixel electrode driving output.
+
+DMY[1] ~
+DMY[12]
+
+O
+
+Dummy Source, leave it Open.
+
+O
+
+VSR control signals, Level shift output, (VGHR-VGLR)
+
+VSR_L[14:1]
+
+Function
+
+VSR_R[14:1]
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page15
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+4.6 DC/DC Convert Pins
+Signal
+
+I/O
+
+Function
+
+AVDD
+
+O
+
+Output voltage from step-up circuit 1, generated from VDDB.
+Connect a capacitor for stabilization.
+
+VCL
+
+O
+
+Output voltage from step-up circuit 3, generated from VDDB.
+Connect a capacitor for stabilization.
+
+VGH
+
+O
+
+Output voltage from step-up circuit 4.
+Connect a capacitor for stabilization.
+
+VGL
+
+O
+
+Output voltage from step-up circuit 5.
+Connect a capacitor for stabilization.
+
+C11P, C11N
+C12P, C12N
+
+IO
+
+Capacitor connection pins for the step-up circuit which generate AVDD.
+Connect capacitor as requirement. When not in used, please open these pins.
+
+C31P, C31N
+C32P, C32N
+
+IO
+
+Capacitor connection pins for the step-up circuit which generate VCL.
+Connect capacitor as requirement.
+
+C41P, C41N
+
+IO
+
+Capacitor connection pins for the step-up circuit which generate VGH.
+Connect capacitor as requirement.
+
+C51P, C51N
+
+IO
+
+Capacitor connection pins for the step-up circuit which generate VGL.
+Connect capacitor as requirement.
+
+OVDD_INT
+
+O
+
+Positive output voltage generated from AVDD. LDO output used for OLED panel display.
+Connect a capacitor for stabilization. When not in use, please open this pin.
+
+OVSS_INT
+
+O
+
+VGHR
+
+O
+
+VGLR
+
+O
+
+VGMP
+
+O
+
+Negative output voltage generated from VCL. LDO output used for OLED panel display
+Connect a capacitor for stabilization. When not in use, please open this pin.
+Output voltage generated from VGH. LDO output used for panel voltage.
+Connect a capacitor for stabilization.
+When not in use, please open this pin.
+Output voltage generated from VGL. LDO output used for panel voltage.
+Connect a capacitor for stabilization.
+When not in use, please open this pin.
+Output voltage generated from AVDD. LDO output for positive gamma high voltage
+generator.
+
+VGSP
+
+O
+
+Output voltage generated from AVDD. LDO output for positive gamma low voltage generator.
+
+VREF
+
+O
+
+Regulator output for internal reference voltage.
+Connect capacitor for stabilization.
+
+DVDD
+
+O
+
+Regulator output for logic system power.
+Connect a capacitor for stabilization.
+
+VREFP5
+
+O
+
+Regulator output for VREFP(0.5~5V)
+
+VREFN5
+
+O
+
+Regulator output for VREFN(-0.5~-4.5V)
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page16
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+4.7 Test Pins
+Signal
+
+I/O
+
+Function
+
+ANALOG_TEST
+1~2
+
+O
+
+Test pin, not accessible to user. Must be left open.
+
+TEST1~3
+
+IO
+
+Test pin, not accessible to user. Must be left open.
+
+TESTEN
+
+I
+
+Test pin, not accessible to user. Must be left open., Internal pull low
+
+EXTCLK
+
+I
+
+Test pin, not accessible to user. Must be left open.
+
+I
+
+Input pins used for panel crack detection
+Please connect PCD_R_AVDD and PCD_L_AVSS together by a routing trace on the panel
+when utilizing PCD
+
+I
+
+The same pad name short together internally
+
+PCD_L_AVSS
+PCD_R_AVDD
+DUMMY_R1~R4
+
+Please leave them open when not utilizing
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page17
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+5 Function Description
+5.1
+
+Interface Type Selection
+
+Interface type selection. The connections of IM[1:0] which not shown in table are invalid.
+IM[1:0]
+Display Data
+Command
+00
+MIPI / 3-wire SPI
+MIPI / 3-wire SPI
+01
+MIPI / 4-wire SPI
+MIPI / 4-wire SPI
+10
+MIPI / QUAD-SPI
+MIPI / QUAD-SPI
+11
+MCU 8-bit
+MCU 8-bit
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page18
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+5.2 MCU Interface
+5.2.1 Write Cycle and Sequence
+During a write cycle the host processor the parallel data to the display module via the interface. The MCU
+interface utilize CSX, DCX, RDX(SDA), SCL and D[7:0] signals. SCL is driven from high to low then pulled
+back to high during the write cycle. The host processor provides information during the write cycle while the
+display module reads the host processor information on the rising edge of SCL.
+During the write sequence the host processor writes one or more bytes of information to the display module
+via the interface. The write sequence is initiated when CSX is driven from high to low and ends when CSX is
+pulled high.
+The basic command format and IFPF (0x3A00, interface pixel format) is equal to 5:
+Command = 2C/3C
+
+CSX
+
+Pixel data
+
+DCX
+RDX(SDA)
+SCL
+D[7]
+
+CMD15
+
+CMD7
+
+0
+
+PAM7
+
+CMD15
+
+CMD7
+
+R4
+
+G2
+
+R4
+
+D[6]
+
+CMD14
+
+CMD6
+
+0
+
+PAM6
+
+CMD14
+
+CMD6
+
+R3
+
+G1
+
+R3
+
+D[5]
+
+CMD13
+
+CMD5
+
+0
+
+PAM5
+
+CMD13
+
+CMD5
+
+R2
+
+G0
+
+R2
+
+D[4]
+
+CMD12
+
+CMD4
+
+0
+
+PAM4
+
+CMD12
+
+CMD4
+
+R1
+
+B4
+
+R1
+
+D[3]
+
+CMD11
+
+CMD3
+
+0
+
+PAM3
+
+CMD11
+
+CMD3
+
+R0
+
+B3
+
+R0
+
+D[2]
+
+CMD10
+
+CMD2
+
+0
+
+PAM2
+
+CMD10
+
+CMD2
+
+G5
+
+B2
+
+G5
+
+D[1]
+
+CMD9
+
+CMD1
+
+0
+
+PAM1
+
+CMD9
+
+CMD1
+
+G4
+
+B1
+
+G4
+
+D[0]
+
+CMD8
+
+CMD0
+
+0
+
+PAM0
+
+CMD8
+
+CMD0
+
+G3
+
+B0
+
+G3
+
+Command
+
+1st Pixel
+
+Parameter
+
+2nd Pixel
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page19
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+The basic command format and IFPF (0x3A00, interface pixel format) is equal to 6:
+Command = 2C/3C
+
+CSX
+
+Pixel data
+
+DCX
+RDX(SDA)
+SCL
+D[7]
+
+CMD15
+
+CMD7
+
+0
+
+PAM7
+
+CMD15
+
+CMD7
+
+R5
+
+G5
+
+B5
+
+D[6]
+
+CMD14
+
+CMD6
+
+0
+
+PAM6
+
+CMD14
+
+CMD6
+
+R4
+
+G4
+
+B4
+
+D[5]
+
+CMD13
+
+CMD5
+
+0
+
+PAM5
+
+CMD13
+
+CMD5
+
+R3
+
+G3
+
+B3
+
+D[4]
+
+CMD12
+
+CMD4
+
+0
+
+PAM4
+
+CMD12
+
+CMD4
+
+R2
+
+G2
+
+B2
+
+D[3]
+
+CMD11
+
+CMD3
+
+0
+
+PAM3
+
+CMD11
+
+CMD3
+
+R1
+
+G1
+
+B1
+
+D[2]
+
+CMD10
+
+CMD2
+
+0
+
+PAM2
+
+CMD10
+
+CMD2
+
+R0
+
+G0
+
+B0
+
+D[1]
+
+CMD9
+
+CMD1
+
+0
+
+PAM1
+
+CMD9
+
+CMD1
+
+0
+
+0
+
+0
+
+D[0]
+
+CMD8
+
+CMD0
+
+0
+
+PAM0
+
+CMD8
+
+CMD0
+
+0
+
+0
+
+0
+
+Command
+
+1st Pixel
+
+Parameter
+
+The basic command format and IFPF (0x3A00, interface pixel format) is equal to 7:
+Command = 2C/3C
+
+CSX
+
+Pixel data
+
+DCX
+RDX(SDA)
+SCL
+D[7]
+
+CMD15
+
+CMD7
+
+0
+
+PAM7
+
+CMD15
+
+CMD7
+
+R7
+
+G7
+
+B7
+
+D[6]
+
+CMD14
+
+CMD6
+
+0
+
+PAM6
+
+CMD14
+
+CMD6
+
+R6
+
+G6
+
+B6
+
+D[5]
+
+CMD13
+
+CMD5
+
+0
+
+PAM5
+
+CMD13
+
+CMD5
+
+R5
+
+G5
+
+B5
+
+D[4]
+
+CMD12
+
+CMD4
+
+0
+
+PAM4
+
+CMD12
+
+CMD4
+
+R4
+
+G4
+
+B4
+
+D[3]
+
+CMD11
+
+CMD3
+
+0
+
+PAM3
+
+CMD11
+
+CMD3
+
+R3
+
+G3
+
+B3
+
+D[2]
+
+CMD10
+
+CMD2
+
+0
+
+PAM2
+
+CMD10
+
+CMD2
+
+R2
+
+G2
+
+B2
+
+D[1]
+
+CMD9
+
+CMD1
+
+0
+
+PAM1
+
+CMD9
+
+CMD1
+
+R1
+
+G1
+
+B1
+
+D[0]
+
+CMD8
+
+CMD0
+
+0
+
+PAM0
+
+CMD8
+
+CMD0
+
+R0
+
+G0
+
+B0
+
+Command
+
+1st Pixel
+
+Parameter
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page20
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+5.2.2 Read Cycle and Sequence
+The command read format:
+MCU Command Read
+CSX
+DCX
+SCL
+RDX (SDA)
+D[7]
+
+CMDH[7]
+
+CMDL[7]
+
+D7
+
+D7
+
+D[6]
+
+CMDH[6]
+
+CMDL[6]
+
+D6
+
+D6
+
+D[5]
+
+CMDH[5]
+
+CMDL[5]
+
+D5
+
+D5
+
+D[4]
+
+CMDH[4]
+
+CMDL[4]
+
+D4
+
+D4
+
+D[3]
+
+CMDH[3]
+
+CMDL[3]
+
+D3
+
+D3
+
+D[2]
+
+CMDH[2]
+
+CMDL[2]
+
+D2
+
+D2
+
+D[1]
+
+CMDH[1]
+
+CMDL[1]
+
+D1
+
+D1
+
+D[0]
+
+CMDH[0]
+
+CMDL[0]
+
+D0
+
+D0
+
+Parameter Content
+1 Dummy
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page21
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+5.3 SPI/DUAL-SPI Interface
+5.3.1 3-wire / 4-wire SPI/DUAL-SPI Write Cycle and Sequence
+During a write cycle the host processor sends a single bit of data to the display module via the interface. The
+3-wire/4-wire SPI interface utilizes CSX, SCL and SDA signals. SCL is driven from high to low then pulled back
+to high during the write cycle. The host processor provides information during the write cycle while the
+display module reads the host processor information on the rising edge of SCL.
+During the write sequence the host processor writes one or more bytes of information to the display module
+via the interface. The write sequence is initiated when CSX is driven from high to low and ends when CSX is
+pulled high. The 3-wire serial data contains DCX bit and a transmission byte. DCX bit is driven low while
+command information is on the interface and is pulled high when data is present.
+The 3-wire/4-wire SPI interface write command sequences are described in the following figure.
+3-wire SPI
+CSX
+
+DCX = 0
+
+DCX = 1
+9 bit
+
+9 bit
+
+SCL (rising)
+SDA
+
+DCX AD7 AD6 AD5 AD4 AD3 AD2 AD1 AD0 DCX D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D2
+
+D1
+
+D0
+
+D1
+
+D0
+
+4-wire SPI
+CSX
+
+8 bit
+
+8 bit
+
+SCL (rising)
+SDA
+
+AD7 AD6 AD5 AD4 AD3 AD2 AD1 AD0
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+DCX
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page22
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+The 3-wire/4-wire SPI interface write display data sequences are described in the following figure.
+When DSPI_en =0, the host sends data by SDA only.
+SPI3, RGB888 -> IFPF = 3'b111
+CSX
+
+Pixel data
+
+Cmd = 2C/3C
+
+SCL
+SDA0(SDI)
+
+0
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+1
+
+R7
+
+R6
+
+R5
+
+R4
+
+Pixel data
+
+R3
+
+R2
+
+R1
+
+R0
+
+1
+
+G7
+
+G6
+
+G5
+
+G4
+
+Pixel data
+
+G3
+
+G2
+
+G1
+
+G0
+
+B7
+
+1
+
+B6
+
+B5
+
+B4
+
+B3
+
+B2
+
+B1
+
+B0
+
+B1
+
+B0
+
+0
+
+0
+
+SDA1(DCX)
+Hi-Z
+
+SPI3, RGB666 -> IFPF = 3'b110
+CSX
+
+Pixel data
+
+Cmd = 2C/3C
+
+SCL
+SDA0(SDI)
+
+0
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+1
+
+R5
+
+R4
+
+R3
+
+R2
+
+Pixel data
+
+R1
+
+R0
+
+0
+
+0
+
+1
+
+G5
+
+G4
+
+G3
+
+G2
+
+Pixel data
+
+G1
+
+G0
+
+0
+
+0
+
+B3
+
+B2
+
+B1
+
+B0
+
+B5
+
+1
+
+B4
+
+B3
+
+B2
+
+SDA1(DCX)
+Hi-Z
+
+SPI3, RGB565 -> IFPF = 3'b101
+CSX
+
+Pixel data
+
+Cmd = 2C/3C
+
+SCL
+SDA0(SDI)
+
+0
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+1
+
+R4
+
+R3
+
+R2
+
+R1
+
+Pixel data
+
+R0
+
+G5
+
+G4
+
+G3
+
+1
+
+G2
+
+G1
+
+G0
+
+B4
+
+SDA1(DCX)
+Hi-Z
+
+SPI3, RGB332 -> IFPF = 3'b010
+CSX
+
+Pixel data
+
+Cmd = 2C/3C
+
+SCL
+SDA0(SDI)
+
+0
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+1
+
+SDA1(DCX)
+
+R2
+
+R1
+
+R0
+
+G2
+
+G1
+
+G0
+
+B0
+
+R0
+
+B1
+
+B0
+
+G0
+
+B0
+
+Hi-Z
+
+SPI3, RGB111 -> IFPF = 3'b011
+CSX
+
+Pixel data
+
+Cmd = 2C/3C
+
+SCL
+SDA0(SDI)
+
+0
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+0
+
+1
+
+R0
+
+0
+
+G0
+
+1st pixel
+
+SDA1(DCX)
+
+2nd pixel
+
+Hi-Z
+
+SPI3, GRAY256 -> IFPF = 3'b001
+CSX
+
+Pixel data
+
+Cmd = 2C/3C
+
+SCL
+SDA0(SDI)
+
+0
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+1
+
+SDA1(DCX)
+
+G7
+
+G6
+
+G5
+
+G4
+
+G3
+
+G2
+
+G1
+
+G0
+
+Hi-Z
+
+SPI4, RGB888 -> IFPF = 3'b111
+CSX
+SCL
+SDA0(SDI)
+
+Pixel data
+
+Cmd = 2C/3C
+
+D7
+
+D6
+
+D5
+
+D4
+
+SDA1(DCX)
+
+D3
+
+D2
+
+D1
+
+D0
+
+R7
+
+R6
+
+R5
+
+R4
+
+Pixel data
+
+R3
+
+R2
+
+R1
+
+R0
+
+0
+
+Hi-Z
+
+G7
+
+G6
+
+G5
+
+G4
+
+Pixel data
+
+G3
+
+G2
+
+G1
+
+1
+
+G0
+
+B7
+
+B6
+
+B5
+
+1
+
+Hi-Z
+
+B4
+
+B3
+
+B2
+
+B1
+
+B0
+
+1
+
+Hi-Z
+
+Hi-Z
+
+SPI4, RGB666 -> IFPF = 3'b110
+CSX
+SCL
+SDA0(SDI)
+
+Pixel data
+
+Cmd = 2C/3C
+
+D7
+
+D6
+
+D5
+
+D4
+
+SDA1(DCX)
+
+D3
+
+D2
+
+D1
+
+D0
+
+R5
+
+R4
+
+R3
+
+R2
+
+Pixel data
+
+R1
+
+R0
+
+0
+
+0
+
+0
+
+Hi-Z
+
+G5
+
+G4
+
+G3
+
+G2
+
+Pixel data
+
+G1
+
+G0
+
+0
+
+1
+
+0
+
+1
+
+Hi-Z
+
+Hi-Z
+
+B5
+
+B4
+
+B3
+
+B2
+
+Hi-Z
+
+B1
+
+B0
+
+0
+
+0
+
+1
+
+SPI4, RGB565 -> IFPF = 3'b101
+CSX
+SCL
+SDA0(SDI)
+
+Pixel data
+
+Cmd = 2C/3C
+
+D7
+
+D6
+
+D5
+
+D4
+
+SDA1(DCX)
+
+D3
+
+D2
+
+D1
+
+D0
+
+R4
+
+R3
+
+R2
+
+R1
+
+Pixel data
+
+R0
+
+G5
+
+G4
+
+G3
+
+0
+
+Hi-Z
+
+G2
+
+G1
+
+G0
+
+B4
+
+1
+
+B3
+
+B2
+
+B1
+
+B0
+
+1
+
+Hi-Z
+
+Hi-Z
+
+SPI4, RGB332 -> IFPF = 3'b010
+CSX
+SCL
+SDA0(SDI)
+
+Pixel data
+
+Cmd = 2C/3C
+
+D7
+
+D6
+
+D5
+
+D4
+
+SDA1(DCX)
+
+D3
+
+D2
+
+D1
+
+D0
+
+R2
+
+R1
+
+R0
+
+G2
+
+G1
+
+G0
+
+B1
+
+0
+
+Hi-Z
+
+B0
+
+1
+
+Hi-Z
+
+SPI4, RGB111 -> IFPF = 3'b011
+CSX
+SCL
+SDA0(SDI)
+
+Pixel data
+
+Cmd = 2C/3C
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+0
+
+0
+
+R0
+
+G0
+
+B0
+
+R0
+
+1st pixel
+
+SDA1(DCX)
+
+G0
+
+B0
+
+2nd pixel
+
+0
+
+Hi-Z
+
+1
+
+Hi-Z
+
+SPI4, GRAY256 -> IFPF = 3'b001
+CSX
+SCL
+SDA0(SDI)
+SDA1(DCX)
+
+Pixel data
+
+Cmd = 2C/3C
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+Hi-Z
+
+D2
+
+D1
+
+D0
+
+G7
+
+G6
+
+G5
+
+0
+
+G4
+
+G3
+
+G2
+
+G1
+
+G0
+
+1
+
+Hi-Z
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page23
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+When DSPI_en =1(DUAL-SPI), the host sends data by SDA and DCX.
+SPI3, 1wire, RGB888: IFPF = 3'b111, DSPI_EN = 1'b1, DSPI_CFG=2'b00
+CSX
+SCL
+SDA0(SDI)
+
+Cmd = 2C/3C
+
+0
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+Pixel data
+
+D2
+
+D1
+
+D0
+
+1
+
+R7
+
+R6
+
+R5
+
+R4
+
+R3
+
+R2
+
+R1
+
+R0
+
+SDA1(DCX)
+
+G7
+
+G6
+
+G5
+
+G4
+
+G3
+
+G2
+
+G1
+
+G0
+
+B7
+
+B6
+
+B5
+
+B4
+
+B3
+
+B2
+
+B1
+
+B0
+
+Hi-Z
+
+SPI3-1P1T, 2wire RGB888: IFPF = 3'b111, DSPI_EN=1'b1, DSPI_CFG=2'b10
+CSX
+SCL
+SDA0(SDI)
+
+Cmd = 2C/3C
+
+0
+
+D7
+
+D6
+
+D5
+
+SDA1(DCX)
+
+D4
+
+D3
+
+Pixel data
+
+D2
+
+D1
+
+D0
+
+1
+
+R7
+
+R6
+
+R5
+
+R4
+
+R3
+
+R2
+
+R1
+
+R0
+
+G7
+
+G6
+
+G5
+
+G4
+
+1
+
+G3
+
+G2
+
+G1
+
+G0
+
+B7
+
+B6
+
+B5
+
+B4
+
+B3
+
+B2
+
+B1
+
+B0
+
+Hi-Z
+
+SPI3-2P3T, 2wire, RGB888: IFPF = 3'b111, DSPI_EN=1'b1, DSPI_CFG=2'b11
+CSX
+SCL
+SDA0(SDI)
+
+Pixel data
+
+Cmd = 2C/3C
+
+0
+
+D7
+
+D6
+
+D5
+
+SDA1(DCX)
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+Pixel data
+
+Pixel data
+
+1
+
+R7
+
+R6
+
+R5
+
+R4
+
+R3
+
+R2
+
+R1
+
+R0
+
+1
+
+B7
+
+B6
+
+B5
+
+B4
+
+B3
+
+B2
+
+B1
+
+B0
+
+1
+
+G7
+
+G6
+
+G5
+
+G4
+
+G3
+
+G2
+
+G1
+
+G0
+
+1
+
+G7
+
+G6
+
+G5
+
+G4
+
+G3
+
+G2
+
+G1
+
+G0
+
+1
+
+R7
+
+R6
+
+R5
+
+R4
+
+R3
+
+R2
+
+R1
+
+R0
+
+1
+
+B7
+
+B6
+
+B5
+
+B4
+
+B3
+
+B2
+
+B1
+
+B0
+
+R0
+
+G5
+
+G4
+
+G3
+
+G2
+
+G1
+
+Hi-Z
+
+SPI3-1wire, RGB666: IFPF = 3'b110, DSPI_EN=1'b1, DSPI_CFG=2'b00
+CSX
+SCL
+SDA0(SDI)
+
+Pixel data
+
+Cmd = 2C/3C
+
+0
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+1
+
+R5
+
+R4
+
+R3
+
+R2
+
+SDA1(DCX)
+
+R1
+
+R0
+
+G5
+
+G4
+
+G3
+
+G2
+
+G1
+
+G0
+
+B5
+
+B4
+
+B3
+
+B2
+
+B1
+
+B0
+
+Hi-Z
+
+SPI3-1P1T, 2wire, RGB666: IFPF = 3'b110, DSPI=1'b1, DSPI_CFG=2'b10
+CSX
+SCL
+SDA0(SDI)
+
+Cmd = 2C/3C
+
+0
+
+D7
+
+D6
+
+D5
+
+SDA1(DCX)
+
+D4
+
+Pixel data
+
+D3
+
+D2
+
+D1
+
+D0
+
+1
+
+R5
+
+R4
+
+R3
+
+R2
+
+R1
+
+R0
+
+G5
+
+G4
+
+G3
+
+1
+
+G2
+
+G1
+
+G0
+
+B5
+
+B4
+
+B3
+
+B2
+
+B1
+
+B0
+
+Hi-Z
+
+SPI3-2P3T, 2wire, RGB666: IFPF = 3'b110, DSPI_EN=1'b1, DSPI_CFG=2'b11
+CSX
+SCL
+SDA0(SDI)
+
+Cmd = 2C/3C
+
+0
+
+D7
+
+D6
+
+D5
+
+SDA1(DCX)
+
+D4
+
+Pixel data
+
+D3
+
+D2
+
+D1
+
+D0
+
+Pixel data
+
+Pixel data
+
+1
+
+R5
+
+R4
+
+R3
+
+R2
+
+R1
+
+R0
+
+1
+
+B5
+
+B4
+
+B3
+
+B2
+
+B1
+
+B0
+
+1
+
+G5
+
+G4
+
+G3
+
+G2
+
+G1
+
+G0
+
+1
+
+G5
+
+G4
+
+G3
+
+G2
+
+G1
+
+G0
+
+1
+
+R5
+
+R4
+
+R3
+
+R2
+
+R1
+
+R0
+
+1
+
+B5
+
+B4
+
+B3
+
+B2
+
+B1
+
+B0
+
+R4
+
+R3
+
+R2
+
+R1
+
+Hi-Z
+
+SPI3-1wire, RGB565: IFPF = 3'b101, DSPI_EN=1'b1, DSPI_CFG=2'b00
+CSX
+SCL
+SDA0(SDI)
+
+Cmd = 2C/3C
+
+0
+
+D7
+
+D6
+
+D5
+
+D4
+
+Pixel data
+
+D3
+
+D2
+
+D1
+
+D0
+
+1
+
+R4
+
+R3
+
+R2
+
+R1
+
+SDA1(DCX)
+
+R0
+
+G5
+
+G4
+
+G3
+
+G2
+
+G1
+
+G0
+
+B4
+
+B3
+
+B2
+
+B1
+
+B0
+
+1
+
+G0
+
+B4
+
+B3
+
+B2
+
+B1
+
+Hi-Z
+
+SPI3-1P1T, 2wire, RGB565: IFPF = 3'b101, DSPI_EN=1'b1, DSPI_CFG=2'b10
+CSX
+SCL
+SDA0(SDI)
+SDA1(DCX)
+
+Cmd = 2C/3C
+
+0
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+Hi-Z
+
+Pixel data
+
+D2
+
+D1
+
+D0
+
+1
+
+R4
+
+R3
+
+R2
+
+R1
+
+R0
+
+G5
+
+G4
+
+G3
+
+1
+
+R4
+
+R3
+
+R2
+
+R1
+
+R0
+
+G5
+
+G4
+
+G3
+
+1
+
+G2
+
+G1
+
+G0
+
+B4
+
+B3
+
+B2
+
+B1
+
+B0
+
+1
+
+G2
+
+G1
+
+G0
+
+B4
+
+B3
+
+B2
+
+B1
+
+B0
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page24
+
+B0
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+SPI4-1wire, RGB888: IFPF = 3'b111, DSPI_EN=1'b1, DSPI_CFG=2'b00
+CSX
+SCL
+SDA0(SDI)
+SDA1(DCX)
+
+Cmd = 2C/3C
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+Pixel data
+
+D2
+
+D1
+
+D0
+
+R7
+
+R6
+
+R5
+
+R4
+
+R3
+
+R2
+
+R1
+
+R0
+
+G7
+
+G6
+
+G5
+
+G4
+
+G3
+
+G2
+
+G1
+
+G0
+
+B7
+
+B6
+
+B5
+
+B4
+
+B3
+
+B2
+
+B1
+
+B0
+
+1
+
+0
+
+Hi-Z
+
+Hi-Z
+
+SPI4-1P1T, 2wire, RGB888: IFPF = 3'b111, DSPI_EN=1'b1, DSPI_CFG=2'b10
+CSX
+SCL
+SDA0(SDI)
+SDA1(DCX)
+
+Cmd = 2C/3C
+
+D7
+
+D6
+
+D5
+
+D4
+
+Pixel data
+
+D3
+
+D2
+
+D1
+
+D0
+
+0
+
+1
+
+R7
+
+R6
+
+R5
+
+R4
+
+R3
+
+R2
+
+R1
+
+R0
+
+G7
+
+G6
+
+G5
+
+G4
+
+1
+
+G3
+
+G2
+
+G1
+
+G0
+
+B7
+
+B6
+
+B5
+
+B4
+
+B3
+
+B2
+
+B1
+
+B0
+
+Hi-Z
+
+SPI4-2P3T, 2wire, RGB888: IFPF = 3'b111, DSPI_EN=1'b1, DSPI_CFG=2'b11
+CSX
+SCL
+SDA0(SDI)
+SDA1(DCX)
+
+Pixel data
+
+Cmd = 2C/3C
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+0
+
+Pixel data
+
+Pixel data
+
+1
+
+R7
+
+R6
+
+R5
+
+R4
+
+R3
+
+R2
+
+R1
+
+R0
+
+1
+
+B7
+
+B6
+
+B5
+
+B4
+
+B3
+
+B2
+
+B1
+
+B0
+
+1
+
+G7
+
+G6
+
+G5
+
+G4
+
+G3
+
+G2
+
+G1
+
+G0
+
+1
+
+G7
+
+G6
+
+G5
+
+G4
+
+G3
+
+G2
+
+G1
+
+G0
+
+1
+
+R7
+
+R6
+
+R5
+
+R4
+
+R3
+
+R2
+
+R1
+
+R0
+
+1
+
+B7
+
+B6
+
+B5
+
+B4
+
+B3
+
+B2
+
+B1
+
+B0
+
+G4
+
+G3
+
+G2
+
+G1
+
+G0
+
+B4
+
+Hi-Z
+
+SPI4-1wire, RGB666: IFPF = 3'b110, DSPI_EN=1'b1, DSPI_CFG=2'b00
+CSX
+SCL
+SDA0(SDI)
+SDA1(DCX)
+
+Pixel data
+
+Cmd = 2C/3C
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+0
+
+R5
+
+R4
+
+R3
+
+R2
+
+R1
+
+R0
+
+G5
+
+G4
+
+G3
+
+G2
+
+G1
+
+G0
+
+B5
+
+B4
+
+B3
+
+B2
+
+B1
+
+B0
+
+1
+
+Hi-Z
+
+Hi-Z
+
+SPI4-1P1T, 2wire, RGB666: IFPF = 3'b110, DSPI_EN=1'b1, DSPI_CFG=2'b10
+CSX
+SCL
+SDA0(SDI)
+SDA1(DCX)
+
+Cmd = 2C/3C
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+Pixel data
+
+D2
+
+D1
+
+D0
+
+0
+
+1
+
+R5
+
+R4
+
+R3
+
+R2
+
+R1
+
+R0
+
+G5
+
+G4
+
+G3
+
+1
+
+G2
+
+G1
+
+G0
+
+B5
+
+B4
+
+B3
+
+B2
+
+B1
+
+B0
+
+Hi-Z
+
+SPI4-2P3T, 2wire, RGB666: IFPF = 3'b110, DSPI_EN=1'b1, DSPI_CFG=2'b11
+CSX
+SCL
+SDA0(SDI)
+SDA1(DCX)
+
+Cmd = 2C/3C
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+Pixel data
+
+D2
+
+D1
+
+D0
+
+0
+
+Pixel data
+
+Pixel data
+
+1
+
+R5
+
+R4
+
+R3
+
+R2
+
+R1
+
+R0
+
+1
+
+B5
+
+B4
+
+B3
+
+B2
+
+B1
+
+B0
+
+1
+
+G5
+
+G4
+
+G3
+
+G2
+
+G1
+
+G0
+
+1
+
+G5
+
+G4
+
+G3
+
+G2
+
+G1
+
+G0
+
+1
+
+R5
+
+R4
+
+R3
+
+R2
+
+R1
+
+R0
+
+1
+
+B5
+
+B4
+
+B3
+
+B2
+
+B1
+
+B0
+
+B0
+
+R4
+
+R3
+
+R2
+
+R1
+
+R0
+
+G5
+
+Hi-Z
+
+SPI4-1wire, RGB565: IFPF = 3'b101, DSPI_EN=1'b1, DSPI_CFG=2'b00
+CSX
+SCL
+SDA0(SDI)
+SDA1(DCX)
+
+Pixel data
+
+Cmd = 2C/3C
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+0
+
+R4
+
+R3
+
+R2
+
+R1
+
+R0
+
+G5
+
+G4
+
+G3
+
+G2
+
+G1
+
+G0
+
+B4
+
+B3
+
+B2
+
+B1
+
+B3
+
+1
+
+1
+
+Hi-Z
+
+Hi-Z
+
+Hi-Z
+
+SPI4-1P1T, 2wire, RGB565: IFPF = 3'b101, DSPI_EN=1'b1, DSPI_CFG=2'b10
+CSX
+SCL
+SDA0(SDI)
+SDA1(DCX)
+
+Cmd = 2C/3C
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+0
+
+D2
+
+Pixel data
+
+D1
+
+D0
+
+1
+
+R4
+
+R3
+
+R2
+
+R1
+
+R0
+
+G5
+
+G4
+
+G3
+
+1
+
+R4
+
+R3
+
+R2
+
+R1
+
+R0
+
+G5
+
+G4
+
+G3
+
+1
+
+G2
+
+G1
+
+G0
+
+B4
+
+B3
+
+B2
+
+B1
+
+B0
+
+1
+
+G2
+
+G1
+
+G0
+
+B4
+
+B3
+
+B2
+
+B1
+
+B0
+
+Hi-Z
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page25
+
+B2
+
+B1
+
+B0
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+5.3.2 3-wire / 4-wire SPI Read Cycle and Sequence
+During a read cycle the host processor reads a single bit of data from the display module via the interface.
+The 3-wire/4-wire SPI interface utilizes CSX, SCL and SDA signals. SCL is driven from high to low then pulled
+back to high during the read cycle. The display module provides information during the read cycle while the
+host processor reads the display module information on the rising edge of SCL.
+During the read sequence the host processor reads one or more bytes of information from the display
+module via the interface. The read sequence is initiated when CSX is driven from high to low and ends when
+CSX is pulled high. The 3-wire serial data contains DCX bit and a transmission byte. DCX is driven low
+while command information is on the interface and is pulled high when data is present.
+The 3-wire/4-wire SPI interface read command sequences are described in the following figure.
+3-wire SPI (0Ah/0B/0Ch/0Dh/0Eh/0Fh/DAh/DBh/DCh) for 8 bit read
+CSX
+
+DCX = 0
+9 bit
+
+8 bit
+
+SCL (rising)
+SDA
+(input from host)
+SDA
+(output from driver)
+
+Hi-Z
+
+D7
+
+3-wire SPI (04h) for 24 bit read
+CSX
+
+Hi-Z
+
+DCX AD7 AD6 AD5 AD4 AD3 AD2 AD1 AD0
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+Hi-Z
+
+D2
+
+D1
+
+D0
+
+D0
+
+Hi-Z
+
+Dummy cycle
+
+DCX = 0
+9 bit
+
+24 bit
+
+SCL (rising)
+
+...
+
+SDA
+(input from host)
+
+DCX AD7 AD6 AD5 AD4 AD3 AD2 AD1 AD0
+
+SDA
+(output from driver)
+
+Hi-Z
+
+Hi-Z
+D23
+
+D22
+
+D21
+
+...
+
+Hi-Z
+
+4-wire SPI (0Ah/0B/0Ch/0Dh/0Eh/0Fh/DAh/DBh/DCh) for 8 bit read
+CSX
+
+DCX = 0
+8 bit
+
+8 bit
+
+SCL (rising)
+DCX
+SDA
+(input from host)
+SDA
+(output from driver)
+
+Hi-Z
+
+AD7 AD6 AD5 AD4 AD3 AD2 AD1 AD0
+
+Hi-Z
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page26
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+4-wire SPI (04h) for 24 bit read
+CSX
+
+Dummy cycle
+
+DCX = 0
+8 bit
+
+24 bit
+
+SCL (rising)
+
+...
+
+DCX
+SDA
+(input from host)
+SDA
+(output from driver)
+
+Hi-Z
+
+AD7 AD6 AD5 AD4 AD3 AD2 AD1 AD0
+
+Hi-Z
+
+D23
+
+D22
+
+D21
+
+...
+
+D2
+
+D1
+
+D0
+
+Hi-Z
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page27
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+5.4 QUAD-SPI protocol
+QUAD-SPI provides 1-wire for writing / reading command, and 4-wire for writing pixel data. CSX is the chip
+selection and it is low active property. SCL is driven from high to low then pulled back to high during the write
+cycle for clock input. SDI_SDA is for 1-wire command writing (PI=02h), 1-wire command reading (PI=03h)
+and 4-wire pixel data transmission (PI=12h or 32h). DCX and D[1:0] are for 4-wire mode pixel data
+transmission.
+5.4.1 QUAD-SPI command format
+The QUAD-SPI interface write command sequences are described in the following figure.
+AD[23:0] is the command address and its contend is {8’h00, CMD[7:0], 8’h00}.
+PAM*[7:0] is the command parameter, and PI[7:0] is the packet instruction for QUAD-SPI protocol format
+decoding.
+CSX
+0
+Host to DDI
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+31
+
+32
+
+39
+
+SCL
+SDI_SDA
+
+PI=02h
+
+AD[23:0]
+
+PAM1[7:0]
+
+CSX
+40
+Host to DDI
+
+47
+
+48
+
+55
+
+56
+
+63
+
+SCL
+SDI_SDA
+
+PAM2[7:0]
+
+PAM3[7:0]
+
+PAM4[7:0]
+
+For example: SLPOUT and memory column setting (multi parameters)
+CSX
+0
+Host to DDI
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+31
+
+32
+
+39
+
+SCL
+SDI_SDA
+
+PI=02h
+
+AD[23:0] = 0x001100
+
+PAM = 0x00
+
+CSX
+0
+Host to DDI
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+31
+
+32
+
+39
+
+SCL
+SDI_SDA
+
+PI=02h
+
+AD[23:0] = 0x002A00
+
+PAM1 = 0x00
+
+CSX
+40
+Host to DDI
+
+47
+
+48
+
+55
+
+56
+
+63
+
+SCL
+SDI_SDA
+
+PAM2 = 0x00
+
+PAM3 = 0x01
+
+PAM4 = 0x8F
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page28
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+5.4.2 QUAD-SPI pixel writing format
+The QUAD-SPI interface write pixel data sequences are described in the following figure.
+AD[23:0] is the driver IC command address, 0x002C00 or 0x003C00.
+Data*[7:0]: the pixel data
+
+Two kinds of ADDR format which is distinguished by the preceding packet (32h or 12h).
+ADDR is 24bits: ADDR is made up 002C00 or 003C00
+ADDR[23:0]
+
+Byte1
+
+Byte2
+
+Byte3
+
+Byte4
+
+D0
+
+D4
+
+D0
+
+D4
+
+D0
+
+D4
+
+D0
+
+D5
+
+D1
+
+D5
+
+D1
+
+D5
+
+D1
+
+D5
+
+D1
+
+D[0]
+
+D6
+
+D2
+
+D6
+
+D2
+
+D6
+
+D2
+
+D6
+
+D2
+
+D[1]
+
+D7
+
+D3
+
+D7
+
+D3
+
+D7
+
+D3
+
+D7
+
+D3
+
+CSX
+0
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+31
+
+32
+
+33
+
+D4
+
+DCX
+
+SCL
+SDI_SDA
+
+PI=32h
+
+Host to DDI
+
+0x002C00 / 0x003C00
+
+ADDR is 8bits: ADDR is 2C or 3C
+ADDR[7:0]
+
+Byte1
+
+Byte2
+
+Byte3
+
+Byte4
+
+CSX
+0
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+10
+
+11
+
+12
+
+13
+
+14
+
+15
+
+SCL
+SDI_SDA
+
+PI=12h
+
+0
+
+0
+
+AD4
+
+AD0
+
+0
+
+0
+
+D4
+
+D0
+
+D4
+
+D0
+
+D4
+
+D0
+
+D4
+
+D0
+
+DCX
+
+0
+
+0
+
+AD5
+
+AD1
+
+0
+
+0
+
+D5
+
+D1
+
+D5
+
+D1
+
+D5
+
+D1
+
+D5
+
+D1
+
+D[0]
+
+0
+
+0
+
+AD6
+
+AD2
+
+0
+
+0
+
+D6
+
+D2
+
+D6
+
+D2
+
+D6
+
+D2
+
+D6
+
+D2
+
+D[1]
+
+0
+
+0
+
+AD7
+
+AD3
+
+0
+
+0
+
+D7
+
+D3
+
+D7
+
+D3
+
+D7
+
+D3
+
+D7
+
+D3
+
+Host to DDI
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page29
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+5.4.3 QUAD-SPI pixel writing color format
+The QUAD-SPI interface supported RGB888, RGB666, RGB565, RGB332, RGB111, Gray256 for the
+following formats.
+
+RGB888:
+CSX
+0
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+31
+
+32
+
+33
+
+R4
+
+R0
+
+G4
+
+G0
+
+B4
+
+B0
+
+R4
+
+R0
+
+DCX
+
+R5
+
+R1
+
+G5
+
+G1
+
+B5
+
+B1
+
+R5
+
+R1
+
+D[0]
+
+R6
+
+R2
+
+G6
+
+G2
+
+B6
+
+B2
+
+R6
+
+R2
+
+D[1]
+
+R7
+
+R3
+
+G7
+
+G3
+
+B7
+
+B3
+
+R7
+
+R3
+
+SCL
+SDI_SDA
+
+PI=32h
+
+Host to DDI
+
+0x002C00 / 0x003C00
+
+1st R
+data
+
+1st G
+data
+
+1st B
+data
+
+2nd R
+data
+
+CSX
+0
+
+7
+
+8
+
+13
+
+14
+
+SCL
+SDI_SDA
+
+PI=12h
+
+0
+
+0
+
+AD4
+
+AD0
+
+0
+
+0
+
+R4
+
+R0
+
+G4
+
+G0
+
+B4
+
+B0
+
+R4
+
+R0
+
+DCX
+
+0
+
+0
+
+AD5
+
+AD1
+
+0
+
+0
+
+R5
+
+R1
+
+G5
+
+G1
+
+B5
+
+B1
+
+R5
+
+R1
+
+D[0]
+
+0
+
+0
+
+AD6
+
+AD2
+
+0
+
+0
+
+R6
+
+R2
+
+G6
+
+G2
+
+B6
+
+B2
+
+R6
+
+R2
+
+D[1]
+
+0
+
+0
+
+AD7
+
+AD3
+
+0
+
+0
+
+R7
+
+R3
+
+G7
+
+G3
+
+B7
+
+B3
+
+R7
+
+R3
+
+Host to DDI
+
+1st R
+data
+
+AD is 2Ch or 3Ch
+
+1st G
+data
+
+1st B
+data
+
+2nd R
+data
+
+RGB666:
+CSX
+0
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+31
+
+32
+
+33
+
+R2
+
+0
+
+G2
+
+SCL
+SDI_SDA
+
+PI=32h
+
+Host to DDI
+
+0x002C00 / 0x003C00
+
+0
+
+B2
+
+0
+
+R2
+
+0
+
+DCX
+
+R3
+
+0
+
+G3
+
+0
+
+B3
+
+0
+
+R3
+
+0
+
+D[0]
+
+R4
+
+R0
+
+G4
+
+G0
+
+B4
+
+B0
+
+R4
+
+R0
+
+D[1]
+
+R5
+
+R1
+
+G5
+
+G1
+
+B5
+
+B1
+
+R5
+
+R1
+
+1st R
+data
+
+1st G
+data
+
+1st B
+data
+
+2nd R
+data
+
+CSX
+0
+
+7
+
+8
+
+13
+
+14
+
+SCL
+SDI_SDA
+
+PI=12h
+
+0
+
+0
+
+AD4
+
+AD0
+
+0
+
+0
+
+R2
+
+0
+
+G2
+
+0
+
+B2
+
+0
+
+R2
+
+0
+
+DCX
+
+0
+
+0
+
+AD5
+
+AD1
+
+0
+
+0
+
+R3
+
+0
+
+G3
+
+0
+
+B3
+
+0
+
+R3
+
+0
+
+D[0]
+
+0
+
+0
+
+AD6
+
+AD2
+
+0
+
+0
+
+R4
+
+R0
+
+G4
+
+G0
+
+B4
+
+B0
+
+R4
+
+R0
+
+D[1]
+
+0
+
+0
+
+AD7
+
+AD3
+
+0
+
+0
+
+R5
+
+R1
+
+G5
+
+G1
+
+B5
+
+B1
+
+R5
+
+R1
+
+Host to DDI
+
+AD is 2Ch or 3Ch
+
+1st R
+data
+
+1st G
+data
+
+1st B
+data
+
+2nd R
+data
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page30
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+RGB565:
+CSX
+0
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+31
+
+32
+
+33
+
+R1
+
+G3
+
+B4
+
+B0
+
+R1
+
+G3
+
+B4
+
+B0
+
+DCX
+
+R2
+
+G4
+
+G0
+
+B1
+
+R2
+
+G4
+
+G0
+
+B1
+
+D[0]
+
+R3
+
+G5
+
+G1
+
+B2
+
+R3
+
+G5
+
+G1
+
+B2
+
+D[1]
+
+R4
+
+R0
+
+G2
+
+B3
+
+R4
+
+R0
+
+G2
+
+B3
+
+SCL
+SDI_SDA
+
+PI=32h
+
+Host to DDI
+
+0x002C00 / 0x003C00
+
+1st Pixel
+
+2nd Pixel
+
+CSX
+0
+
+7
+
+8
+
+13
+
+14
+
+SCL
+SDI_SDA
+
+PI=12h
+
+0
+
+0
+
+AD4
+
+AD0
+
+0
+
+0
+
+R1
+
+G3
+
+B4
+
+B0
+
+R1
+
+G3
+
+B4
+
+B0
+
+DCX
+
+0
+
+0
+
+AD5
+
+AD1
+
+0
+
+0
+
+R2
+
+G4
+
+G0
+
+B1
+
+R2
+
+G4
+
+G0
+
+B1
+
+D[0]
+
+0
+
+0
+
+AD6
+
+AD2
+
+0
+
+0
+
+R3
+
+G5
+
+G1
+
+B2
+
+R3
+
+G5
+
+G1
+
+B2
+
+D[1]
+
+0
+
+0
+
+AD7
+
+AD3
+
+0
+
+0
+
+R4
+
+R0
+
+G2
+
+B3
+
+R4
+
+R0
+
+G2
+
+B3
+
+Host to DDI
+
+1st Pixel
+
+AD is 2Ch or 3Ch
+
+2nd Pixel
+
+RGB332:
+CSX
+0
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+31
+
+32
+
+33
+
+SCL
+SDI_SDA
+
+PI=32h
+
+0x002C00 / 0x003C00
+
+G2
+
+B0
+
+G2
+
+B0
+
+G2
+
+B0
+
+G2
+
+B0
+
+DCX
+
+R0
+
+B1
+
+R0
+
+B1
+
+R0
+
+B1
+
+R0
+
+B1
+
+D[0]
+
+R1
+
+G0
+
+R1
+
+G0
+
+R1
+
+G0
+
+R1
+
+G0
+
+D[1]
+
+R2
+
+G1
+
+R2
+
+G1
+
+R2
+
+G1
+
+R2
+
+G1
+
+Host to DDI
+
+1st
+Pixel
+
+2nd
+Pixel
+
+3rd
+data
+
+4th
+Pixel
+
+CSX
+0
+
+7
+
+8
+
+13
+
+14
+
+SCL
+SDI_SDA
+
+PI=12h
+
+0
+
+0
+
+AD4
+
+AD0
+
+0
+
+0
+
+G2
+
+B0
+
+G2
+
+B0
+
+G2
+
+B0
+
+G2
+
+B0
+
+DCX
+
+0
+
+0
+
+AD5
+
+AD1
+
+0
+
+0
+
+R0
+
+B1
+
+R0
+
+B1
+
+R0
+
+B1
+
+R0
+
+B1
+
+D[0]
+
+0
+
+0
+
+AD6
+
+AD2
+
+0
+
+0
+
+R1
+
+G0
+
+R1
+
+G0
+
+R1
+
+G0
+
+R1
+
+G0
+
+D[1]
+
+0
+
+0
+
+AD7
+
+AD3
+
+0
+
+0
+
+R2
+
+G1
+
+R2
+
+G1
+
+R2
+
+G1
+
+R2
+
+G1
+
+Host to DDI
+
+AD is 2Ch or 3Ch
+
+1st
+Pixel
+
+2nd
+Pixel
+
+3rd
+data
+
+4th
+Pixel
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page31
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+RGB111:
+CSX
+0
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+31
+
+32
+
+33
+
+B0
+
+B0
+
+B0
+
+B0
+
+B0
+
+B0
+
+B0
+
+B0
+
+DCX
+
+G0
+
+G0
+
+G0
+
+G0
+
+G0
+
+G0
+
+G0
+
+G0
+
+D[0]
+
+R0
+
+R0
+
+R0
+
+R0
+
+R0
+
+R0
+
+R0
+
+R0
+
+0
+
+0
+
+0
+
+0
+
+SCL
+SDI_SDA
+
+PI=32h
+
+Host to DDI
+
+0x002C00 / 0x003C00
+
+D[1]
+
+0
+
+0
+
+0
+
+0
+
+1st
+
+2nd
+
+3rd
+
+4th
+
+CSX
+0
+
+7
+
+8
+
+13
+
+14
+
+SCL
+SDI_SDA
+
+PI=12h
+
+0
+
+0
+
+AD4
+
+AD0
+
+0
+
+0
+
+B0
+
+B0
+
+B0
+
+B0
+
+B0
+
+B0
+
+B0
+
+B0
+
+DCX
+
+0
+
+0
+
+AD5
+
+AD1
+
+0
+
+0
+
+G0
+
+G0
+
+G0
+
+G0
+
+G0
+
+G0
+
+G0
+
+G0
+
+D[0]
+
+0
+
+0
+
+AD6
+
+AD2
+
+0
+
+0
+
+R0
+
+R0
+
+R0
+
+R0
+
+R0
+
+R0
+
+R0
+
+R0
+
+D[1]
+
+0
+
+0
+
+AD7
+
+AD3
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+1st
+
+2nd
+
+3rd
+
+4th
+
+31
+
+32
+
+33
+
+Host to DDI
+
+AD is 2Ch or 3Ch
+
+Gray256:
+CSX
+0
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+SCL
+SDI_SDA
+
+PI=32h
+
+0x002C00 / 0x003C00
+
+G4
+
+G0
+
+G4
+
+G0
+
+G4
+
+G0
+
+G4
+
+G0
+
+DCX
+
+G5
+
+G1
+
+G5
+
+G1
+
+G5
+
+G1
+
+G5
+
+G1
+
+D[0]
+
+G6
+
+G2
+
+G6
+
+G2
+
+G6
+
+G2
+
+G6
+
+G2
+
+D[1]
+
+G7
+
+G3
+
+G7
+
+G3
+
+G7
+
+G3
+
+G7
+
+G3
+
+Host to DDI
+
+1st
+Pixel
+
+2nd
+Pixel
+
+3rd
+Pixel
+
+4th
+Pixel
+
+CSX
+0
+
+7
+
+8
+
+13
+
+14
+
+SCL
+SDI_SDA
+
+PI=12h
+
+0
+
+0
+
+AD4
+
+AD0
+
+0
+
+0
+
+G4
+
+G0
+
+G4
+
+G0
+
+G4
+
+G0
+
+G4
+
+G0
+
+DCX
+
+0
+
+0
+
+AD5
+
+AD1
+
+0
+
+0
+
+G5
+
+G1
+
+G5
+
+G1
+
+G5
+
+G1
+
+G5
+
+G1
+
+D[0]
+
+0
+
+0
+
+AD6
+
+AD2
+
+0
+
+0
+
+G6
+
+G2
+
+G6
+
+G2
+
+G6
+
+G2
+
+G6
+
+G2
+
+D[1]
+
+0
+
+0
+
+AD7
+
+AD3
+
+0
+
+0
+
+G7
+
+G3
+
+G7
+
+G3
+
+G7
+
+G3
+
+G7
+
+G3
+
+Host to DDI
+
+AD is 2Ch or 3Ch
+
+1st
+Pixel
+
+2nd
+Pixel
+
+3rd
+Pixel
+
+4th
+Pixel
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page32
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+5.4.4 QUAD-SPI Read Cycle and Sequence
+During a read cycle the host processor reads a single bit of data from the display module via the interface.
+The QUAD-SPI interface utilizes CSX, SCL and SDI_SDA signals. SCL is driven from high to low then pulled
+back to high during the read cycle. The display module provides information during the read cycle while the
+host processor reads the display module information on the rising edge of SCL.
+During the read sequence the host processor reads one or more bytes of information from the display
+module via the interface. The read sequence is initiated when CSX is driven from high to low and ends when
+CSX is pulled high.
+QUAD-SPI read format:
+CSX
+0
+Host to DDI
+
+SDI_SDA
+DDI to Host
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+31
+
+32
+
+SCL
+
+SDI_SDA
+
+...
+PI=03h
+
+AD[23:0]
+
+Hi-Z
+
+Dout1[7:0]
+
+Hi-Z
+
+Dout2[7:0]
+
+AD is made up {8’h00, CMD[7:0], 8’h00}
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page33
+
+...
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+5.5
+
+Break and Pause Sequence
+
+The host processor can break a read or write sequence by pulling the CSX signal high during a command or
+data byte. The display module shall reset its interface so it will be ready to receive the same byte when CSX
+is again driven low.
+The host processor can pause a read or write sequence by pulling the CSX signal high between command
+or data bytes. The display module shall wait for the host processor to drive CSX low before continuing the
+read or write sequence at the point where the sequence was paused.
+
+1. Middle of frame
+Break
+
+Command
+
+Parameter 2
+
+Parameter 1
+
+Command
+
+The old value is kept
+on the register
+
+Stored to register
+
+2. Between frames
+Without break
+Command 1
+
+Parameter 1
+
+Parameter 2
+
+Ignored parameters
+
+With break
+
+Command
+
+Parameter 3
+
+Parameter 1
+
+Parameter 2
+
+Stored to register
+
+Stored to register
+
+Break
+Command 2
+
+Parameter 3
+The old value is kept
+on the register
+
+Parameter for
+Command 2
+
+Break can be e.g. another command or noise pulse.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page34
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+5.6 Display Serial Interface (DSI)
+DSI-compliant peripherals support either of two basic modes of operation: Command Mode and Video Mode.
+The mode definitions reflect the primary intended use of DSI for display interconnect, but are not intended to
+restrict DSI from operating in other applications.
+RM690B0 is capable of both Command Mode operation and Video Mode operation. Command Mode refers to
+operation in which transactions primarily take the form of sending commands and data to a display module
+that incorporates a display controller. The display controller may include local registers and a frame buffer.
+Systems using Command Mode write to, and read from, the registers and frame buffer memory. The host
+processor indirectly controls activity at the peripheral by sending commands, parameters and data to the
+display controller.
+The host processor can also read display module status information or the contents of the frame memory.
+Command Mode operation requires a bidirectional interface. Video Mode refers to operation in which
+transfers from the host processor to the peripheral take the form of a real-time pixel stream. In normal
+operation, the display module relies on the host processor to provide image data at sufficient bandwidth to
+avoid flicker or other visible artifacts in the displayed image. Video information should only be transmitted
+using High Speed Mode.
+RM690B0 Video Mode architectures also include a simple timing controller and partial frame buffer, used to
+maintain a partial-screen or lower-resolution image in standby or Low Power Mode. This permits the interface
+to reduce power consumption.
+RM690B0 Configuration:
+Lane Pair
+Clock Lane
+Data Lane 0
+
+Data Lane 1
+
+MCU(Host) RM690B0(Client)
+Unidirectional Lane
+Clock only
+Bi-directional Lane
+Forward High-speed
+Bi-directional Escape Mode
+Bi-directional LPDT
+Unidirectional Lane
+Forward High-Speed
+Escape Mode
+No LPDT
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page35
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+5.7
+
+DSI Protocol
+
+On the transmitter side of a DSI Link, parallel data, signal events, and commands are converted to packets.
+These packets are sent across the serial Link. The receiver side of a DSI Link performs the converse of the
+transmitter side, decomposing the packet into parallel data, signal events and commands.
+....
+Byte 5
+Byte 4
+Byte 3
+Byte 2
+Byte 1
+Byte 0
+
+....
+Byte 5
+Byte 4
+Byte 3
+Byte 2
+Byte 1
+Byte 0
+
+....
+Byte 3
+Byte 2
+Byte 1
+Byte 0
+
+Lane Distribution Function
+
+Byte 2
+Byte 0
+
+Byte 3
+Byte 1
+
+SerDes
+
+SerDes
+
+SerDes
+
+Lane 0
+
+Lane 0
+
+single lane link
+
+two lane link
+
+Lane 1
+
+two lane link
+
+single lane link
+
+Lane 0
+
+Lane 1
+
+Lane 0
+
+SerDes
+
+SerDes
+
+SerDes
+
+Byte 0
+Byte 2
+
+Byte 1
+Byte 3
+
+Lane Merging Function
+
+Byte 0
+Byte 1
+Byte 2
+Byte 3
+....
+
+Byte 0
+Byte 1
+Byte 2
+Byte 3
+Byte 4
+Byte 5
+....
+
+Byte 0
+Byte 1
+Byte 2
+Byte 3
+Byte 4
+Byte 5
+....
+
+There are two kinds of packets, short packet and long packet.
+Short packet structure:
+LP-11: low power mode
+SoT: start of transmission
+DI: data identification
+Data 0, Data1: packet data
+ECC: error correction code
+EoT: End of Transmission
+Packet Header
+Packet Data
+
+LP-11
+
+SoT
+
+DI
+
+Data 0 Data 1
+
+ECC
+
+EoT
+
+LP-11
+
+Time
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page36
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+DI structure:
+Virtual Channel: these two bits identify the data as directed to one of four virtual channels
+Data Type: It specifies the packet structure and packet format
+Virtual Channel (VC)
+Bit 7
+Bit 6
+
+Bit 5
+
+Bit 4
+
+Data Type (DT)
+Bit 3
+Bit 2
+
+Bit 1
+
+Bit 0
+
+Long packet structure:
+LP-11: low power mode
+SoT: start of transmission
+DI: data identification
+Word Count: the number of data bytes of packet data
+ECC: error correction code
+Checksum: The 16-bit CRC generator to check packet data. If the calculated checksum of receiver are equal
+to the packet data, the packet data is correct. If the calculated checksum of receiver are not equal, the packet
+data are not correct.
+EoT: end of transmission
+Packet Header
+LP-11
+
+SoT
+
+DI
+
+Word
+Count
+
+ECC
+
+Data 0 Data 1
+
+...
+
+Data
+WC-2
+
+Data
+checksum
+WC-1
+
+EoT
+
+LP-11
+
+Time
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page37
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+5.8
+
+Processor to Peripheral Transactions
+
+Processor to Peripheral Direction Packet Data Types
+Data Type
+Data Type binary
+Description
+01h
+00 0001
+Sync Event, V Sync Start
+11h
+01 0001
+Sync Event, V Sync End
+21h
+10 0001
+Sync Event, H Sync Start
+31h
+11 0001
+Sync Event, H Sync End
+08h
+00 1000
+End of Transmission packet (EoTp)
+02h
+00 0010
+reserved
+12h
+01 0010
+reserved
+22h
+10 0010
+reserved
+32h
+11 0010
+reserved
+03h
+00 0011
+reserved
+13h
+01 0011
+Generic Short WRITE, 1 parameter
+23h
+10 0011
+Generic Short WRITE, 2 parameters
+04h
+00 0100
+reserved
+14h
+01 0100
+Generic READ, 1 parameter
+24h
+10 0100
+reserved
+05h
+00 0101
+DCS Short WRITE, no parameters
+15h
+01 0101
+DCS Short WRITE, 1 parameter
+06h
+00 0110
+DCS READ, no parameters
+37h
+11 0111
+Set Maximum Return Packet Size
+09h
+00 1001
+Null Packet, no data
+19h
+01 1001
+Blanking Packet, no data
+29h
+10 1001
+Generic Long Write
+DCS Long Write/write_LUT Command
+39h
+11 1001
+Packet
+Packed Pixel Stream, 16-bit RGB, 5-6-5
+0Eh
+00 1110
+Format
+Packed Pixel Stream, 18-bit RGB, 6-6-6
+1Eh
+01 1110
+Format
+2Eh
+10 1110
+reserved
+Packed Pixel Stream, 24-bit RGB, 8-8-8
+3Eh
+11 1110
+Format
+
+Packet Size
+Short
+Short
+Short
+Short
+Short
+Short
+Short
+Short
+Short
+Short
+Short
+Short
+Short
+Short
+Short
+Short
+Short
+Short
+Short
+Long
+Long
+Long
+Long
+Long
+Long
+Long
+Long
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page38
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+Sync Event, Data Type = xx 0001
+Sync Events are all short packets and time-accurately. They can perform like the start and end of sync pulses. To
+represent timing information as accurately as possible, a V Sync Start event represents the start of the VSA and
+also implies an H Sync Start event for the first line of the VSA. Hence, a V Sync End event implies an H Sync Start
+event for the last line of the VSA. Sync events may be concatenated with blanking packets to convey inter-line
+timing accurately and avoid the overhead of switching between LPS and HS for every event. Note there is a power
+penalty for keeping the data line in HS mode.
+EoT packet
+This short packet is used to indicate the end of a high speed (HS) transmission. This packet will enhance overall
+syntem reliability. Although the main objective of the EoTp is to enhance robustness during HS transmission mode,
+RM690B0 can detect and interpret arriving EoTps regardless of transmission mode (HS or LP modes)
+
+Generic short write / read packet
+Generic Short WRITE command is a Short packet type for sending generic data to the peripheral. Generic READ
+request is a Short packet requesting data from the peripheral.
+DCS commands
+DCS short write command
+DCS short write command is used to write a single data byte command to display module. If there is a valid
+parameter byte, data type bit 4 shall be set to 1. If there is no valid parameter byte, data type bit 4 shall be set to 0
+and the parameter byte shall be 00h.
+DCS read commands
+The commands are used to request data from s display module.
+DCS Long Write / write_LUT command
+The commands are used to send larger blocks of data to a display module.
+Maximum return packet size
+This command specifies the maximum size of the payload in a long packet transmission from a display module to
+host processor.
+
+Null Packet
+This is a mechanism for keeping the data lane(s) in high speed mode while sending dummy data.
+Blanking Packet
+A Blanking packet is used to convey blanking timing information in a Long packet. The packet represents a period
+between active scan lines of a Video Mode display, where traditional display timing is provided from the host
+processor to the display module. The blanking period may have Sync Event packets interspersed between blanking
+segments. Blanking packets may contain arbitrary data as payload.
+Generic Long Write
+This is used to transmit arbitrary blocks of data from a host processor to a peripheral.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page39
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+Packed Pixel Stream, 16-bit Format, Data Type: 00 1110
+The pixel format is five bits red, six bits green and five bits blue. The green component is split across two bytes.
+Within a color component, the LSB is sent first, the MSB last.
+1B
+2B
+1B
+1B
+1B
+1B
+1B
+2B
+
+DT
+
+6b
+
+5b
+
+5b
+
+ECC
+
+Virtual Channel
+
+5b
+WC
+
+6b
+
+5b
+
+...
+
+checksum
+
+pixel 1
+
+pixel n
+
+time
+
+B: byte, b: bit
+
+Packet pixel stream, 18-bit format, Data Type: 01 1110
+The pixel format is six bits red, six bits green and six bits blue. Within a color component, the LSB is sent first, the
+MSB last.
+0
+
+Virtual Channel
+
+DT
+
+2B
+
+1B
+
+0
+
+3
+
+6b
+
+6b
+
+1B
+
+1B
+
+6b
+WC
+
+67
+
+6b
+
+6b
+
+4
+
+7
+
+01
+
+6b
+
+1B
+
+1B
+
+6b
+
+6b
+
+1B
+6b
+
+6b
+
+1B
+
+1B
+
+6b
+
+6b
+
+1B
+6b
+
+1B
+6b
+
+2B
+
+6b
+
+ECC
+
+1B
+
+5
+
+...
+pixel 1
+
+pixel 2
+
+pixel 3
+
+pixel 4
+
+checksum
+Pixel
+n-3
+
+Pixel
+n-3
+
+Pixel
+n-3
+
+Pixel
+n-3
+
+time
+
+DT
+
+Virtual Channel
+
+1B
+
+2B
+
+1B
+
+WC
+
+ECC
+
+Packet pixel stream, 24-bit format, Data Type: 11 1110
+The pixel format is eight bits red, eight bits green and eight bits blue.
+1B
+
+1B
+
+1B
+
+1B
+
+1B
+
+1B
+
+...
+
+2B
+
+checksum
+
+time
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page40
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+5.9
+
+Peripheral-to-Processor LP Transmission
+
+All Command Mode systems require bidirectional capability for returning READ data, acknowledge, or error
+information to the host processor. Multi-Lane systems shall use Lane 0 for all peripheral-to-processor
+transmissions. Reverse-direction signaling shall only use low power mode transmission.
+Packet structure for peripheral-to-processor transaction is the same as for the processor-to-peripheral
+direction. For the processor-to-peripheral direction, two basic packet formats are the same as the
+peripheral-to-processor direction: Short and Long packet structure. BTA shall take place after every
+peripheral-to-processor transaction. This returns bus control to the host processor following the completion of
+the LP transmission from the peripheral.
+There are four basic types of peripheral-to-processor transactions.
+Tearing Effect: It is a Trigger message sent to convey display timing information to the host processor.
+Acknowledge: It is a Trigger Message sent when the current transmission, as well as all preceding
+transmissions since the last peripheral to host communication.
+Acknowledge and Error Report: It is a Short packet sent if any errors were detected in preceding
+transmissions from the host processor.
+Response to Read Request: It may be a Short or Long packet that returns data requested by the preceding
+READ command from the processor.
+Interpretation of processor-to-peripheral transactions with BTA asserted, and the expected responses, are as
+follows:
+Following a non-Read command: If no errors were detected, the peripheral shall respond with Acknowledge.
+Following a Read request: The peripheral shall send the requested READ data if no errors were detected and
+stored since the last peripheral to host communication.
+Following a Read request: If only a single-bit ECC error was detected and corrected, the peripheral shall send
+the requested READ data in a Long or Short packet and a 4-byte Acknowledge and Error Report packet in the
+same LP transmission.
+Following a non-Read command: If only a single-bit ECC error was detected and corrected, the peripheral
+shall respond to BTA by sending a 4-byte Acknowledge and Error Report packet.
+Following a Read request: If multi-bit ECC errors were detected and not corrected, the peripheral shall send a
+4-byte Acknowledge and Error Report packet without sending Read data.
+Following a non-Read command: If multi-bit ECC errors were detected and not corrected, the peripheral shall
+not execute the command, and shall send a 4-byte Acknowledge and Error Report packet.
+Following any command: If SoT Error, SoT Sync Error, the VC of DSI or the ID of DSI Invalid or DSI protocol
+violation was detected, or the DSI command was not recognized, the peripheral shall send a 4-byte
+Acknowledge and Error Report response.
+Following any command: If EoT Sync Error or LP Transmit Sync Error is detected, or a checksum error is
+detected in the payload, the peripheral shall send a 4-byte Acknowledge and Error Report packet.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page41
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+5.10 Error Report Format
+The following table shows the bit assignment for all error report.
+Bit
+
+Description
+
+0
+
+SoT Error
+
+1
+
+SoT Sync Error
+
+2
+
+EoT Sync Error
+
+3
+
+Escape Mode Entry Command Error
+
+4
+
+Low-Power Transmit Sync Error
+
+5
+
+HS Receive Timeout Error
+
+6
+
+False Control Error
+
+7
+
+Reserved
+
+8
+
+ECC Error, single-bit (detected and corrected)
+
+9
+
+ECC Error, multi-bit (detected, not corrected)
+
+10
+
+Checksum Error (Long packet only)
+
+11
+
+DSI Data Type Not Recognized
+
+12
+
+DSI VC ID Invalid
+
+13
+
+reserved
+
+14
+
+reserved
+
+15
+
+reserved
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page42
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+5.11 Peripheral-to-Processor Transaction – Detail Format Description
+The following list is the complete set of peripheral-to-processor data types.
+Data
+Data
+type,
+type
+Description
+hex
+binary
+
+Packet
+size
+
+02h
+
+00 0010
+
+Acknowledge and error report
+
+short
+
+08h
+
+00 1000
+
+reserved
+
+short
+
+11h
+
+01 0001
+
+GEN short read response, 1byte returned
+
+short
+
+12h
+
+01 0010
+
+GEN short read response, 2bytes returned
+
+short
+
+1Ah
+
+01 1010
+
+Generic long read response
+
+long
+
+1Ch
+
+01 1100
+
+DCS long read response
+
+long
+
+21h
+
+10 0001
+
+DCS short read response, 1byte returned
+
+short
+
+22h
+
+10 0010
+
+DCS short read response, 2bytes returned
+
+short
+
+Acknowledge and error report: It is sent with BTA asserted when a reportable error is detected in the
+preceding, or earlier, transmission from the host processor.
+Generic Short Read Response: This is the short-packet response to Generic READ Request. Packet
+composition is the Data Identifier (DI) byte, two bytes of payload data and an ECC byte. If the command itself
+is possibly corrupt, due to an uncorrectable ECC error, SoT or SoT Sync error, the requested READ data
+packet shall not be sent and only the Acknowledge and Error Report packet shall be sent.
+Generic long read response: This is the long-packet response to Generic READ Request. Packet composition
+is DI followed by a two-byte Word Count, an ECC byte, N bytes of payload, and a two-byte Checksum. If the
+command itself is possibly corrupt, due to an uncorrectable ECC error, SoT or SoT Sync error, the requested
+READ data packet shall not be sent and only the Acknowledge and Error Report packet shall be sent.
+DCS long read response: This is a Long packet response to DCS Read Request. Packet composition is DI
+followed by a two-byte Word Count, an ECC byte, N bytes of payload, and a two-byte Checksum. If the DCS
+command itself is possibly corrupt, due to uncorrectable ECC error, SoT or SoT Sync error, the requested
+READ data packet shall not be sent and only the Acknowledge and Error Report packet shall be sent.
+DCS short read response: This is the short-packet response to DCS Read Request. Packet composition is DI,
+two bytes of payload data and an ECC byte. If the command itself is possibly corrupt, due to an uncorrectable
+ECC error, SoT or SoT Sync error, the requested READ data packet shall not be sent and only the
+Acknowledge and Error Report packet shall be sent.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page43
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+5.12 DSI Video Mode Interface Timing
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page44
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+5.13 Error Correction Code (ECC)
+ECC shall always be generated and appended in the Packet Header from the host processor. Peripherals with
+Bidirectional Links shall also generate and send ECC.
+The number of parity or error check bits required is given by the Hamming rule, which uses parity to correct a
+single-bit error or detect a two-bit error, but are not capable of doing both simultaneously. DSI uses
+Hamming-modified codes where an extra parity bit is used to support both single error correction as well as
+two-bit error detection.
+Since Packet Headers are fixed at four bytes (twenty-four data bits and eight ECC bits), P6 and P7 of the ECC
+byte are unused and shall be set to zero by the transmitter. The receiver shall ignore P6 and P7 and set both
+bits to zero before processing ECC.
+The parity bits of ECC are defined as below:
+P7 = 0
+P6 = 0
+P5 = D10^D11^D12^D13^D14^D15^D16^D17^D18^D19^D21^D22^D23
+P4 = D4^D5^D6^D7^D8^D9^D16^D17^D18^D19^D20^D22^D23
+P3 = D1^D2^D3^D7^D8^D9^D13^D14^D15^D19^D20^D21^D23
+P2 = D0^D2^D3^D5^D6^D9^D11^D12^D15^D18^D20^D21^D22
+P1 = D0^D1^D3^D4^D6^D8^D10^D12^D14^D17^D20^D21^D22^D23
+P0 = D0^D1^D2^D4^D5^D7^D10^D11^D13^D16^D20^D21^D22^D23
+The table below shows a compact way to specify the encoding of parity and decoding of syndromes.
+ECC Parity Generation Rules:
+Data Bit
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+
+P7
+
+P6
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+
+P5
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+
+P4
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+0
+1
+1
+1
+
+P3
+0
+0
+0
+0
+1
+1
+1
+1
+1
+1
+0
+0
+0
+0
+0
+0
+1
+1
+1
+1
+1
+0
+1
+1
+
+P2
+0
+1
+1
+1
+0
+0
+0
+1
+1
+1
+0
+0
+0
+1
+1
+1
+0
+0
+0
+1
+1
+1
+0
+1
+
+P1
+1
+0
+1
+1
+0
+1
+1
+0
+0
+1
+0
+1
+1
+0
+0
+1
+0
+0
+1
+0
+1
+1
+1
+0
+
+P0
+1
+1
+0
+1
+1
+0
+1
+0
+1
+0
+1
+0
+1
+0
+1
+0
+0
+1
+0
+0
+1
+1
+1
+1
+
+1
+1
+1
+0
+1
+1
+0
+1
+0
+0
+1
+1
+0
+1
+0
+0
+1
+0
+0
+0
+1
+1
+1
+1
+
+Hex
+0x07
+0x0B
+0x0D
+0x0E
+0x13
+0x15
+0x16
+0x19
+0x1A
+0x1C
+0x23
+0x25
+0x26
+0x29
+0x2A
+0x2C
+0x31
+0x32
+0x34
+0x38
+0x1F
+0x2F
+0x37
+0x3B
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page45
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+5.14 Notice
+1. We recommend users to stay in STOP state for 500ns when switching from LPDT to HSDT.
+2. We recommend users to adopt EoTp to enhance overall robustness of the system during HSDT.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page46
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+5.15 Tearing Effect Output
+The tearing effect output line supplies to the HOST a panel synchronization signal. This signal can be enabled
+or disabled by the set_tear_off (34h) and set_tear_on (35h) commands. The mode of the tearing effect signal
+is defined by the parameter of the set_tear_on (35h) and set_tear_scanline(44h) commands. The signal can
+be used by the HOST to synchronize internal VSYNC when displaying video images.
+5.15.1 Tearing Effect Line Mode
+Mode 1, the tearing effect output signal consist of V-sync information only:
+
+tvdl
+
+tvdh
+
+tvdh = The display is not updated from the frame memory.
+tvdl = The display is updated from the frame memory.
+
+Mode 2, the tearing effect output signal consist of V-sync and H-sync information:
+tvdh tvdl
+
+t
+hdh = The display is not updated from the frame memory.
+thdl = The display is updated from the frame memory.
+
+Mode 3, this mode turn on the tearing effect output signal when vertical scanning reaches line N.
+N=1
+
+N=2
+
+N=3
+
+N = The N-th scanning line which set by register N[15:0] of command STESL(44h).
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page47
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+Note. During Sleep In mode, the tearing effect output signal is active low.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page48
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+5.15.2 Tearing Effect Line Timing
+The tearing effect signal is described as below:
+
+AC characteristics of Tearing Effect Signal (Frame Rate = 60Hz)
+Symbol
+
+Parameter
+
+Min.
+
+Max.
+
+Unit
+
+Description
+
+tvdl
+
+Vertical timing low duration
+
+TBD
+
+TBD
+
+ms
+
+It depends on
+the vertical
+timing setting.
+
+tvdh
+
+Vertical timing high duration
+
+TBD
+
+TBD
+
+us
+
+thdl
+
+Horizontal timing low duration
+
+TBD
+
+TBD
+
+us
+
+It depends on
+the vertical
+timing setting.
+It depends on
+the horizontal
+timing setting.
+
+thdh
+
+Horizontal timing high duration 1.8
+
+TBD
+
+us
+
+Notes:
+The signal’s rise and fall times (tf, tr) are stipulated to be equal to or less than 15ns.
+
+The Tearing Effect Output Line is fed back to the HOST and should be used as shown below to avoid tearing effect:
+The Tearing Effect output line supplies to the HOST a panel synchronization signal. This signal can be enabled or
+disabled by the set_tear_off(34h), set_tear_on(35h) commands. The mode of the Tearing Effect Signal is defined by
+the Parameter of the Tearing Effect Line On command. The signal can be used by the HOST to synchronize internal
+VSYNC when displaying video images.
+TEON (35h) TELOM (35h, 1st bit) TE signal Output
+0
+*
+GND
+1
+0
+TE (Mode 1)
+1
+1
+TE (Mode 2)
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page49
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+6. Command
+6.1 Command List
+Command
+W/R Function
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+Page Add. Para.
+
+Default
+(hex)
+
+MTP
+
+CMD1 00h
+
+-
+
+W
+
+NOP
+
+No Argument
+
+-
+
+-
+
+CMD1 01h
+
+-
+
+W
+
+Software reset
+
+No Argument
+
+-
+
+-
+
+CMD1 04h
+
+1st
+
+ID1[7:0]
+
+00h
+
+-
+
+CMD1 04h
+
+2nd
+
+ID2[7:0]
+
+80h
+
+-
+
+CMD1 04h
+
+3rd
+
+ID3[7:0]
+
+00h
+
+-
+
+R
+
+Read display identification
+information
+
+CMD1 05h
+
+-
+
+R
+
+Read number of the errors on
+DSI
+
+CMD1 0Ah
+
+1st
+
+R
+
+Read display power mode
+
+CMD1 0Bh
+
+1st
+
+R
+
+CMD1 0Ch
+
+1st
+
+CMD1 0Dh
+
+00h
+
+-
+
+BSTON
+
+IDMON
+
+PTLON
+
+SLPOUT
+
+NORON
+
+DISPON
+
+-
+
+-
+
+08h
+
+-
+
+Read display MADCTR
+
+-
+
+MX
+
+-
+
+-
+
+RGB
+
+-
+
+-
+
+-
+
+00h
+
+-
+
+R
+
+Read display pixel format
+
+SPI_IFPF_
+SEL
+
+VIPF2
+
+VIPF1
+
+VIPF0
+
+-
+
+IFPF2
+
+IFPF1
+
+IFPF0
+
+77h
+
+-
+
+1st
+
+R
+
+Read display image mode
+
+0
+
+0
+
+INVON
+
+ALLPON
+
+ALLPOFF
+
+0
+
+0
+
+0
+
+00h
+
+-
+
+CMD1 0Eh
+
+1st
+
+R
+
+Read display signal mode
+
+TEON
+
+M
+
+0
+
+0
+
+0
+
+0
+
+0
+
+ERR
+
+00h
+
+-
+
+CMD1 0Fh
+
+1st
+
+R
+
+Read display self-diagnostic
+result
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+checksum_
+comp
+
+00h
+
+-
+
+CMD1 10h
+
+-
+
+W
+
+Sleep-in
+
+No Argument
+
+-
+
+-
+
+CMD1 11h
+
+-
+
+W
+
+Sleep-out
+
+No Argument
+
+-
+
+-
+
+CMD1 12h
+
+-
+
+W
+
+Partial display mode on
+
+No Argument
+
+-
+
+-
+
+CMD1 13h
+
+-
+
+W
+
+Normal display mode on
+
+No Argument
+
+-
+
+-
+
+CMD1 20h
+
+-
+
+W
+
+Display inversion off
+
+No Argument
+
+-
+
+-
+
+CMD1 21h
+
+-
+
+W
+
+Display inversion on
+
+No Argument
+
+-
+
+-
+
+CMD1 22h
+
+-
+
+W
+
+All pixel off
+
+No Argument
+
+-
+
+-
+
+CMD1 23h
+
+-
+
+W
+
+All pixel on
+
+No Argument
+
+-
+
+-
+
+CMD1 28h
+
+-
+
+W
+
+Display off
+
+No Argument
+
+-
+
+-
+
+CMD1 29h
+
+-
+
+W
+
+Display on
+
+No Argument
+
+-
+
+-
+
+CMD1
+
+1st
+
+W
+
+SC[9:8]
+
+00h
+
+-
+
+CMD1
+
+2nd
+
+W
+
+SC[7:0]
+
+00h
+
+-
+
+CMD1
+
+3rd
+
+W
+
+EC[9:8]
+
+01h
+
+-
+
+CMD1
+
+4th
+
+W
+
+EC[7:0]
+
+8Fh
+
+-
+
+CMD1
+
+1st
+
+W
+
+SP[9:8]
+
+00h
+
+-
+
+CMD1
+
+2nd
+
+W
+
+SP[7:0]
+
+00h
+
+-
+
+CMD1
+
+3rd
+
+W
+
+EP[9:8]
+
+01h
+
+-
+
+CMD1
+
+4th
+
+W
+
+EP[7:0]
+
+8Fh
+
+-
+
+CMD1 2Ch
+
+-
+
+W
+
+No Argument
+
+-
+
+-
+
+CMD1
+
+1st
+
+W
+
+SR[9:8]
+
+00h
+
+-
+
+CMD1
+
+2nd
+
+W
+
+SR[7:0]
+
+00h
+
+-
+
+CMD1
+
+3rd
+
+W
+
+ER[9:8]
+
+01h
+
+-
+
+CMD1
+
+4th
+
+W
+
+ER[7:0]
+
+8Fh
+
+-
+
+CMD1
+
+1st
+
+W
+
+PSC[9:8]
+
+00h
+
+-
+
+CMD1
+
+2nd
+
+W
+
+PSC[7:0]
+
+00h
+
+-
+
+CMD1
+
+3rd
+
+W
+
+PEC[9:8]
+
+01h
+
+-
+
+CMD1
+
+4th
+
+W
+
+PEC[7:0]
+
+8Fh
+
+-
+
+CMD1 34h
+
+-
+
+W
+
+Tearing effect line off
+
+No Argument
+
+-
+
+-
+
+CMD1 35h
+
+-
+
+W
+
+Tearing effect line on
+
+00h
+
+-
+
+CMD1 36h
+
+-
+
+W
+
+Scan direction control
+
+MADCTR[7:0]
+
+00h
+
+-
+
+CMD1 38h
+
+-
+
+W
+
+Idle mode off
+
+No Argument
+
+-
+
+-
+
+CMD1 39h
+
+-
+
+W
+
+Enter idle mode
+
+No Argument
+
+-
+
+-
+
+CMD1 3Ah
+
+-
+
+W
+
+Interface Pixel Format
+
+77h
+
+-
+
+CMD1 3Ch
+
+-
+
+W
+
+Memory Continuous Write
+
+No Argument
+
+-
+
+-
+
+CMD1
+
+1st
+
+W
+
+STS[15:8]
+
+00h
+
+-
+
+CMD1
+
+2nd
+
+W
+
+STS[7:0]
+
+00h
+
+-
+
+CMD1 45h
+
+1st
+
+R
+
+GTS[15:8]
+
+00h
+
+-
+
+2Ah
+
+P[7:0]
+
+Set column start address
+
+2Bh
+
+Set row start address
+
+30h
+
+Memory write
+
+Partial area
+
+31h
+
+Vertical partial area
+
+44h
+
+0
+
+SPI_IFPF_
+SEL
+
+0
+
+VIPF2
+
+0
+
+VIPF1
+
+0
+
+0
+
+VIPF0
+
+0
+
+0
+
+IFPF[2]
+
+TE_M
+
+IFPF[1]
+
+TELOM
+
+IFPF[0]
+
+Set tear scan-line
+Get scan line
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page50
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+CMD1
+
+2nd
+
+R
+
+CMD1 4Fh
+
+-
+
+W
+
+Deep standby
+
+GTS[7:0]
+
+CMD1 51h
+
+-
+
+W
+
+Write display brightness
+
+CMD1 52h
+
+-
+
+R
+
+Read display brightness
+
+CMD1 53h
+
+-
+
+W
+
+Write CTRL display
+
+0
+
+0
+
+BCTRL
+
+0
+
+DD
+
+0
+
+0
+
+CMD1 54h
+
+-
+
+R
+
+Read CTRL display
+
+0
+
+0
+
+BCTRL
+
+0
+
+DD
+
+0
+
+0
+
+CMD1 55h
+
+-
+
+W
+
+Write RAD_ACL function
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+RAD_ACL[1:0]
+
+00h
+
+CMD1 56h
+
+-
+
+R
+
+Read RAD_ACL function
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+RAD_ACL[1:0]
+
+00h
+
+CMD1 63h
+
+-
+
+W
+
+Write HBM display brightness
+
+DBV_HBM[7:0]
+
+CMD1 64h
+
+-
+
+R
+
+Read HBM display brightness
+
+DBV_HBM[7:0]
+
+CMD1 66h
+
+W
+
+HBM enable
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+HBM_en
+
+-
+
+00h
+
+CMD1 67h
+
+W
+
+Frame Level Control
+
+0
+
+0
+
+LEVEL_A[1:0]
+
+0
+
+0
+
+0
+
+0
+
+00h
+
+0
+
+0
+
+0
+
+00h
+
+-
+
+00h
+
+-
+
+DBV[7:0]
+
+00h
+
+-
+
+DBV[7:0]
+
+00h
+
+-
+
+0
+
+28h
+
+-
+
+0
+
+28h
+
+-
+
+0
+
+0
+
+0
+
+0
+
+DSTB
+
+00h
+00h
+
+CMD1
+
+1st
+
+W
+
+COLSET
+
+R_0000[7:0]
+
+00h
+
+CMD1 70h
+
+2nd
+
+W
+
+COLSET
+
+G_0000[7:0]
+
+00h
+
+CMD1
+
+3rd
+
+W
+
+COLSET
+
+B_0000[7:0]
+
+00h
+
+CMD1
+
+1st
+
+W
+
+COLSET
+
+R_0001[7:0]
+
+00h
+
+CMD1 71h
+
+2nd
+
+W
+
+COLSET
+
+G_0001[7:0]
+
+00h
+
+CMD1
+
+3rd
+
+W
+
+COLSET
+
+B_0001[7:0]
+
+FFh
+
+CMD1
+
+1st
+
+W
+
+COLSET
+
+R_0010[7:0]
+
+00h
+
+CMD1 72h
+
+2nd
+
+W
+
+COLSET
+
+G_0010[7:0]
+
+FFh
+
+CMD1
+
+3rd
+
+W
+
+COLSET
+
+B_0010[7:0]
+
+00h
+
+CMD1
+
+1st
+
+W
+
+COLSET
+
+R_0011[7:0]
+
+00h
+
+CMD1 73h
+
+2nd
+
+W
+
+COLSET
+
+G_0011[7:0]
+
+FFh
+
+CMD1
+
+3rd
+
+W
+
+COLSET
+
+B_0011[7:0]
+
+FFh
+
+CMD1
+
+1st
+
+W
+
+COLSET
+
+R_0100[7:0]
+
+FFh
+
+CMD1 74h
+
+2nd
+
+W
+
+COLSET
+
+G_0100[7:0]
+
+00h
+
+CMD1
+
+3rd
+
+W
+
+COLSET
+
+B_0100[7:0]
+
+00h
+
+CMD1
+
+1st
+
+W
+
+COLSET
+
+R_0101[7:0]
+
+FFh
+
+CMD1 75h
+
+2nd
+
+W
+
+COLSET
+
+G_0101[7:0]
+
+00h
+
+CMD1
+
+3rd
+
+W
+
+COLSET
+
+B_0101[7:0]
+
+FFh
+
+CMD1
+
+1st
+
+W
+
+COLSET
+
+R_0110[7:0]
+
+FFh
+
+CMD1 76h
+
+2nd
+
+W
+
+COLSET
+
+G_0110[7:0]
+
+FFh
+
+CMD1
+
+3rd
+
+W
+
+COLSET
+
+B_0110[7:0]
+
+00h
+
+CMD1
+
+1st
+
+W
+
+COLSET
+
+R_0111[7:0]
+
+FFh
+
+CMD1 77h
+
+2nd
+
+W
+
+COLSET
+
+G_0111[7:0]
+
+FFh
+
+CMD1
+
+3rd
+
+W
+
+COLSET
+
+B_0111[7:0]
+
+FFh
+
+CMD1
+
+1st
+
+W
+
+COLSET
+
+R_1000[7:0]
+
+00h
+
+CMD1 78h
+
+2nd
+
+W
+
+COLSET
+
+G_1000[7:0]
+
+00h
+
+CMD1
+
+3rd
+
+W
+
+COLSET
+
+B_1000[7:0]
+
+00h
+
+CMD1
+
+1st
+
+W
+
+COLSET
+
+R_1001[7:0]
+
+00h
+
+CMD1 79h
+
+2nd
+
+W
+
+COLSET
+
+G_1001[7:0]
+
+00h
+
+CMD1
+
+3rd
+
+W
+
+COLSET
+
+B_1001[7:0]
+
+FFh
+
+CMD1
+
+1st
+
+W
+
+COLSET
+
+R_1010[7:0]
+
+00h
+
+CMD1 7Ah 2nd
+
+W
+
+COLSET
+
+G_1010[7:0]
+
+FFh
+
+CMD1
+
+3rd
+
+W
+
+COLSET
+
+B_1010[7:0]
+
+00h
+
+CMD1
+
+1st
+
+W
+
+COLSET
+
+R_1011[7:0]
+
+00h
+
+CMD1 7Bh 2nd
+
+W
+
+COLSET
+
+G_1011[7:0]
+
+FFh
+
+CMD1
+
+3rd
+
+W
+
+COLSET
+
+B_1011[7:0]
+
+FFh
+
+CMD1
+
+1st
+
+W
+
+COLSET
+
+R_1100[7:0]
+
+FFh
+
+CMD1 7Ch 2nd
+
+W
+
+COLSET
+
+G_1100[7:0]
+
+00h
+
+CMD1
+
+3rd
+
+W
+
+COLSET
+
+B_1100[7:0]
+
+00h
+
+CMD1
+
+1st
+
+W
+
+COLSET
+
+R_1101[7:0]
+
+FFh
+
+CMD1 7Dh 2nd
+
+W
+
+COLSET
+
+G_1101[7:0]
+
+00h
+
+CMD1
+
+3rd
+
+W
+
+COLSET
+
+B_1101[7:0]
+
+FFh
+
+CMD1
+
+1st
+
+W
+
+COLSET
+
+R_1110[7:0]
+
+FFh
+
+CMD1 7Eh
+
+2nd
+
+W
+
+COLSET
+
+G_1110[7:0]
+
+FFh
+
+CMD1
+
+3rd
+
+W
+
+COLSET
+
+B_1110[7:0]
+
+00h
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page51
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+CMD1
+
+1st
+
+W
+
+COLSET
+
+R_1111[7:0]
+
+FFh
+
+CMD1 7Fh
+
+2nd
+
+W
+
+COLSET
+
+G_1111[7:0]
+
+FFh
+
+CMD1
+
+3rd
+
+W
+
+COLSET
+
+B_1111[7:0]
+
+FFh
+
+CMD1 80h
+
+1st
+
+W
+
+COLOPT
+
+CMD1
+
+1st
+
+R
+
+SID[7:0]
+
+D0h
+
+-
+
+CMD1
+
+2nd
+
+R
+
+SID[15:8]
+
+01h
+
+-
+
+CMD1 A1h
+
+3rd
+
+R
+
+MID[7:0]
+
+80h
+
+-
+
+CMD1
+
+4th
+
+R
+
+MID[15:8]
+
+90h
+
+-
+
+CMD1
+
+5th
+
+R
+
+FFh
+
+-
+
+CMD1
+
+1st
+
+R
+
+SID[7:0]
+
+D0h
+
+-
+
+CMD1
+
+2nd
+
+R
+
+SID[15:8]
+
+01h
+
+-
+
+CMD1 A8h
+
+3rd
+
+R
+
+MID[7:0]
+
+80h
+
+-
+
+CMD1
+
+4th
+
+R
+
+MID[15:8]
+
+90h
+
+-
+
+CMD1
+
+5th
+
+R
+
+FFh
+
+-
+
+CMD1 AAh
+
+-
+
+R
+
+Read first checksum
+
+FCS[7:0]
+
+00h
+
+-
+
+CMD1 AFh
+
+-
+
+R
+
+Read continuous checksum
+
+CCS[7:0]
+
+00h
+
+-
+
+CMD1 C2h
+CMD1 C4h
+CMD1 DAh
+
+-
+
+R
+
+CMD1 DBh
+
+-
+
+R
+
+CMD1 DCh
+
+-
+
+R
+
+CMD1 FEh
+
+-
+
+W
+
+CMD1 FFh
+
+-
+
+R
+
+-
+
+RGB111_o
+pt
+
+-
+
+Read DDB
+
+1
+
+1
+
+1
+
+1
+
+Read DDB Continuous
+
+1
+
+Set_DSIP Mode
+
+0
+
+Set_DSPI Mode
+
+SPI_WRA
+M
+
+1
+
+0
+0
+
+1
+
+0
+
+RGB4bit_ gray256_col gray256_c gray256_
+en
+or[2]
+olor[1]
+color[0]
+
+-
+
+1
+
+1
+
+1
+
+0
+
+DSPI_CFG DSPI_CFG
+1
+0
+
+1
+
+1
+
+1
+
+1
+
+1
+
+1
+
+07h
+
+0
+
+0
+
+DM1
+
+DM0
+
+00h
+
+-
+
+0
+
+0
+
+0
+
+DSPI_EN
+
+00h
+
+-
+
+ID1[7:0]
+
+00h
+
+-
+
+ID2[7:0]
+
+80h
+
+-
+
+ID3[7:0]
+
+00h
+
+-
+
+Write CMD mode page
+
+CMD_Page[7:0]
+
+00h
+
+-
+
+Read CMD page Status
+
+CMD_Status[7:0]
+
+00h
+
+-
+
+Read display identification
+information
+(the same as 04h)
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page52
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+6.2 Command Description
+NOP (0000h)
+R/W
+
+Address
+
+W
+
+0000h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+No Argument
+
+Description
+
+This command is an empty command; it does not have any effect on the display module.
+X = Don’t care.
+
+Restriction
+
+None
+
+SWRESET(0100h) : Software Reset
+R/W
+
+Address
+
+W
+
+0100h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+No Argument
+
+When the Software Reset command is written, it causes software reset. It resets the
+Description commands and parameters to their S/W Reset default values. (See default tables in each
+command description.)
+Software Reset Command cannot be sent during Sleep Out sequence.
+Restriction Any new command cannot be sent for 10-frame period until the RM690B0 enters Sleep-In
+mode. Do not send any command.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page53
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+RDDID(0400h~0402h) : Read Display ID
+R/W
+
+R
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+0400h
+
+ID17
+
+ID16
+
+ID15
+
+ID14
+
+ID13
+
+ID12
+
+ID11
+
+ID10
+
+00
+
+0401h
+
+ID27
+
+ID26
+
+ID25
+
+ID24
+
+ID23
+
+ID22
+
+ID21
+
+ID20
+
+80
+
+0402h
+
+ID37
+
+ID36
+
+ID35
+
+ID34
+
+ID33
+
+ID32
+
+ID31
+
+ID30
+
+00
+
+The 1st parameter (ID1): the Module’s manufacture ID
+The 2nd parameter (ID2): the Module/driver version ID
+Description The 3rd parameter (ID3): the Module/driver ID
+Note: Commands RDID1/2/3 (DAh/DBh/DCh) read data correspond to the parameter 1, 2, 3
+of command 04h, respectively.
+Restriction -
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page54
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+RDNUMED(0500h) : Read Number of Errors on DSI
+R/W
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+R
+
+0500h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+00
+
+The first parameter is telling a number of the parity errors on DSI. The more detailed description of
+the bits is below.
+D[6..0] bits are telling a number of the parity errors.
+Description D[7] is set to “1” if there is overflow with D[6..0] bits.
+D[7..0] bits are set to “0”s (as well as RDDSM(0Eh)’s D0 are set “0” at the same time) after there is
+sent the first parameter information (= The read function is completed).
+This command is used for MIPI DSI only. It is no function for others interface operation.
+Restriction -
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page55
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+RDDPM (0A00h) : Read Display Power Mode
+R/W
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+R
+
+0A00h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+08
+
+This command indicates the current status of the display as described in the table below:
+
+Description
+
+Bit
+
+Symbol
+
+Description
+
+D7
+
+BSTON
+
+Booster Voltage Status
+
+D6
+
+IDMON
+
+Idle Mode On/Off
+
+D5
+
+PTLON
+
+Partial Mode On/Off
+
+D4
+
+SLPON
+
+Sleep In/Out
+
+D3
+
+NORON
+
+Display Normal Mode On/Off
+
+D2
+
+DISON
+
+Display On/Off
+
+D1
+D0
+
+Reserved
+Reserved
+
+Comment
+‘1’=Booster on,
+‘0’=Booster off
+‘1’ = Idle Mode On,
+‘0’ = Idle Mode Off
+‘1’ = Partial Mode On,
+‘0’ = Partial Mode Off
+‘1’ = Sleep Out,
+‘0’ = Sleep In
+‘1’ = Normal Display,
+‘0’ = Partial Display
+‘1’ = Display On,
+‘0’ = Display Off
+0
+0
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page56
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+RDDMADCTR (0B00h): Read Display MADCTR
+R/W
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+R
+
+0B00h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+00
+
+This command indicates the current status of the display as described in the table below:
+
+Description
+
+Bit
+
+Symbol
+
+RGB
+
+Description
+Column Address
+Increment
+RGB/BGR Order
+
+Comment
+0: Increasing in horizontal
+1: Decreasing in horizontal
+‘1’ =BGR, “0”=RGB
+
+D6
+
+MX
+
+D3
+othe
+rs
+
+Reserved
+
+-
+
+-
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page57
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+RDDCOLMOD (0C00h): Read Display Pixel Format
+R/W
+
+Address
+
+R
+
+0C00h
+
+D7
+
+D6
+
+SPI_IFPF
+VIPF[2]
+_SEL
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+VIPF[1]
+
+VIPF[0]
+
+0
+
+IFPF[2]
+
+IFPF[1]
+
+IFPF[0]
+
+77
+
+To return the status of 0x3A00.
+This command sets the pixel format for the RGB image data used by the interface.
+If SPI_IFPF_SEL(3Ah-D7) = 1:
+The SPI/QSPI interface will use VIPF[2:0] as pixel format setting specifically, and the
+other interface will use IFPF[2:0].
+If SPI_IFPF_SEL(3Ah-D7) = 0:
+All interface will use IFPF[2:0] as pixel format setting
+Description
+
+Control Interface Color Format
+SPI 8 bit/pixel (256 colors); SPI 256 Gray
+(Support IF: SPI3/SPI4)
+
+IFPF[2]
+
+IFPF[1]
+
+IFPF[0]
+
+0
+
+0
+
+1
+
+SPI 8 bit/pixel (256 colors); SPI 3-3-2
+(Support IF: SPI3/SPI4)
+
+0
+
+1
+
+0
+
+SPI 3 bit/pixel (8 colors); SPI 1-1-1
+(Support IF: SPI3/SPI4)
+
+0
+
+1
+
+1
+
+16bit/pixel (65,536 colors)
+
+1
+
+0
+
+1
+
+18bit/pixel (262,144 colors)
+
+1
+
+1
+
+0
+
+24bit/pixel (16.7M colors)
+
+1
+
+1
+
+1
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page58
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+RDDIM (0D00h): Read Display Image Mode
+R/W
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+R
+
+0D00h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+00
+
+The display module returns the display image mode status.
+Bit
+
+Description
+
+D7
+D6
+
+Symbol
+Reserved
+Reserved
+
+Description
+
+D5
+
+INVON
+
+Inversion On/Off
+
+D4
+
+ALLON
+
+All Pixel On
+
+D3
+
+ALLOFF
+
+All Pixel Off
+
+D2~
+D0
+
+Reserved
+
+Comment
+‘0’
+‘0’
+“1” = Inversion is On,
+“0” = Inversion is Off
+‘0’ = Normal display
+‘1’ = White display
+‘0’ = Normal display
+‘1’ = Black display
+‘000’
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page59
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+RDDSM (0E00h): Read Display Signal Mode
+R/W
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+R
+
+0E00h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+00
+
+The display module returns the Display Signal Mode.
+Bit
+Symbol
+Description
+Comment
+
+Description
+
+D7
+
+TEON
+
+D6
+
+TELOM
+
+D5
+D4
+D3
+D2
+D1
+
+Reserved
+Reserved
+Reserved
+Reserved
+Reserved
+
+D0
+
+Error on DSI
+
+Tearing Effect Line
+On/Off
+Tearing effect line
+mode
+
+Error on DSI
+
+“1” = On, “0” = Off
+“0” = mode1,
+“1” = mode2
+‘0’
+‘0’
+‘0’
+‘0’
+‘0’
+‘0’ = No Error
+‘1’ = Error
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page60
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+RDDSDR (0F00h): Read Display Self-Diagnostic Result
+R/W
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+R
+
+0F00h
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+checksu
+m_comp
+
+00
+
+The display module returns the self-diagnostic results following a Sleep Out command.
+Description
+
+Bit
+
+Symbol
+
+Description
+
+Comment
+
+D0
+
+Reserved
+
+checksum_comp
+
+‘0’
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page61
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+SLPIN (1000h): Sleep In
+R/W
+
+Address
+
+W
+
+1000h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+No Argument
+
+This command causes the display module to enter the minimum power consumption mode.
+In this mode the DC/DC converter is stopped, Internal display oscillator is stopped, and panel
+scanning is stopped. The control Interface such as registers is still working and keeps its
+values.
+Description
+
+This command has no effect when the display module is already in Sleep mode.
+Sleep In Mode can only be exit by the Sleep Out Command (11h).
+It must wait 5msec before sending next command for the supply voltages and clock circuits to
+Restriction
+stabilize.
+It must wait 120msec after sending Sleep Out command (when in Sleep In Mode) before
+Sleep In command can be sent.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page62
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+SLPOUT (1100h): Sleep Out
+R/W
+
+Address
+
+W
+
+1100h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+No Argument
+
+This command causes the display module to exit Sleep mode.
+Description
+
+This command shall not cause any visible effect on the display device when the display module
+is not in Sleep mode. The host processor must wait five milliseconds after sending this
+command before sending another command. This delay allows the supply voltages and clock
+circuits to stabilize.
+The host processor must wait 60 milliseconds after sending a Sleep Out command before
+Restriction
+sending a Sleep-In command. The display module loads the display module’s default values to
+the registers when exiting the Sleep mode. There shall not be any abnormal visual effect on the
+display device when loading the registers if the factory default and register values are the same
+or when the display module is not in Sleep mode. The display module runs the self-diagnostic
+functions after this command is received.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page63
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+PTLON (1200h): Partial Display Mode On
+R/W
+
+Address
+
+W
+
+1200h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+No Argument
+
+Description
+
+This command causes the display module to enter the Partial Display Mode. The Partial
+Display Mode window is described by the Partial Area (30h) command.
+To leave Partial Display Mode, the Normal Display Mode On (13h) command should be
+written.
+
+Restriction
+
+This command has no effect when Partial Display Mode is already active.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page64
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+NORON (1300h): Normal Display Mode On
+R/W
+
+Address
+
+W
+
+1300h
+
+Description
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+No Argument
+
+This command causes the display module to enter the Normal mode. Normal Mode is defined
+as Partial Display mode.
+
+Restriction This command has no effect when Normal Display mode is already active.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page65
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+INVOFF (2000H): Display Inversion Off
+R/W
+
+Address
+
+W
+
+2000h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+No Argument
+
+This command causes the display module to stop inverting the image data on the display
+device. No status bits are changed.
+
+Display Panel
+
+Input Image
+
+Description
+
+Restriction This command has no effect when the display module is not inverting the display image.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page66
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+INVON (2100H): Display Inversion On
+R/W
+
+Address
+
+W
+
+2100h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+No Argument
+
+This command causes the display module to invert the image data only on the display device.
+No status bits are changed.
+Input Image
+
+Display Panel
+
+Description
+
+Restriction This command has no effect when module is already in inversion on mode.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page67
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+ALLPOFF (2200H): All Pixel Off
+R/W
+
+Address
+
+W
+
+2200h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+No Argument
+
+This command turns the display panel black in Sleep Out mode and a status of the Display
+On/Off register can be on or off.
+This command does not change any other status.
+
+Input
+Image
+Memory
+
+Display
+Panel
+Display
+
+Description
+
+“All Pixels On”, “Normal Display Mode On” or “Partial Mode On” commands are used to leave
+this mode. The display panel is showing the content of the Input Image after “Normal Display
+On” and “Partial Mode On” commands.
+Restriction -
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page68
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+ALLPON (2300H): All Pixel On
+R/W
+
+Address
+
+W
+
+2300h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+No Argument
+
+This command turns the display panel white in Sleep Out mode and a status of the Display
+On/Off register can be on or off.
+This command does not change any other status.
+
+Input
+Image
+Memory
+
+Display
+Panel
+Display
+
+Description
+
+“All Pixels Off”, “Normal Display Mode On” or “Partial Mode On” commands are used to leave
+this mode. The display panel is showing the content of the Input Image after “Normal Display
+On” and “Partial Mode On” commands.
+Restriction -
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page69
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+DISPOFF (2800h): Display Off
+R/W
+
+Address
+
+W
+
+2800h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+No Argument
+
+This command causes the display module to stop displaying the image data on the display
+device. No status bits are changed.
+Display Panel
+Input Image
+
+Description
+
+Restriction This command has no effect when module is already in display off mode.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page70
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+DISPON (2900h): Display On
+R/W
+
+Address
+
+W
+
+2900h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+No Argument
+
+This command causes the display module to start displaying the image data on the display
+device. No status bits are changed.
+Input Image
+
+Display Panel
+
+Description
+
+Restriction This command has no effect when module is already in display on mode.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page71
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+CASET(2A00h~2A03h) : Set Column Start Address
+R/W
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+2A00h
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+SC9
+
+SC8
+
+00
+
+2A01h
+
+SC7
+
+SC6
+
+SC5
+
+SC4
+
+SC3
+
+SC2
+
+SC1
+
+SC0
+
+00
+
+2A02h
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+EC9
+
+EC8
+
+01
+
+2A03h
+
+EC7
+
+EC6
+
+EC5
+
+EC4
+
+EC3
+
+EC2
+
+EC1
+
+EC0
+
+8F
+
+W
+
+This command defines the column extent of the frame memory accessed by the host processor
+with the read_memory_continue and write_memory_continue commands.
+This command makes no change on the other driver status. The values of SC[9:0] and EC[9:0]
+are referred when RAMWR command comes. Each value represents one column line in the
+Frame Memory.
+
+SC[9:0]
+
+Description
+
+EC[9:0]
+
+SP[9:0]
+
+EP[9:0]
+
+(1) SC[9:0] always must be equal to or less than EC[9:0].
+Restriction
+(2) The SC[9:0] and EC[9:0]-SC[9:0]+1 must can be divisible by 2.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page72
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+RASET(2B00h~2B03h) : Set Row Start Address
+R/W
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+2B00h
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+SP9
+
+SP8
+
+00
+
+2B01h
+
+SP7
+
+SP6
+
+SP5
+
+SP4
+
+SP3
+
+SP2
+
+SP1
+
+SP0
+
+00
+
+2B02h
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+EP9
+
+EP8
+
+01
+
+2B03h
+
+EP7
+
+EP6
+
+EP5
+
+EP4
+
+EP3
+
+EP2
+
+EP1
+
+EP0
+
+8F
+
+W
+
+This command defines the page extent of the frame memory accessed by the host processor
+with the write_memory_continue and read_memory_continue command.
+This command makes no change on theother driver status. The values of SP[9:0] and EP[9:0]
+are referred when RAMWR command comes. Each value represents one Page line in the Frame
+Memory.
+
+SC[9:0]
+
+Description
+
+EC[9:0]
+
+SP[9:0]
+
+EP[9:0]
+
+(1) SP[9:0] always must be equal to or less than EP[9:0]
+Restriction
+
+(2) The SP[9:0] and EP[9:0]-SP[9:0]+1 must can be divisible by 2.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page73
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+RAMWR (2C00h): Memory Write
+R/W
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+2C00h
+
+0
+
+0
+
+1
+
+0
+
+1
+
+1
+
+0
+
+0
+
+2C
+
+1st Pixel
+
+D17
+
+D16
+
+D15
+
+D14
+
+D13
+
+D12
+
+D11
+
+D10
+
+:
+
+:
+
+:
+
+:
+
+:
+
+:
+
+:
+
+:
+
+:
+
+Nth Pixel
+
+D N7
+
+D N6
+
+D N5
+
+D N4
+
+D N3
+
+D N2
+
+D N1
+
+D N0
+
+W
+
+This command transfers image data from the host processor to the display module’s frame
+Description memory starting at the pixel location specified by preceding CASET (2Ah) and RASET (2Bh)
+commands.
+A Memory Write should follow a CASET(2Ah), RASET(2Bh) or MADCTR(36h) to define the
+Restriction write location. Otherwise, data written with RAMWR(2Ch) and any following RAMWRC(3Ch)
+commands is written to undefined locations.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page74
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+PTLAR (3000h): Partial Area
+R/W
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+3000h
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+SR9
+
+SR8
+
+00
+
+3001h
+
+SR7
+
+SR6
+
+SR5
+
+SR4
+
+SR3
+
+SR2
+
+SR1
+
+SR0
+
+00
+
+3002h
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+ER9
+
+ER8
+
+01
+
+3003h
+
+ER7
+
+ER6
+
+ER5
+
+ER4
+
+ER3
+
+ER2
+
+ER1
+
+ER0
+
+8F
+
+W
+
+This command defines the Partial Display mode’s display area. There are two parameters
+associated with this command, the first defines the Start Row (SR) and the second the End
+Row (ER), as illustrated in the following figure.
+If End Row > Start Row
+
+SR[9:0]
+9
+
+ER[9:0]
+9
+Description
+If End Row < Start Row
+
+9
+ER[9:0]
+
+SR[9:0]
+9
+
+If End Row = Start Row then the Partial Area will be one row deep.
+SR[9:0]
+and ER[9:0] settings should be within max available Display Area.
+Restriction
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page75
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+PTLAR (3100h): Vertical Partial Area
+R/W
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+3100h
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+SC8
+
+00
+
+3101h
+
+SC7
+
+SC6
+
+SC5
+
+SC4
+
+SC3
+
+SC2
+
+SC1
+
+SC0
+
+00
+
+3102h
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+EC8
+
+01
+
+3103h
+
+EC7
+
+EC6
+
+EC5
+
+EC4
+
+EC3
+
+EC2
+
+EC1
+
+EC0
+
+8F
+
+W
+
+This command defines the Vertical Partial Display mode’s display area. There are two
+parameters associated with this command, the first defines the Start Column (SC) and the
+second the End Column (EC), as illustrated in the following figure.
+If End Column > Start Column
+
+Start Column
+SC[9:0]
+
+End Column
+EC[9:0]
+
+Description
+
+Partial Area
+If End Column < Start Column
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page76
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+End Column
+EC[9:0]
+
+Start Column
+SC[9:0]
+
+Partial Area
+
+Partial Area
+
+If End Column = Start Column then the Partial Area will be one column deep.
+
+Restriction SC[9:0] and EC[9:0] settings should be within max available Display Area.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page77
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+TEOFF (3400h): Tearing Effect Line OFF
+R/W
+
+Address
+
+W
+
+3400h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+No Argument
+
+Description
+
+This command turns off the display module’s Tearing Effect output signal on the TE signal
+line.
+
+Restriction
+
+This command has no effect when the Tearing Effect output is already off.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page78
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+TEON (3500h): Tearing Effect Line ON
+R/W
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+W
+
+3500h
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+TE_M
+
+TELOM
+
+00
+
+Bit
+
+Symbol
+
+Description
+
+D1
+
+TE_M
+
+Output mode of TE signal set
+
+D0
+
+TELOM
+
+Output mode of TE signal
+
+Comment
+1: Refresh frame active
+<Note>
+TE output active at refresh frame
+to avoid tearing effect, command
+can be set:
+1. 0x3500=00.or
+2. 0x3500=02.
+0:only V-blanking
+1:V-blanking +H-blanking
+
+This command turns on the tearing Effect output signal on the TE signal line.
+The Tearing Effect Line On has one parameter that describes the Tearing Effect Output Line
+mode.
+Description
+
+The Tearing Effect Output line shall be active low when the display module is in Sleep mode.
+
+Restriction This command has no effect when Tearing Effect output is already ON.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page79
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+MADCTR (3600h): Scan Direction Control
+R/W
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+W
+
+3600h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+00
+
+This command defines the scan direction of Source and Gate Driver. This command makes no
+change on the other driver status.
+Bit
+D7
+
+Symbol
+Reserved
+
+Description
+
+Comment
+
+D6
+
+MX
+
+Column Address Increment
+
+D3
+D2
+D1
+D0
+
+RGB
+Reserved
+Reserved
+Reserved
+
+RGB/BGR Order
+
+0: Increasing in horizontal
+1: Decreasing in horizontal
+‘1’ =BGR, “0”=RGB
+
+Display Panel
+MX
+
+Description
+
+Image In Frame Memory
+B
+
+Input Image
+
+0
+
+F
+1
+
+F
+
+E
+
+B
+
+E
+
+Restriction
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page80
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+IDMOFF (3800h): Idle Mode Off
+R/W
+
+Address
+
+W
+
+3800h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+No Argument
+
+Description This command causes the display module to exit Idle mode.
+Restriction This command has no effect when the display module is not in Idle mode.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page81
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+IDMON (3900h): Enter_idle_mode
+R/W
+
+Address
+
+W
+
+3900h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+No Argument
+
+Description This command causes the display module to enter Idle Mode.
+Restriction This command has no effect when module is already in idle on mode.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page82
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+COLMOD (3A00h): Interface Pixel Format
+R/W
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+W
+
+3A00h
+
+SPI_IFPF_SEL
+
+VIPF[2]
+
+VIPF[1]
+
+VIPF[0]
+
+0
+
+IFPF[2]
+
+IFPF[1]
+
+IFPF[0]
+
+77
+
+This command sets the pixel format for the RGB image data used by the interface.
+If SPI_IFPF_SEL(3Ah-D7) = 1:
+The SPI/QSPI interface will use VIPF[2:0] as pixel format setting individually, and the other
+interface will use IFPF[2:0].
+If SPI_IFPF_SEL(3Ah-D7) = 0:
+All interface use IFPF[2:0] as pixel format setting
+Control Interface Color Format
+SPI 8 bit/pixel (256 colors); SPI 256 Gray
+(Support IF: SPI3/SPI4)
+
+Description
+
+SPI 8 bit/pixel (256 colors); SPI 3-3-2
+(Support IF: SPI3/SPI4)
+
+SPI 3 bit/pixel (8 colors); SPI 1-1-1
+(Support IF: SPI3/SPI4)
+
+16bit/pixel (65,536 colors)
+18bit/pixel (262,144 colors)
+24bit/pixel (16.7M colors)
+
+IFPF[2]
+
+IFPF[1]
+
+IFPF[0]
+
+0
+
+0
+
+1
+
+0
+
+1
+
+0
+
+0
+
+1
+
+1
+
+1
+1
+1
+
+0
+1
+1
+
+1
+0
+1
+
+Restriction -
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page83
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+RAMWRC (3C00h): Memory Continuous Write
+R/W
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+3C00h
+
+0
+
+0
+
+1
+
+1
+
+1
+
+1
+
+0
+
+0
+
+3C
+
+1st Pixel
+
+D17
+
+D16
+
+D15
+
+D14
+
+D13
+
+D12
+
+D11
+
+D10
+
+:
+
+:
+
+:
+
+:
+
+:
+
+:
+
+:
+
+:
+
+:
+
+Nth Pixel
+
+D N7
+
+D N6
+
+D N5
+
+D N4
+
+D N3
+
+D N2
+
+D N1
+
+D N0
+
+W
+
+This command transfers image data from the host processor to the display module’s frame
+Description memory continuing from the pixel location following the previous write_memory_continue or
+write_memory_start command.
+
+A Memory Write should follow a CASET(2Ah), RASET(2Bh) or MADCTR(36h) to define the
+Restriction write location. Otherwise, data written with RAMWR(2Ch) and any following RAMWRC(3Ch)
+commands is written to undefined locations.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page84
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+STESL(4400h) : Set_Tear_Scanline
+R/W
+W
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+4400h
+
+STS[15]
+
+STS[14]
+
+STS[13]
+
+STS[12]
+
+STS[11]
+
+STS[10]
+
+STS[9]
+
+STS[8]
+
+00
+
+4401h
+
+STS[7]
+
+STS[6]
+
+STS[5]
+
+STS[4]
+
+STS[3]
+
+STS[2]
+
+STS[1]
+
+STS[0]
+
+00
+
+This command turns on the display Tearing Effect output signal on the TE signal line when
+the display reaches line N. The TE signal is not affected by changing set_address_mode bit
+B4. The Tearing Effect Line On has one parameter that describes the Tearing Effect Output
+Line mode.
+Description
+
+The Tearing Effect Output line shall be active low when the display module is in Sleep mode.
+Restriction
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page85
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+GSL (4500h) : Get_Scanline
+R/W
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+4500h
+
+GTS[15]
+
+GTS[14]
+
+GTS[13]
+
+GTS[12]
+
+GTS[11]
+
+GTS[10]
+
+GTS[9]
+
+GTS[8]
+
+0x
+
+4501h
+
+GTS[7]
+
+GTS[6]
+
+GTS[5]
+
+GTS[4]
+
+GTS[3]
+
+GTS[2]
+
+GTS[1]
+
+GTS[0]
+
+xx
+
+R
+
+The display returns the current scan line, N, used to update the display device. The total
+number of scan lines on a display device is defined as VSYNC + VBP + VACT + VFP. The
+Description
+first scan line is defined as the first line of V-Sync and is denoted as Line 0.
+When in Sleep Mode, the value returned by get scanline is undefined.
+Restriction -
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page86
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+DSTBON (4F00h): Deep Standby Mode On
+R/W
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+W
+
+4F00h
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+DSTB
+
+00
+
+This command is used to enter deep standby mode.
+DSTB=”1”, enter deep standby mode.
+Notes:
+Description
+1. To exit Deep Standby Mode, input low pulse more than 3 msec to pin RESX.
+2. For MIPI IF, if deep standby mode is used, please pull HSSI_CLK_P/N &
+HSSI_D0~D1_P/N to GND after executing deep standby command.
+Restriction -
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page87
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+WRDISBV (5100h): Write Display Brightness
+R/W
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+W
+
+5100h
+
+DBV7
+
+DBV6
+
+DBV5
+
+DBV4
+
+DBV3
+
+DBV2
+
+DBV1
+
+DBV0
+
+00
+
+This command is used to adjust brightness value.
+
+Description In principle relationship is that 00h value means the lowest brightness and FFh value means the highest
+brightness.
+
+Restriction The display supplier cannot use this command for tuning
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page88
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+RDDISBV (5200h): Read Display Brightness
+R/W
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+R
+
+5200h
+
+DBV7
+
+DBV6
+
+DBV5
+
+DBV4
+
+DBV3
+
+DBV2
+
+DBV1
+
+DBV0
+
+00
+
+This command returns brightness value.
+
+Description In principle relationship is that 00h value means the lowest brightness and FFh value means the highest
+brightness.
+
+Restriction
+
+-
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page89
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+WRCTRLD (5300h): Write Display Control
+R/W
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+W
+
+5300h
+
+0
+
+0
+
+BCTRL
+
+0
+
+DD
+
+0
+
+0
+
+0
+
+28
+
+BCTRL: Brightness control ,1=enable
+
+Description DD: Display dimming control ,1=enable
+Restriction The display supplier cannot use this command for tuning
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page90
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+RDCTRLD (5400h): Read Display Control
+R/W
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+R
+
+5400h
+
+0
+
+0
+
+BCTRL
+
+0
+
+DD
+
+0
+
+0
+
+0
+
+28
+
+BCTRL: Brightness control ,1=enable
+
+Description DD: Display dimming control ,1=enable
+Restriction
+
+-
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page91
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+WRRADACL (5500h): RAD_ACL Control
+R/W
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+W
+
+5500h
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+RAD_ACL[1:0]
+
+00
+
+This command is used to control Raydium specific function for ACL (Auto Current Limit)
+RAD_ACL[1:0]=11, Enable Raydium ACL function.
+RAD_ACL[1:0]=00, Disable Raydium ACL function.
+
+Description
+
+Restriction
+
+-
+
+COLORTEMP (5500h): Color Temperature Selection
+R/W
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+W
+
+5500h
+
+0
+
+0
+
+0
+
+0
+
+D2
+
+color_ temp_sel[1:0]
+
+D1
+
+D0
+
+HEX
+
+0
+
+0
+
+00
+
+This command is used to select color temperature setting
+color_ temp_sel = 0 : Choose color temperature 1 configuration
+color_ temp_sel = 1 : Choose color temperature 2 configuration
+color_ temp_sel = 2 : Choose color temperature 3 configuration
+
+Description
+
+Restriction
+
+D3
+
+-
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page92
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+WRDISBV (6300h): Write HBM Display Brightness
+R/W
+
+Address
+
+W
+
+6300h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+DBV_HBM[7:0]
+
+HEX
+00
+
+Description This command is used to adjust brightness value in HBM mode if hbm_gidx_type=1.
+DBV_HBM[7:0] setting value must be greater than G_ratio_HBM_swap value.
+
+Restriction
+
+RDDISBV (6400h): Read HBM Display Brightness
+R/W
+
+Address
+
+R
+
+6400h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+DBV_HBM[7:0]
+
+D2
+
+D1
+
+D0
+
+HEX
+00
+
+Description This command returns brightness value in HBM mode.
+Restriction
+
+-
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page93
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+HBM_Mode (6600h) : Set_HBM_Mode
+R/W
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+W
+
+6600h
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+HBM_en
+
+0
+
+00
+
+HBM_en = 1, This command causes the display module to enter HBM mode (exit normal, idle)
+
+Description
+HBM_en = 0, This command causes the display module to exit HBM mode (to normal mode)
+
+under display area
+Restriction
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page94
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+FR_LEVEL (6700h) :
+
+Frame Rate Level Control
+
+R/W
+
+Address
+
+D7
+
+D6
+
+R/W
+
+6700h
+
+0
+
+0
+
+D5
+
+D4
+
+Normal_Level[1:0]
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+0
+
+0
+
+Idle_level[1:0]
+
+00
+
+This command is used to select Raydium specific display scenario in normal mode and
+IDLE mode (ex: frame-rate).
+Bit
+
+Description
+
+Data
+
+Description
+
+Normal_level[1:0]
+
+Normal mode display scenario
+setting
+
+Idle_level[1:0]
+
+IDLE mode
+setting
+
+display
+
+scenario
+
+0: Normal mode
+1: Normal mode level 1
+2: Normal mode level 2
+3: Normal mode level 3
+Others: Reserved
+0: IDLE mode
+1: IDLE mode level 1
+2: IDLE mode level 2
+Others: Reserved
+
+under display area
+Restriction
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page95
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+COLSET (7000~7F00h): Interface Pixel Format Set
+R/W
+W
+
+W
+
+W
+
+W
+
+W
+
+W
+
+W
+
+W
+
+W
+
+W
+
+W
+
+W
+
+W
+
+W
+W
+
+Address
+7000h
+7001h
+7002h
+7100h
+7101h
+7102h
+7200h
+7201h
+7202h
+7300h
+7301h
+7302h
+7400h
+7401h
+7402h
+7500h
+7501h
+7502h
+7600h
+7601h
+7602h
+7700h
+7701h
+7702h
+7800h
+7801h
+7802h
+7900h
+7901h
+7902h
+7A00h
+7A01h
+7A02h
+7B00h
+7B01h
+7B02h
+7C00h
+7C01h
+7C02h
+7D00h
+7D01h
+7D02h
+7E00h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+R_0000[7:0]
+G_0000[7:0]
+B_0000[7:0]
+R_0001[7:0]
+G_0001[7:0]
+B_0001[7:0]
+R_0010[7:0]
+G_0010[7:0]
+B_0010[7:0]
+R_0011[7:0]
+G_0011[7:0]
+B_0011[7:0]
+R_0100[7:0]
+G_0100[7:0]
+B_0100[7:0]
+R_0101[7:0]
+G_0101[7:0]
+B_0101[7:0]
+R_0110[7:0]
+G_0110[7:0]
+B_0110[7:0]
+R_0111[7:0]
+G_0111[7:0]
+B_0111[7:0]
+R_1000[7:0]
+G_1000[7:0]
+B_1000[7:0]
+R_1001[7:0]
+G_1001[7:0]
+B_1001[7:0]
+R_1010[7:0]
+G_1010[7:0]
+B_1010[7:0]
+R_1011[7:0]
+G_1011[7:0]
+B_1011[7:0]
+R_1100[7:0]
+G_1100[7:0]
+B_1100[7:0]
+R_1101[7:0]
+G_1101[7:0]
+B_1101[7:0]
+R_1110[7:0]
+
+D2
+
+D1
+
+D0
+
+HEX
+00
+00
+00
+00
+00
+FF
+00
+FF
+00
+00
+FF
+FF
+FF
+00
+00
+FF
+00
+FF
+FF
+FF
+00
+FF
+FF
+FF
+00
+00
+00
+00
+00
+FF
+00
+FF
+00
+00
+FF
+FF
+FF
+00
+00
+FF
+00
+FF
+FF
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page96
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+W
+
+7E01h
+7E02h
+7F00h
+7F01h
+7F02h
+
+G_1110[7:0]
+B_1110[7:0]
+R_1111[7:0]
+G_1111[7:0]
+B_1111[7:0]
+
+FF
+00
+FF
+FF
+FF
+
+This command set the 1-1-1 color format map directly to 24 bits by CMD 7000h-7F00h
+
+Description
+
+Restriction
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page97
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+COLOPT (8000h): Interface Pixel Format Option
+R/W
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+W
+
+8000h
+
+x
+
+RGB111_opt
+
+x
+
+x
+
+RGB4bit_en
+
+D2
+
+D1
+
+D0
+
+HEX
+
+gray256_col gray256_col gray256_col
+or[2]
+or[1]
+or[0]
+
+07
+
+This command sets the 1-1-1/256 gray color format option used by SPI interface.
+RGB111_opt = 0 (80h-B6):
+Supporting in IFPF[2:0]=011 case setting by 3A00h (interface pixel format is SPI 1-1-1).
+
+RGB111_opt = 1 (80h-B6):
+Supporting in IFPF[2:0]=011 case setting by 3A00h (interface pixel format is SPI 1-1-1).
+
+Description
+
+RGB4bit_en = 0 (80h-B3):
+Supporting in IFPF[2:0]=011 case setting by 3A00h (interface pixel format is SPI 1-1-1).
+Three bits per pixel formats map directly to 24bits by CMD 7000h-7700h
+
+Example:
+P1[2:0] = 3’b101 = { R_0101[7:0], G_0101[7:0], B_0101[7:0] }
+
+CMD 7500h-7502h
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page98
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+RGB4bit_en = 1(80h-B3):
+Supporting in IFPF[2:0]=011 case setting by 3A00h (interface pixel format is SPI 1-1-1).
+Four bits per pixel formats map directly to 24bits by CMD 7000h-7F00h
+
+Example:
+P1[3:0] = 4’b1101 = { R_1101[7:0], G_1101[7:0], B_1101[7:0] }
+
+CMD 7D00h-7D02h
+
+gray256_color(80h-B[2:0]):
+Supporting in IFPF[2:0]=001 case setting by 3A00h (interface pixel format is SPI 256 Gray).
+This command sets the valid red, green and blue 256 grayscale
+
+Description
+
+Restriction -
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page99
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+RDDDBS(A100h) : Read_DDB_Start
+R/W
+
+R
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+A100h
+
+SID[7]
+
+SID [6]
+
+SID [5]
+
+SID [4]
+
+SID [3]
+
+SID [2]
+
+SID [1]
+
+SID [0]
+
+D0
+
+A101h
+
+SID[15]
+
+SID[14]
+
+SID[13]
+
+SID[12]
+
+SID[11]
+
+SID[10]
+
+SID[9]
+
+SID[8]
+
+01
+
+A102h
+
+MID[7]
+
+MID[6]
+
+MID[5]
+
+MID[4]
+
+MID[3]
+
+MID[2]
+
+MID[1]
+
+MID[0]
+
+80
+
+A103h
+
+MID[15]
+
+MID[14]
+
+MID[13]
+
+MID[12]
+
+MID[11]
+
+MID[10]
+
+MID[9]
+
+MID[8]
+
+90
+
+A104h
+
+1
+
+1
+
+1
+
+1
+
+1
+
+1
+
+1
+
+1
+
+FF
+
+1st
+2nd
+3rd
+Description 4th
+5th
+
+parameter: Supplier ID code
+parameter: Supplier ID code
+parameter: Module ID
+parameter: Module ID
+Exit code (FFh).
+
+Restriction
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page100
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+RDDDBC(A800h) : Read DDB Continous
+R/W Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+A800h
+
+SID[7]
+
+SID [6]
+
+SID [5]
+
+SID [4]
+
+SID [3]
+
+SID [2]
+
+SID [1]
+
+SID [0]
+
+D0
+
+A801h
+
+SID[15]
+
+SID[14]
+
+SID[13]
+
+SID[12]
+
+SID[11]
+
+SID[10]
+
+SID[9]
+
+SID[8]
+
+01
+
+A802h
+
+MID[7]
+
+MID[6]
+
+MID[5]
+
+MID[4]
+
+MID[3]
+
+MID[2]
+
+MID[1]
+
+MID[0]
+
+80
+
+A803h
+
+MID[15]
+
+MID[14]
+
+MID[13]
+
+MID[12]
+
+MID[11]
+
+MID[10]
+
+MID[9]
+
+MID[8]
+
+90
+
+A804h
+
+1
+
+1
+
+1
+
+1
+
+1
+
+1
+
+1
+
+1
+
+FF
+
+R
+
+This command returns the supplier identification and display module mode/revision
+information from the
+point where RDDDBS command was interrupted by an other command.
+Note: Parameter 0xFF is an “Exit Code”, this means that there is no more data in the DDB
+Description block.
+Note: For use example,
+1. Set maximum return packet size=3
+2. Read 0xA1, return 3 bytes SID[7:0], SID[15:8], MID[7:0]
+3. Read 0xA8, return 2 bytes MID[15:8], and 0xFF
+
+A Read DDB Start command (RDDDBS) should be executed at least once before a Read
+DDB Continue
+Restriction
+command (RDDDBC) to define the read location. Otherwise, data read with a Read DDB
+Continue c ommnd is undefined.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page101
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+RDFCS(AA00h) : Read First Checksum
+R/W Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+R
+
+FCS7
+
+FCS6
+
+FCS5
+
+FCS4
+
+FCS3
+
+FCS2
+
+FCS1
+
+FCS0
+
+00
+
+AA00h
+
+This command returns the first checksum what has been calculated from “User Command
+Set” area
+Description registers (not include “Manufacture Command Set) and the frame memory after the write
+access to those
+registers and/or frame memory has been done.
+It will be necessary to wait 150ms after there is the last write access on “User Command Set”
+Restriction area
+registers before there can read this checksum value.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page102
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+RDCCS(AF00h) : Read Continue Checksum
+R/W Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+R
+
+CCS7
+
+CCS6
+
+CCS5
+
+CCS4
+
+CCS3
+
+CCS2
+
+CCS1
+
+CCS0
+
+00
+
+AF00h
+
+This command returns the continue checksum what has been calculated continuously after
+Description the first checksum has been calculated from “User Command Set” area registers and the
+frame memory after the write access to those registers and/or frame memory has been done.
+
+Restriction
+
+It will be necessary to wait 300ms after there is the last write access on “User Command Set”
+area registers before there can read this checksum value in the first time.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page103
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+SetDISPMode (C200h) : set_DISP Mode
+R/W
+
+Address
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+W
+
+C200h
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+DM1
+
+DM0
+
+00
+
+Description
+
+Bit
+
+Description
+
+DM[1:0]
+
+Display timing mode selection
+
+Value
+2’b00: internal timing
+2’b01: reserved
+2’b10: reserved
+2’b11: external timing (VSYNC +
+HSYNC align mode)
+
+Note:
+(1) If video mode, need to set DM[1:0] = 2’b11.
+Restriction (2) System video mode parameter V-total and H-total setting has restriction, it must match
+driver IC V-total and H-total setting.
+Related video mode parameter settings suggest asking Raydium.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page104
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+SetSPIMode (C400h) : set_SPI Mode
+R/W
+
+Address
+
+D7
+
+D6
+
+W
+
+C400h
+
+SPI_WRAM
+
+0
+
+Description
+
+D5
+
+D4
+
+DSPI_CFG DSPI_CFG
+1
+0
+
+D3
+
+D2
+
+D1
+
+D0
+
+HEX
+
+0
+
+0
+
+0
+
+DSPI_EN
+
+00
+
+Bit
+
+Description
+
+DSPI_EN
+
+DAUL SPI MODE Enable
+
+DSPI_CFG[1:0]
+
+DAUL SPI MODE Selection
+
+SPI_WRAM
+
+This command is used in
+SPI/SPINK interfaces.
+Making sure to set SPI_WRAM=1
+before host writes SRAM via
+SPI/SPINK interfaces.
+
+Value
+0: disable
+1: enable
+00: 1P1T for 1 wire
+10: 1P1T for 2 wire
+11: 2P3T for 2 wire
+01: reserved
+
+0: disable
+1: SPI interface write RAM enable
+
+Restriction
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page105
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+RDID1 (DA00h): ID1 Code
+R/W
+
+Address
+
+R
+
+DA00h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+ID1[7:0]
+
+HEX
+00h
+
+This command is for Module Manufacture Number
+Description
+
+Bit
+
+Description
+
+ID1[7:0]
+
+Module Manufactor Number
+
+Data
+
+Restriction
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page106
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+RDID2 (DB00h): ID2 Code
+R/W
+
+Address
+
+R
+
+DB00h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+ID2[7:0]
+
+D0
+
+HEX
+80h
+
+This command is for Module/Driver Version Number
+
+Description
+
+Bit
+
+Description
+
+ID2[7:0]
+
+Module/Driver Version Number
+
+Data
+
+Restriction
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page107
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+RDID3 (DC00h): ID3 Code
+R/W
+
+Address
+
+R
+
+DC00h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+ID3[7:0]
+
+D0
+
+HEX
+00h
+
+This command is for Module / Driver ID
+Description
+
+Bit
+
+Description
+
+ID3[7:0]
+
+Module /Driver ID
+
+Data
+
+Restriction
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page108
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+(FE00h): CMD Mode Switch
+R/W
+
+Address
+
+W
+
+FE00h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+CMD_Page[7:0]
+
+HEX
+00
+
+This command is used to switch the Manufacture Command Pages and User
+Commands sets.
+CMD_Page[7:0]
+00h (default)
+
+Description
+User Command Set (UCS = CMD1)
+
+10h
+
+Manufacture Command Set Page Panel ID
+
+12h
+
+Manufacture Command Set Page SID
+
+20h
+
+Manufacture Command Set Page Panel
+
+40h
+
+Manufacture Command Set Page ABH Mode
+
+82h
+
+Manufacture Command Set Page Power
+
+92h
+
+Manufacture Command Set Page SD timing
+
+50h
+
+Manufacture Command Set Page Gamma1
+
+60h
+
+Manufacture Command Set Page Gamma2
+
+30h
+
+Manufacture Command Set Page Gamma3
+
+52h
+
+Manufacture Command Set Page Gamma4
+
+70h
+
+Manufacture Command Set Page GOA Timing 1
+
+F0h
+
+Manufacture Command Set Page GOA Timing 2
+
+42h
+
+Manufacture Command Set Page DBV
+
+22h
+
+Manufacture Command Set Page SES
+
+90h
+
+Manufacture Command Set Page ACL
+
+62h
+
+Manufacture Command Set Page CGM
+
+C2h
+
+Manufacture Command Set Page CGM LUT
+
+Description
+
+Restriction
+
+-
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page109
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+(FF00h): Read CMD Status
+R/W
+
+Address
+
+R
+
+FF00h
+
+D7
+
+D6
+
+D5
+
+D4
+
+D3
+
+D2
+
+D1
+
+D0
+
+CMD_Status[7:0]
+
+HEX
+00
+
+This command is used to show the FE00h Manufacture Command Pages status.
+Description
+
+Restriction
+
+-
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page110
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+7. Electrical Characteristics
+7.1 Absolute Maximum Ratings
+The absolute maximum rating is listed on following table. When RM690B0 is used out of the absolute maximum
+ratings, the RM690B0 may be permanently damaged. To use the RM690B0 within the following electrical
+characteristics limit is strongly recommended for normal operation. If these electrical characteristic conditions are
+exceeded during normal operation, the RM690B0 will malfunction and cause poor reliability.
+item
+Power supply voltage
+Power supply voltage
+Supply voltage (MV)
+
+Symbol
+VDDI
+VDD (VDDA, VDDB, VDDR)
+AVDD- AVSS
+AVSS- VCL
+VGH- VGLX
+VIN
+VO
+Topr
+Tstg
+
+Value
+-0.3 ~ + 5.5
+-0.3 ~ + 5.5
+-0.3 ~ + 6.6
+-0.3 ~ + 5.0
+-0.3 ~ + 33
+-0.3 ~ VDDI+ 0.3
+-0.3 ~ VDDI+ 0.3
+-40 ~ + 85
+-55 ~ + 125
+
+Unit
+V
+V
+V
+V
+V
+V
+V
+°C
+°C
+
+Supply voltage (HV)
+Input voltage
+Output voltage
+Operating temperature
+Storage temperature
+Notes:
+If one of the above items is exceeded its maximum limitation momentarily, the quality of the product may be
+degraded. Absolute maximum limitation. Therefore, specify the values exceeding which the product may be
+physically damaged. Be sure to use the product within the recommend range.
+
+7.2 ESD Protection Level
+Model
+Human Body Mode
+Machine Mode
+
+Test Condition
+R = 1.5 kohm / C = 100 pF
+R = 0 ohm / C = 200 pF
+
+Level
+Pass 3KV
+Pass 300V
+
+7.3 Latch-Up Protection Level
+The device will not latch up at trigger current levels less than ±200 mA.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page111
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+7.4 DC Characteristics
+7.4.1 Basic Characteristics
+Parameter
+
+Symbol
+
+Condition
+
+Min.
+
+Typ.
+
+Max.
+
+Analog Power Supply Voltage
+
+VDD
+VDDI
+
+Operation Voltage
+I/O supply voltage
+
+2.7
+1.65
+
+2.8
+1.8
+
+3.6
+3.3
+
+Unit Related
+Pins
+V
+Note 1
+V
+Note 1,2
+
+Logic High level input voltage
+Logic Low level input voltage
+Logic High level Output voltage
+Logic Low level Output voltage
+Logic High level input current
+(Except MIPI)
+Logic Low level input current
+(Except MIPI)
+Logic High level input current
+(MIPI)
+Logic Low level input current
+(MIPI)
+
+VIH
+VIL
+VOH
+VOL
+
+VDDI = 1.65V ~ 3.3V
+VDDI = 1.65V ~ 3.3V
+Iout = -1 mA
+Iout = +1 mA
+
+0.8* VDDI
+0.0
+0.8* VDDI
+0.0
+
+-
+
+VDDI
+0.2* VDDI
+VDDI
+0.2* VDDI
+
+V
+V
+V
+V
+
+IIHD
+
+Vin=0~VDDI
+
+1
+
+uA
+
+IILD
+
+Vin=0~VDDI
+
+IIHD
+
+Vin=0~VDDI
+
+IILD
+
+Vin=0~VDDI
+
+AVDD booster voltage
+VCL booster voltage
+VGH booster voltage
+
+AVDD
+VCL
+VGH
+
+4.5
+-3.5
+AVDD
+
+VGL booster voltage
+
+VGL
+
+VCL
+
+I/O pin Power Supply Voltage
+
+Voltage difference between VGH and
+VGHL
+VGL
+Gamma reference voltage
+VGMP
+VGSP
+Gamma reference voltage
+
+OSC
+
+VDEV
+
+Channel deviation voltage
+
+VDEV
+
+uA
+1
+
+-1
+
+2.0
+0.0
+
+22.08
+Sout ≥ AVDD-1.0V, and
+0V < Sout ≤ 1.0V
+1.0V < Sout <
+AVDD-1.0V
+
+uA
+uA
+
+|VGH-VGL|
+
+Fosc
+
+Channel deviation voltage
+
+-1
+
+24
+
+Note 3
+Note 3
+Note 3
+Note 3
+Note 3
+Note 3
+Note 3
+Note 3
+
+6.5
+-5
+2AVDD
+VCL
+-AVDD
+
+V
+V
+V
+
+Note 3
+Note 3
+Note 3
+
+V
+
+Note 3
+
+30
+
+V
+
+Note 3
+
+6.3
+4.5
+
+V
+V
+
+Note 3,4
+Note 3
+
+25.92
+
+MHz
+mV
+mV
+
+Notes:
+1. VDD means VDDA, VDDR, VDDB. And VSS means VSSA, VSSR, VSSB, AVSS, VSSAM.
+and VDDR should be the same input voltage level and larger than VDDI voltage.
+2. Recommend VDDI=1.8V for power saving.
+3. Ta(ambient temperature) ranges from -30℃ to 85 ℃.
+4. VGMP <= AVDD – 0.2V
+
+TBD
+TBD
+
+VDDB, VDDA
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page112
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+7.5 MIPI Characteristics
+7.5.1 High-Speed Receiver Specification
+DC Specifications
+
+Parameter
+
+Description
+
+Min
+
+VCMRX(DC)
+
+Common-mode voltage HS
+receive mode
+
+70
+
+VIDTH
+
+Differential input high threshold
+
+VIDTL
+
+Differential input low threshold -70
+
+VIHHS
+
+Single-ended input high voltage
+
+VILHS
+
+Single-ended input low voltage -40
+
+Nom
+
+Max
+
+Units
+
+330
+
+mV
+
+70
+
+mV
+
+Note
+1,2
+
+mV
+460
+
+mV
+
+1
+
+mV
+
+1
+
+ZID
+Differential input impedance
+80
+100
+125
+Ω
+Notes:
+1. Excluding possible additional RF interference of 100mV peak sine wave beyond 450MHz.
+2. This table value includes a ground difference of 50mV between the transmitter and the receiver, the static
+common-mode level tolerance and variations below 450MHz
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page113
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+7.5.2 Forward high speed transmissions
+DDR Clock Definition
+
+Clock Parameter
+UI instantaneous
+
+Symbol
+UIINST
+
+Min
+
+Typ
+
+1.818
+
+Max
+12.5
+
+Units
+ns
+
+Notes
+1,2
+
+Notes:
+1.
+This value corresponds to a minimum 80 Mbps data rate.
+2.
+The minimum UI shall not be violated for any single bit period, i.e., any DDR half cycle within a data burst.
+
+Data-Clock Timing Specifications
+Parameter
+Symbol
+Data to Clock Skew [measured
+at transmitter]
+TSKEW[TX]
+
+Min
+-0.15
+
+Data to Clock Setup Time
+[receiver]
+
+TSETUP[RX]
+
+Clock to Data Hold Time
+[receiver]
+
+THOLD[RX]
+
+Typ
+
+Max
+0.15
+
+Units
+
+Notes
+
+UIINST
+
+1
+
+0.15
+
+UIINST
+
+2
+
+0.15
+
+UIINST
+
+2
+
+Notes:
+1.
+Total silicon and package delay budget of 0.3*UIINST
+2.
+Total setup and hold window for receiver of 0.3*UIINST
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page114
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+7.5.3 Data to Clock Timing Definitions
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page115
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+7.5.4 Low power transceiver specifications
+
+Parameters
+Logic high level
+input voltage
+Logic low level
+input voltage
+Logic high level
+input voltage
+Logic low level
+input voltage
+Logic low level
+input voltage
+Logic high level
+input voltage
+Logic low level
+input voltage
+eSPIKE(1.2.3)
+
+Symbol
+VIHCD
+
+Condition
+Contention Detection (Lane_D0)
+
+Min
+450
+
+VILCD
+
+Contention Detection (Lane_D0)
+
+0
+
+VIH-LPRX
+
+LP-Rx (Lane_CK, Lane_D0, Lane_D1)
+
+880
+
+VIL-LPRX
+
+LP-Rx (Lane_CK, Lane_D0, Lane_D1
+
+VIL-ULPS
+
+Typ
+
+Max
+1350
+
+Unit
+mV
+
+200
+
+mV
+
+1350
+
+mV
+
+0
+
+550
+
+mV
+
+LP-Rx ULPS (Lane_CK, Lane_D0, Lane_D1) 0
+
+300
+
+mV
+
+-
+
+VOH-LPTX Contention Detection (Lane_D0)
+
+1.1
+
+1.2
+
+1.3
+
+V
+
+VOL-LPTX Contention Detection (Lane_D0)
+
+-50
+
+0
+
+50
+
+mV
+
+300
+
+V.ps
+
+Fig. 2
+
+Input pulse rejection
+
+Notes:
+Time-voltage integration of a spike above VIL when being in LP-0 state or below VIH when being in LP-1 State.
+An impulse less than this will not change the receiver state.
+In addition to the required glitch rejection, implementers shall ensure rejection of known RF-interferers.
+Input Glitch Rejection of Low Power Receivers as follow.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page116
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+7.6 AC Characteristics
+7.6.1 SPI/DUAL-SPI Characteristics
+3/4-wire SPI
+CSX
+
+VIH
+
+VIL
+tSCYC (Write Cycle)
+
+tCSU
+tSCR
+
+tSCH
+tSCF
+
+tSCL
+
+tSCYC (Read Cycle)
+
+tCHWR
+
+tSCR
+
+tCH
+
+SCL
+tSISU
+SDI
+(DCX)
+
+tSIH
+Input Data
+
+Input Data
+
+Parameter
+
+Symbol
+
+Clock cycle
+
+tSCYC
+
+Clock low pulse width
+Clock rise time
+Clock fall time
+Chip select setup time
+Chip select hold time
+Data input setup time
+Data input hold time
+Access time of output data
+Hold time of output data
+Transition time from Write
+cycle to Read cycle
+
+tSOH
+Output Data
+
+SDO
+
+Clock high pulse width
+
+Input Data
+
+Don’t Care
+tSOD
+
+tSCH
+tSCH
+tSCL
+tSCL
+tSCR
+tSCF
+tCSU
+tCH
+tSISU
+tSIH
+tSOD
+tSOH
+tCHWR
+
+Condition
+
+Min.
+
+Write
+Read
+Write
+Read
+Write
+Read
+0.2*VDDI -> 0.8*VDDI
+0.8*VDDI -> 0.2*VDDI
+
+20
+300
+6.5
+140
+6.5
+140
+
+Typ.
+
+Max.
+
+Unit
+
+3.5
+3.5
+
+From VIL of SCL’s falling edge
+From VIH of SCL’s rising edge
+
+5
+
+ns
+ns
+ns
+ns
+ns
+ns
+ns
+ns
+ns
+ns
+ns
+ns
+ns
+ns
+
+From VIH of SCL’s rising edge
+
+150
+
+ns
+
+To VIL of SCL’s rising edge
+
+10
+10
+5
+5
+120
+
+Notes:
+(1) Logic high and low levels are specified as 80% and 20% of VDDI for Input signals.
+(2) For the 4-wire SPI, the DCX’s timing is the same as input data.
+(3) Ta = -30°C to 70°C, VDDI=1.65V to 3.3V, VDD=2.7V to 3.6V, and VSS=0V
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page117
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+7.6.2 QUAD-SPI Characteristics
+CSX
+
+VIH
+
+VIL
+tSCYC (Write Cycle)
+
+tCSU
+tSCR
+
+tSCH
+tSCF
+
+tSCYC (Read Cycle)
+
+tCHWR
+
+tSCL
+
+tSCR
+
+tCH
+
+SCL
+
+SDI
+DCX
+D[1:0]
+
+tSISU
+
+tSIH
+Input Data
+
+Input Data
+tSOD
+
+Parameter
+
+Symbol
+
+Clock cycle
+
+tSCYC
+
+Clock low pulse width
+Clock rise time
+Clock fall time
+Chip select setup time
+Chip select hold time
+Data input setup time
+Data input hold time
+Access time of output data
+Hold time of output data
+Transition time from Write
+cycle to Read cycle
+
+tSOH
+Output Data
+
+SDO
+
+Clock high pulse width
+
+Input Data
+
+Don’t Care
+
+tSCH
+tSCH
+tSCL
+tSCL
+tSCR
+tSCF
+tCSU
+tCH
+tSISU
+tSIH
+tSOD
+tSOH
+tCHWR
+
+Condition
+
+Min.
+
+Write
+Read
+Write
+Read
+Write
+Read
+0.2*VDDI -> 0.8*VDDI
+0.8*VDDI -> 0.2*VDDI
+
+20
+150
+6.5
+70
+6.5
+70
+
+Typ.
+
+Max.
+
+Unit
+
+3.5
+3.5
+
+From VIL of SCL’s falling edge
+From VIH of SCL’s rising edge
+
+5
+
+ns
+ns
+ns
+ns
+ns
+ns
+ns
+ns
+ns
+ns
+ns
+ns
+ns
+ns
+
+From VIH of SCL’s rising edge
+
+150
+
+ns
+
+To VIL of SCL’s rising edge
+
+10
+10
+4
+4
+70
+
+Note: The max SCL frequency for each pixel data format is specified as the below table.
+Note: Logic high and low levels are specified as 20% and 80% of VDDI for Input signals.
+Note: Ta = -30 to 70 °C, VDDI=1.65V to 3.3V, VDD=2.7V to 3.6V, GND=0V
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page118
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+7.6.3 DSI Timing Characteristics
+HS Data Transmission Burst
+CLK
+
+THS-PREPARE
+
+TLPX
+
+Dp/Dn
+
+THS-ZERO
+Disconnect
+Terminator
+
+VIH(min)
+VIL(max)
+
+Capture
+1st Data Bit
+
+TD-TERM-EN
+LP-01
+
+LP-11
+
+LP-00
+
+LP-11
+
+THS-TRIAL
+
+THS-EXIT
+
+HS clock transmission
+Disconnect
+Terminator
+
+Clock Lane
+CLKp/CLKn
+
+TCLK-POST
+
+TCLK-TERM-EN
+
+VIH(min)
+VIL(max)
+
+TCLK-TRAIL
+
+THS-EXIT
+
+TLPX
+
+TCLK-ZERO
+
+TCLK-PRE
+
+TCLK-PREPARE
+
+Data Lane
+Dp/Dn
+
+Disconnect
+Terminator
+
+TLPX
+
+THS-PREPARE
+
+VIH(min)
+VIL(max)
+
+TD-TERM-EN
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page119
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+Timing Parameters:
+Parameter
+Description
+TCLK-POST
+Time that the transmitter continues to send
+HS clock after the last associated Data
+Lane has transitioned to LP Mode. Interval
+is defined as the period from the end of
+THS-TRAIL to the beginning of T CLK-TRAIL .
+TCLK-TRAIL
+Time that the transmitter drives the HS-0
+state after the last payload clock bit of a HS
+transmission burst.
+THS-EXIT
+Time that the transmitter drives LP-11
+following a HS burst.
+TCLK-TERM-EN
+Time for the Clock Lane receiver to enable
+the HS line termination, starting from the
+time point when Dn crosses V IL,MAX .
+TCLK-PREPARE
+Time that the transmitter drives the Clock
+Lane LP-00 Line state immediately before
+the HS-0 Line state starting the HS
+transmission.
+TCLK-PRE
+Time that the HS clock shall be driven by
+the transmitter prior to any associated Data
+Lane beginning the transition from LP to
+HS mode.
+TCLK-PREPARE
+TCLK-PREPARE + time that the transmitter
++ T CLK-ZERO
+drives the HS-0 state prior to starting the
+Clock.
+TD-TERM-EN
+Time for the Data Lane receiver to enable
+the HS line termination, starting from the
+time point when Dn crosses V IL,MAX .
+THS-PREPARE
+Time that the transmitter drives the Data
+Lane LP-00 Line state immediately before
+the HS-0 Line state starting the HS
+transmission
+THS-PREPARE
+THS-PREPARE + time that the transmitter
++ T HS-ZERO
+drives the HS-0 state prior to
+transmitting the Sync sequence.
+THS-TRAIL
+Time that the transmitter drives the flipped
+differential state after last payload data bit
+of a HS transmission burst
+
+Min
+60ns + 52*UI
+
+Typ
+
+Max
+
+Unit
+ns
+
+60
+
+ns
+
+300
+
+ns
+
+Time for Dn to
+reach VTERM-EN
+
+38
+
+ns
+
+38
+
+95
+
+ns
+
+8
+
+UI
+
+300
+
+ns
+
+Time for Dn to
+reach VTERM-EN
+
+35 ns +4*UI
+
+40ns + 4*UI
+
+85 ns + 6*UI
+
+ns
+
+145ns + 10*UI
+
+ns
+
+60ns + 4*UI
+
+ns
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page120
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+Turnaround Procedure
+
+TLPX(M)
+
+TLPX(M)
+
+TLPX(M)
+drive
+overlap
+
+LP-10
+
+LP-00
+
+LP-10
+
+LP-00
+
+LP-00
+
+TLP-SURE(M)
+
+LP-00
+
+LP-10
+
+LP-11
+
+TTA-GET(D)
+
+TLPX(D)
+
+TLPX(D)
+
+LP-10
+
+LP-11
+
+TLPX(M)
+
+TLPX(M)
+
+Bus turnaround (BAT) from MPU to display module timing
+
+TLPX(D)
+
+TLPX(D)
+
+TLPX(D)
+
+TTA-GO(D)
+drive
+overlap
+
+LP-10
+
+LP-00
+
+LP-10
+
+LP-00
+
+LP-00
+
+LP-00
+
+TLP-SURE(D)
+Bus turnaround (BAT) from display module to MPU timing
+Low Power Mode :
+Parameter
+Description
+TLPX(M)
+Transmitted length of any Low-Power
+state period of MCU to display module
+TTA-SURE(M)
+Time that the display module waits after
+the LP-10 state before transmitting the
+Bridge state (LP-00) during a Link
+Turnaround.
+TLPX(D)
+Transmitted length of any Low-Power
+state period of display module to MCU
+TTA-GET(D)
+Time that the display module drives the
+Bridge state (LP-00) after accepting
+control during a Link Turnaround.
+TTA-GO(D)
+Time that the display module drives the
+Bridge state (LP-00) before releasing
+control during a Link Turnaround.
+TTA-SURE(D)
+Time that the MPU waits after the LP-10
+state before transmitting the Bridge
+state (LP-00) during a Link Turnaround.
+
+Min
+50
+
+Max
+150
+
+Unit
+ns
+
+Notes
+1,2
+
+TLPX(M)
+
+2*TLPX(M)
+
+ns
+
+2
+
+50
+
+150
+
+ns
+
+1,2
+
+5*TLPX(D)
+
+ns
+
+2
+
+4*TLPX(D)
+
+ns
+
+2
+
+ns
+
+2
+
+TLPX(D)
+
+Typ
+
+2*TLPX(D)
+
+NOTE:
+1. TLPX is an internal state machine timing reference. Externally measured values may differ slightly from
+the specified values due to asymmetrical rise and fall times.
+2. Transmitter-specific parameter
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page121
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+7.6.4 Reset Timing
+
+Shorter than tRESW
+
+t RESW
+
+RES
+t REST
+
+Normal Operation
+Resetting
+Internal Status
+Reset input timing:
+VDDI=1.65 to 3.3V, VDD=2.7 to 3.6V, AGND=DGND=0V, Ta=-40 to 85℃
+Symbol Parameter
+Related Pins MIN TYP MAX
+
+tRESW
+
+*1) Reset low pulse width
+
+tREST
+
+*2) Reset complete time
+
+RESX
+
+30
+
+-
+
+-
+
+-
+
+-
+
+-
+
+20
+
+-
+
+120
+
+-
+
+Initial Condition
+( Default for H /W reset)
+
+Note
+
+Unit
+
+When reset applied
+during Sleep in mode
+When reset applied
+during Sleep out mode
+
+s
+ms
+ms
+
+Note 1) Spike due to an electrostatic discharge on RESX line does not cause irregular system reset according to the
+table below.
+RESX Pulse
+Action
+Reset Rejected
+Reset
+Reset starts
+Between 5s and 30s
+(It depends on voltage and temperature condition.)
+Note 2. During the resetting period, the display will be blanked (The display is entering blanking sequence, which
+maximum time is 120 ms, when Reset Starts in Sleep Out –mode. The display remains the blank state in Sleep
+In –mode) and then return to Default condition for H/W reset.
+Note 3. During Reset Complete Time, data in OTP will be latched to internal register during this period. This loading
+is done every time when there is H/W reset complete time (tREST) within 20ms after a rising edge of RESX.
+Note 4. Spike Rejection also applies during a valid reset pulse as shown below:
+Shorter than 5s
+Longer than 30s
+
+30us
+
+30us
+
+Note 5. It is necessary to wait 20msec after releasing RESX before sending commands. Also Sleep Out command
+cannot be sent for 120msec.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page122
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+8. Power Generation
+8.1 Two Supply Power ( VDDI / VDD )
+
+VGH (AVDD, AVDD+VCI, 2xAVDD)
+VGHR (3 ~12.0v)
+
+AVDD (4.5 ~6.5v), (2xVCI, 3xVCI)
+VDD = VDDA = VDDB = VDDR
+(2.7~3.6v)
+
+VGMP (2v ~ 6.3v)
+VGSP (0 ~ 4.5v)
+
+VCC (1.65~3.3v)
+VDDI (1.65~3.3v)
+
+VREFP (0.5 ~ 5V)
+
+DVDD(1.1v)
+
+VSSA = VSSB = VSSR = VSSI = DVSS = VSSAM
+(0v)
+
+VREFN (0, -0.5 ~ -4.5v)
+
+VCL (-2.7v, -3.5~ -5v), (-1xVCI, -2xVCI)
+
+VGLR (-2 ~ -12v)
+VGL (VCL, VCL-VCI, VCL-AVDD)
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page123
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+8.2 DC/DC Converter Circuit
+
+AVDD
+
+C11
+
+C12
+
+CAVDD
+
+S1~S240
+
+Source driver
+
+C11P
+C11N
+
+AVSS
+
+C12P
+
+Boost 1
+(AVDD)
+
+Gamma Buffers
+Reference Circuit
+
+C12N
+
+(x2) VDDB
+(x3) VDDB
+
+AVDD
+VGMP
+VGSP
+
+Positive Gamma
+Voltage Generator
+
+AVDD
+
+VGHR
+VSR_L[1:14]
+VSR_R[1:14]
+
+Gate level shifter
+
+VGLR
+AVDD
+C31P
+
+C31
+
+C32
+
+VREFP5
+
+VREFP5
+Regulator
+
+C31N
+C32P
+
+Boost 3
+(VCL)
+
+C32N
+
+(-1x) VDDB
+(-2x) VDDB
+
+CVREFP5
+
+VREFN5
+
+VREFN5
+Regulator
+
+CVREFN5
+
+C33P
+VCL
+
+CVCL
+
+VCL
+
+C41P
+
+C41
+CVGH
+
+OVDD
+Regulator
+
+OVDD_INT
+
+OVSS
+Regulator
+
+OVSS_IN
+
+COVDD
+
+COVSS
+
+C41N
+VGH
+
+DVDD
+
+DVDD Regulator
+
+CDVDD
+Boost 4 & 5
+(VGH/VGL)
+
+VREF
+
+C51P
+
+C51
+CVGL
+
+CVREF (22nF)
+
+C51N
+VDDB
+
+VGL
+
+VDDA
+VDDR
+VGH
+
+CVGHR
+
+VGHR
+
+VSSR
+
+Analog
+Power
+
+VSSA
+
+VGHR Regulator
+
+VSSB
+AVSS
+
+CVGLR
+
+VSSAM
+VGLR
+
+VGLR Regulator
+
+VCC
+VDDI
+
+VGL
+
+VSSI
+
+Digital
+Power
+
+DVSS
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page124
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+8.3 External Components
+No.
+
+Signal name
+
+Values
+
+Max ability
+
+1
+
+VDDA, VDDR, VDDB
+
+Cap , 2.2uF
+
+6.3V
+
+2
+
+VDDI, VCC
+
+Cap , 2.2uF
+
+6.3V
+
+3
+
+VREF
+
+Cap , 22nF
+
+6.3V
+
+4
+
+DVDD
+
+Cap , 1.0uF
+
+6.3V
+
+5
+
+VREFN/VREFP
+
+Cap , 1.0uF
+
+10V
+
+6
+
+VGHR
+
+Cap , 2.2uF
+
+16V
+
+7
+
+VGLR
+
+Cap , 2.2uF
+
+16V
+
+8
+
+OVDD_INT
+
+Cap , 2.2uF
+
+10V
+
+9
+
+OVSS_INT
+
+Cap , 2.2uF
+
+10V
+
+10
+
+C11P/C11N
+
+Cap , 1.0uF
+
+6.3V
+
+11
+
+C12P/C12N
+
+Cap , 1.0uF
+
+6.3V
+
+12
+
+AVDD
+
+Cap , 2.2uF
+
+10V
+
+13
+
+C31P/C31N
+
+Cap , 1.0uF
+
+6.3V
+
+14
+
+C32P/C32N
+
+Cap , 1.0uF
+
+6.3V
+
+15
+
+VCL
+
+Cap , 2.2uF
+
+10V
+
+16
+
+C41P/C41N
+
+Cap , 1.0uF
+
+16V
+
+17
+
+VGH
+
+Cap , 2.2uF
+
+16V
+
+18
+
+C51P/C51N
+
+Cap , 1.0uF
+
+16V
+
+19
+
+VGL
+
+Cap , 2.2uF
+
+16V
+
+20
+
+VGL (VGL-GND)
+
+Schottky Diode
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page125
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+8.4 Power on/off sequence and timing
+
+Power On sequence
+
+Power on
+
+IC state
+VDDI
+
+Reset
+
+Initial
+setting
+& sleepout
+
+MIPI
+initia
+l
+
+Display on
+
+90% VDDI
+
+VDD
+
+90% VDD
+
+VBAT
+RESX
+LP11
+
+MIPI I/F
+
+SWIRE
+
+>10m
+s
+No
+order
+
+>10ms
+
+>20ms
+
+initial
+setting
+
+Image
+DISPON write
+
+SLPOUT
+
+T-ini
+>1ms
+
+1
+Frame
+
+>50ms
+
+Enable Power IC
+ELVSS, ELVSS
+
+Power Off sequence
+
+IC state
+
+Display on
+
+Display off
+& sleep in
+
+Power down
+
+VDDI
+VDD
+VBAT
+RESX
+DISPOFF SLPIN
+
+MIPI I/F
+
+>0
+
+> 5 frame
+>83 ms @ 60hz
+
+>0
+
+>10ms
+
+SWIRE
+Disable Power IC
+ELVSS, ELVSS
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page126
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+SPI Interface
+
+Power On sequence
+
+Power on
+
+IC state
+VDDI
+
+Reset
+
+SPI
+initial
+
+Initial setting
+& sleepout
+
+Display on
+
+90% VDDI
+
+90% VDD
+
+VDD
+VBAT
+RESX
+
+initial
+setting
+
+Image
+DISPON write
+
+SLPOUT
+
+SPI I/F
+>10ms
+
+>10ms
+
+No
+order
+
+>20ms
+
+T-ini
+>1ms
+
+>50ms
+
+1 Frame
+
+SWIRE
+Enable Power IC
+ELVSS, ELVSS
+
+Power Off sequence
+
+IC state
+
+Display on
+
+SPI Interface
+Display off
+& sleep in
+
+Power down
+
+VDDI
+VDD
+VBAT
+RESX
+DISPOFF SLPIN
+
+SPI I/F
+>0
+
+> 5 frame
+>83 ms @ 60hz
+
+>0
+
+>10ms
+
+SWIRE
+Disable Power IC
+ELVSS, ELVSS
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page127
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+8.5 Power Level Modes
+Normal display mode on = NORON
+Partial mode on = PTLON
+Idle mode off = IDMOFF
+Idle mode on = IDMON
+Sleep out = SLPOUT
+Sleep in = SLPIN
+Deep standby mode = DSTBON
+
+Definition example:
+1. Normal Mode On (full display), Idle Mode Off, Sleep Out.
+In this mode, the display is able to show maximum 16.7M colors.
+2. Partial Mode On, Idle Mode Off, Sleep Out
+In this mode, part of the display is used with maximum 16.7M colors.
+3. Normal Mode On (full display), Idle Mode On, Sleep Out.
+In this mode, the full display is used with 8 or 16.7M colors.
+4. Partial Mode On, Idle Mode On, Sleep Out
+In this mode, part of the display is used with 8 or 16.7M colors.
+5. Sleep In Mode.
+In this mode, the DC/DC converter, internal oscillator and panel driver circuit are stopped. Only the MPU
+interface and registers are working with VDDI power supply. Contents of the frame memory can be safe or
+random.
+6. Deep Standby Mode.
+In this mode, the DC/DC converter, internal oscillator and panel driver circuit are stopped. The MPU interface
+and registers are not working. Contents of the frame memory are random.
+7. Power Off Mode
+In this mode, VDDI and VDDA/VDDR/VDDB are removed.
+NOTE: Transition between mode 1~5 is controllable by MPU commands. Mode 6 is entered for power saving with
+both power supplies for I/O and analog circuits and can be exited by hardware reset only (RESX=L). Mode 7 is
+entered only when both power supplies for I/O and analog circuits are removed.
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page128
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+8.6 Maximum Series Resistance
+Pin Name
+
+Type
+
+Max Resistance
+
+Unit
+
+VDDA, VDDB, VDDR, VDDI, VCC,
+AVSS, VSSAM, DVSS, VSSI, VSSA, VSSR,
+VSSB
+AVDD
+DVDD
+VCL
+VGH, VGL
+C11P/N~C12P/N
+C31P/N~C32P/N
+C41P/N
+C51P/N
+
+Power Supply
+
+5
+
+Ω
+
+Power Supply
+
+5
+
+Ω
+
+Power Input/Output
+Power Output
+Power Output
+Power Output
+Capacitor Connection
+Capacitor Connection
+Capacitor Connection
+Capacitor Connection
+
+5
+5
+5
+10
+5
+5
+5
+5
+
+Ω
+Ω
+Ω
+Ω
+Ω
+Ω
+Ω
+Ω
+
+MIPI Interface I/O
+
+5
+
+Ω
+
+Digital Output I/O
+
+20
+
+Ω
+
+Digital Interface I/O
+
+20
+
+Ω
+
+Input I/O
+Power Supply
+Source output
+GOA,SWoutput
+
+100
+5
+20
+20
+
+Ω
+Ω
+Ω
+Ω
+
+HSSI_CLK_P/N,
+HSSI_DATA0_P/N, HSSI_DATA1_P/N,
+TE, TE1, SWIRE, ERR
+RESX, CSX, D/CX, SCL, SDI_RDX,
+SDO,D[0]~D[7], WATCH_OSC_IN
+IM[1 :0], DSWAP, PSWAP
+MTP_PWR
+S[1]~S[240]
+VSR_L[1]~ VSR_L[14], VSR_R[1]~ VSR_R[14]
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page129
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+9. Pad Diagram and Coordination
+8080um
+
+48u
+
+16u
+
+… 179
+175 35u
+18u
+
+18u
+
+18u
+
+16u
+
+110u
+
+181 35u
+46u
+
+… … 195
+
+183
+
+219.8u
+
+196
+
+………
+
+198
+
+200
+
+202
+
+318
+
+320
+
+322
+
+16u 28u 16u
+
+53u 16u
+
+48u 16u
+
+317
+
+319
+
+321
+
+18u 26u 18u
+
+41u 18u
+
+46u 18u
+
+48u 16u 28u 16u 28u 16u
+
+197
+
+199
+
+203
+
+201
+
+………
+
+18u 46u 18u 36u 18u 26u 18u 26u 18u
+
+46u
+
+316
+
+…………
+
+315
+
+……
+
+350
+
+354
+
+470
+
+………
+
+356
+
+48u 16u 43u 16u 28u 16u
+
+16u
+
+……
+
+352
+
+349
+
+351
+
+18u
+
+46u 18u
+
+353
+
+……
+
+355
+
+51u 18u 26u 18u
+
+472
+
+474
+
+16u 28u 16u
+
+48u
+
+471
+
+473
+
+18u 26u 18u
+
+36u 18u
+
+469
+
+16u
+
+57.15u
+
+488
+
+35u 490
+
+16u
+
+48u
+
+110u
+
+475
+46u
+
+74.8u
+
+………
+
+……
+
+491 … 35u 495 69u
+
+18u
+
+46u
+
+18u
+
+18u
+
+81.6u
+51u
+
+54.85u
+
+16u
+
+489
+
+18u
+
+150u
+
+150u
+
+150u
+
+182
+
+16u
+69u
+
+219.8u
+
+180 35u
+
+81.6u
+
+35u
+
+497
+
+35u
+35u
+
+35u
+
+65u
+
+65u
+
+35u
+
+35u
+
+1186um
+………
+502
+
+FACE UP (COF)
+8080 X 1186 um (Include Scribe Line)
+
+798.2u
+
+798.2u
+
+35u
+
+35u
+
+81.6u
+
+25u 20u 25u 20u 25u
+
+45u
+
+95u
+
+45u
+
+……
+45u
+
+95u
+
+45u
+
+38u
+
+45u
+
+509
+
+25u 20u 25u 20u 25u
+38u
+
+……………
+
+135u
+45u
+
+25u 20u 25u 20u 25u
+38u
+
+38u
+
+3
+
+2
+
+504
+
+81.6u
+
+25u 20u 25u 20u 25u
+1
+
+51u
+
+503
+
+………
+
+496
+
+64.8u
+
+64.8u
+
+74.8u
+
+57.15u
+
+150u
+
+54.85u
+
+…………
+
+172
+
+173
+
+135u
+95u
+
+95u
+
+174
+
+45u
+
+45u
+
+8080um
+
+179
+
+17u
+
+17u
+
+…
+
+219.8
+u
+
+………
+
+196
+
+198
+
+200
+
+…………
+
+202
+
+47u
+
+181 100
+
+183
+
+u
+
+47u
+
+17u
+
+17u
+
+45u
+
+47u
+
+… … 195
+
+47u 17u 27u 17u 27u 17u
+
+197
+
+199
+
+201
+
+203
+
+………
+
+17u 47u 17u 37u 17u 27u 17u 27u 17u
+
+……
+
+322
+
+350
+
+352
+
+354
+
+………
+
+356
+
+470
+
+472
+
+319
+
+74.8
+u
+
+321
+
+……
+
+351
+
+353
+
+……
+
+355
+
+17u 47u 17u 52u 17u 27u 17u
+
+………
+
+488
+
+100 490
+u
+
+17u
+
+45u
+
+17u
+
+47u 17u
+
+17u 27u 17u
+
+47u
+
+471
+
+473
+
+475
+
+17u 27u 17u 37u 17u
+
+47u 17u
+
+469
+
+45u
+
+45u
+
+60u
+
+……
+45u
+
+45u
+
+489
+
+491
+
+… 100 495 69.5u
+
+47u
+
+17u
+
+17u
+
+676.2
+u
+
+60u
+
+…………
+
+172
+
+60u
+
+17
+3
+45u
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page130
+
+54.85
+u
+
+u
+
+17u
+
+130u
+
+……………
+
+……
+
+150u
+
+25u 20u 25u 20u 25u
+
+130u
+
+60u
+
+349
+
+56.65
+u
+
+474
+
+25u 20u 25u 20u 25u
+
+130u
+
+45u
+
+317
+
+25u 20u 25u 20u 25u
+
+130u
+
+3
+
+2
+
+315
+
+17u 47u 17u 42u 17u 27u 17u
+
+FACE UP (COG)
+8080 X 1186 um (Include Scribe Line)
+
+25u 20u 25u 20u 25u
+
+45u
+
+320
+
+17u 27u 17u 42u 17u 47u 17u
+
+676.2
+u
+
+1
+
+318
+
+17u 27u 17u 52u 17u 47u 17u
+
+1186um
+
+135u
+
+316
+
+u
+17u
+
+69.5
+100
+u 175 u
+
+219.8
+u
+
+182
+
+150u
+
+150u
+
+180 100
+
+64.8u
+
+64.8u
+
+74.8
+u
+
+56.65
+u
+
+150u
+
+54.85u
+
+17
+4
+45u
+
+135u
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+30 um
+
+30 um
+
+20 um
+
+20 um
+
+30 um
+
+30 um
+
+20 um
+
+20 um
+
+30 um
+
+30 um
+
+30 um
+
+30 um
+
+(-3910.15 , 453.2)
+
+30 um
+
+30 um
+
+30 um
+
+30 um
+
+(3910.15 , 453.2)
+
+30 um
+
+30 um
+
+30 um
+
+
+
+Chip size: 8080um x 1186um (Include sealing and scribe line)
+
+
+
+Chip thickness: 200/300 um
+
+
+
+PAD coordinates: PAD center
+
+
+
+PAD coordinates origin: Chip center
+
+
+
+Au bump size
+
+
+
+
+30 um
+
+30 um
+
+30 um
+
+30 um
+
+COF:
+
+
+16um/18um x 35um: Source:S1~S240
+
+
+
+16um/18um x 35um: gate control signal
+
+
+
+25um x 38um: Input Pads
+
+COG:
+
+
+17um x 100um: Source:S1~S240
+
+
+
+17um x 100um: gate control signal
+
+
+
+25um x 130um: Input Pads
+
+
+
+Au bump pitch: See PAD coordinates table
+
+
+
+Au bump height: 12±2 um (typ.)
+
+
+
+No. in the figure corresponds to No. in the PAD coordinates table
+
+
+
+Alignment mark
+Alignment mark shape
+left
+right
+
+X
+-3910.15
+3910.15
+
+Y
+453.2
+453.2
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page131
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+
+NO
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+
+Pad Coordinate (Unit: um)
+PAD NAME
+DUMMY_R1
+DUMMY_R1
+ANALOG_TEST[1]
+VGLR
+VGLR
+VGHR
+VGHR
+VREFP5
+VREFP5
+VREFN5
+VREFN5
+OVDD_INT
+OVDD_INT
+OVSS_INT
+OVSS_INT
+VCL
+VCL
+AVDD
+AVDD
+VREF
+VGSP
+VGMP
+ANALOG_TEST[2]
+VDDR
+VDDR
+VDDA
+VDDA
+AVSS
+AVSS
+VSSA
+VSSA
+VSSR
+VSSR
+WATCH_OSC_IN
+ERR
+TE1
+SWIRE
+TE
+RESX
+SDO
+VSSI
+SDI_RDX
+DCX
+WRX_SCL
+CSX
+D[0]
+VSSI
+D[1]
+D[2]
+D[3]
+
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+
+D[4]
+D[5]
+VSSI
+D[6]
+D[7]
+TEST[1]
+EXTCLK
+TEST[2]
+VSSI
+TEST[3]
+IM[1]
+IM[0]
+DSWAP
+TESTEN
+PSWAP
+VDDI
+VDDI
+VDDI
+VCC
+VCC
+VCC
+DVDD
+DVDD
+DVDD
+DVDD
+DVSS
+DVSS
+DVSS
+DVSS
+HSSI_D1_P
+HSSI_D1_P
+HSSI_D1_N
+HSSI_D1_N
+VSSAM
+HSSI_CLK_P
+HSSI_CLK_P
+HSSI_CLK_N
+HSSI_CLK_N
+VSSAM
+HSSI_D0_P
+HSSI_D0_P
+HSSI_D0_N
+HSSI_D0_N
+VSSR
+VSSR
+VSSR
+VSSA
+VSSA
+VSSA
+AVSS
+
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+
+AVSS
+AVSS
+VSSB
+VSSB
+VSSB
+VSSB
+VSSB
+C11P
+C11P
+C11P
+C11N
+C11N
+C11N
+C12P
+C12P
+C12P
+C12N
+C12N
+C12N
+VDDB
+VDDB
+VDDB
+VDDB
+VDDB
+VDDR
+VDDR
+VDDR
+VDDR
+AVDD
+AVDD
+AVDD
+C31P
+C31P
+C31P
+C31N
+C31N
+C31N
+VCL
+VCL
+VCL
+C32P
+C32P
+C32P
+C32N
+C32N
+C32N
+C41P
+C41P
+C41N
+C41N
+
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+
+C51N
+C51N
+C51P
+C51P
+VGH
+VGH
+VGH
+VGHR
+VGHR
+VGHR
+VGLR
+VGLR
+VGLR
+VGL
+VGL
+VGL
+AVSS
+AVSS
+MTP_PWR
+MTP_PWR
+MTP_PWR
+MTP_PWR
+DUMMY_R2
+DUMMY_R2
+DUMMY_R3
+DUMMY_R3
+PCD_L_AVSS
+VGLR
+VGHR
+VREFP5
+VREFN5
+DMY[1]
+VSR_L[14]
+VSR_L[13]
+VSR_L[12]
+VSR_L[11]
+VSR_L[10]
+VSR_L[9]
+VSR_L[8]
+VSR_L[7]
+VSR_L[6]
+VSR_L[5]
+VSR_L[4]
+VSR_L[3]
+VSR_L[2]
+VSR_L[1]
+DMY[2]
+SOUT_TEST
+S[240]
+S[239]
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page132
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247
+248
+249
+250
+
+S[238]
+S[237]
+S[236]
+S[235]
+S[234]
+S[233]
+S[232]
+S[231]
+S[230]
+S[229]
+S[228]
+S[227]
+S[226]
+S[225]
+S[224]
+S[223]
+S[222]
+S[221]
+S[220]
+S[219]
+S[218]
+S[217]
+S[216]
+S[215]
+S[214]
+S[213]
+S[212]
+S[211]
+S[210]
+S[209]
+S[208]
+S[207]
+S[206]
+S[205]
+S[204]
+S[203]
+S[202]
+S[201]
+S[200]
+S[199]
+S[198]
+S[197]
+S[196]
+S[195]
+S[194]
+S[193]
+S[192]
+S[191]
+S[190]
+S[189]
+
+251
+252
+253
+254
+255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283
+284
+285
+286
+287
+288
+289
+290
+291
+292
+293
+294
+295
+296
+297
+298
+299
+300
+
+S[188]
+S[187]
+S[186]
+S[185]
+S[184]
+S[183]
+S[182]
+S[181]
+S[180]
+S[179]
+S[178]
+S[177]
+S[176]
+S[175]
+S[174]
+S[173]
+S[172]
+S[171]
+S[170]
+S[169]
+S[168]
+S[167]
+S[166]
+S[165]
+S[164]
+S[163]
+S[162]
+S[161]
+S[160]
+S[159]
+S[158]
+S[157]
+S[156]
+S[155]
+S[154]
+S[153]
+S[152]
+S[151]
+S[150]
+S[149]
+S[148]
+S[147]
+S[146]
+S[145]
+S[144]
+S[143]
+S[142]
+S[141]
+S[140]
+S[139]
+
+301
+302
+303
+304
+305
+306
+307
+308
+309
+310
+311
+312
+313
+314
+315
+316
+317
+318
+319
+320
+321
+322
+323
+324
+325
+326
+327
+328
+329
+330
+331
+332
+333
+334
+335
+336
+337
+338
+339
+340
+341
+342
+343
+344
+345
+346
+347
+348
+349
+350
+
+S[138]
+S[137]
+S[136]
+S[135]
+S[134]
+S[133]
+S[132]
+S[131]
+S[130]
+S[129]
+S[128]
+S[127]
+S[126]
+S[125]
+S[124]
+S[123]
+S[122]
+S[121]
+VGHR
+VGLR
+VREFN5
+VSR_L[1]
+VSR_L[2]
+VSR_L[3]
+VSR_L[4]
+VSR_L[5]
+VSR_L[6]
+VSR_L[7]
+VSR_L[8]
+VSR_L[9]
+VSR_L[10]
+DMY[3]
+DMY[4]
+DMY[5]
+DMY[6]
+DMY[7]
+DMY[8]
+DMY[9]
+DMY[10]
+VSR_R[9]
+VSR_R[10]
+VSR_R[7]
+VSR_R[8]
+VSR_R[5]
+VSR_R[6]
+VSR_R[3]
+VSR_R[4]
+VSR_R[1]
+VSR_R[2]
+VREFP5
+
+351
+352
+353
+354
+355
+356
+357
+358
+359
+360
+361
+362
+363
+364
+365
+366
+367
+368
+369
+370
+371
+372
+373
+374
+375
+376
+377
+378
+379
+380
+381
+382
+383
+384
+385
+386
+387
+388
+389
+390
+391
+392
+393
+394
+395
+396
+397
+398
+399
+400
+
+VGLR
+VGHR
+S[120]
+S[119]
+S[118]
+S[117]
+S[116]
+S[115]
+S[114]
+S[113]
+S[112]
+S[111]
+S[110]
+S[109]
+S[108]
+S[107]
+S[106]
+S[105]
+S[104]
+S[103]
+S[102]
+S[101]
+S[100]
+S[99]
+S[98]
+S[97]
+S[96]
+S[95]
+S[94]
+S[93]
+S[92]
+S[91]
+S[90]
+S[89]
+S[88]
+S[87]
+S[86]
+S[85]
+S[84]
+S[83]
+S[82]
+S[81]
+S[80]
+S[79]
+S[78]
+S[77]
+S[76]
+S[75]
+S[74]
+S[73]
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page133
+
+RM690B0 Data Sheet
+Rev：V0.2
+
+401
+402
+403
+404
+405
+406
+407
+408
+409
+410
+411
+412
+413
+414
+415
+416
+417
+418
+419
+420
+421
+422
+423
+424
+425
+426
+427
+428
+429
+430
+431
+432
+433
+434
+435
+436
+437
+438
+439
+440
+441
+442
+443
+444
+445
+446
+447
+448
+449
+450
+
+S[72]
+S[71]
+S[70]
+S[69]
+S[68]
+S[67]
+S[66]
+S[65]
+S[64]
+S[63]
+S[62]
+S[61]
+S[60]
+S[59]
+S[58]
+S[57]
+S[56]
+S[55]
+S[54]
+S[53]
+S[52]
+S[51]
+S[50]
+S[49]
+S[48]
+S[47]
+S[46]
+S[45]
+S[44]
+S[43]
+S[42]
+S[41]
+S[40]
+S[39]
+S[38]
+S[37]
+S[36]
+S[35]
+S[34]
+S[33]
+S[32]
+S[31]
+S[30]
+S[29]
+S[28]
+S[27]
+S[26]
+S[25]
+S[24]
+S[23]
+
+451
+452
+453
+454
+455
+456
+457
+458
+459
+460
+461
+462
+463
+464
+465
+466
+467
+468
+469
+470
+471
+472
+473
+474
+475
+476
+477
+478
+479
+480
+481
+482
+483
+484
+485
+486
+487
+488
+489
+490
+491
+492
+493
+494
+495
+
+S[22]
+S[21]
+S[20]
+S[19]
+S[18]
+S[17]
+S[16]
+S[15]
+S[14]
+S[13]
+S[12]
+S[11]
+S[10]
+S[9]
+S[8]
+S[7]
+S[6]
+S[5]
+S[4]
+S[3]
+S[2]
+S[1]
+DMY[11]
+VSR_R[1]
+VSR_R[2]
+VSR_R[3]
+VSR_R[4]
+VSR_R[5]
+VSR_R[6]
+VSR_R[7]
+VSR_R[8]
+VSR_R[9]
+VSR_R[10]
+VSR_R[11]
+VSR_R[12]
+VSR_R[13]
+VSR_R[14]
+DMY[12]
+VREFN5
+VREFP5
+VGHR
+VGLR
+PCD_R_AVDD
+DUMMY_R4
+DUMMY_R4
+
+Attachment is the exclusive property of Raydium and shall not be reproduced or copied or transformed to any other format without prior
+permission of Raydium. Please handle the information based on Non-Disclosure Agreement.
+
+Page134
+
+

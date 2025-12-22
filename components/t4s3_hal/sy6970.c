@@ -1,13 +1,24 @@
 #include "sy6970.h"
+#include <stdbool.h>
+#include <esp_err.h>
 #include "driver/i2c_master.h"
 #include "esp_log.h"
 
+#define I2C_MASTER_FREQ_HZ          400000 // 400kHz
+
 static const char *TAG = "sy6970";
 
-#define I2C_MASTER_FREQ_HZ          400000
-
+// Forward declaration for static function used before definition
+static esp_err_t sy6970_update_reg(uint8_t reg, uint8_t mask, uint8_t val);
 static i2c_master_bus_handle_t bus_handle = NULL;
 static i2c_master_dev_handle_t dev_handle = NULL;
+
+// Control STAT LED (true = ON, false = OFF)
+esp_err_t sy6970_set_stat_led(bool on) {
+    // STAT_DIS bit (bit 6) in REG_07: 0 = enable STAT, 1 = disable STAT
+    // So to turn ON, clear bit; to turn OFF, set bit
+    return sy6970_update_reg(SY6970_REG_07, SY6970_REG07_STAT_DIS, on ? 0 : SY6970_REG07_STAT_DIS);
+}
 
 static esp_err_t sy6970_write_reg(uint8_t reg, uint8_t data) {
     uint8_t write_buf[2] = {reg, data};
@@ -22,10 +33,8 @@ static esp_err_t sy6970_update_reg(uint8_t reg, uint8_t mask, uint8_t val) {
     uint8_t data;
     esp_err_t ret = sy6970_read_reg(reg, &data);
     if (ret != ESP_OK) return ret;
-    
     data &= ~mask;
     data |= (val & mask);
-    
     return sy6970_write_reg(reg, data);
 }
 
@@ -69,21 +78,54 @@ void sy6970_init(void) {
         return;
     }
 
-    // Disable Watchdog (Reg 0x07, clear bits 5:4)
-    sy6970_update_reg(SY6970_REG_07, SY6970_REG07_WD_MASK, 0);
-    ESP_LOGI(TAG, "Watchdog Disabled");
+    // Factory default settings (see datasheet)
+    // REG_00: Input Current Limit = 500mA, EN_HIZ=0, EN_ILIM=0
+    sy6970_update_reg(SY6970_REG_00, 0xFF, 0x08); // 0b00001000
 
-    // Disable OTG (Reg 0x03, Bit 5)
-    sy6970_enable_otg(false);
+    // REG_01: VINDPM default, temp default (0x1B)
+    sy6970_update_reg(SY6970_REG_01, 0xFF, 0x1B);
 
-    // Enable Charging (Reg 0x03, Bit 4)
-    sy6970_enable_charging(true);
+    // REG_02: ADC/Boost Freq default (0x3C)
+    sy6970_update_reg(SY6970_REG_02, 0xFF, 0x3C);
 
-    // Set Input Current Limit to Max (3.25A)
-    sy6970_set_input_current_limit(3250);
-    
-    // Enable ADC for monitoring (Reg 0x02, Bit 7 = 1, Bit 6 = 1 for continuous)
-    sy6970_update_reg(SY6970_REG_02, 0xC0, 0xC0);
+    // REG_03: SYS_MIN=3.5V, OTG=0, CHG=1 (0x18)
+    sy6970_update_reg(SY6970_REG_03, 0xFF, 0x18);
+
+    // REG_04: Fast Charge Current default (0x20)
+    sy6970_update_reg(SY6970_REG_04, 0xFF, 0x20);
+
+    // REG_05: Precharge/Term Current default (0x04)
+    sy6970_update_reg(SY6970_REG_05, 0xFF, 0x04);
+
+    // REG_06: Charge Voltage default (0xB2)
+    sy6970_update_reg(SY6970_REG_06, 0xFF, 0xB2);
+
+    // REG_07: EN_TERM=1, STAT_DIS=0, WD=00, EN_TIMER=1 (0x89)
+    sy6970_update_reg(SY6970_REG_07, 0xFF, 0x89);
+
+    // REG_08: IR Comp/Thermal Reg default (0x7B)
+    sy6970_update_reg(SY6970_REG_08, 0xFF, 0x7B);
+
+    // REG_09: Safety Timer/BATFET default (0x8C)
+    sy6970_update_reg(SY6970_REG_09, 0xFF, 0x8C);
+
+    // REG_0A: Boost Voltage/Current default (0x20)
+    sy6970_update_reg(SY6970_REG_0A, 0xFF, 0x20);
+
+    // REG_0B: Status 0 (read only)
+    // REG_0C: Status 1 (read only)
+    // REG_0D: VINDPM Threshold default (0x1B)
+    sy6970_update_reg(SY6970_REG_0D, 0xFF, 0x1B);
+
+    // REG_0E: Battery Voltage (ADC, read only)
+    // REG_0F: System Voltage (ADC, read only)
+    // REG_10: NTC % (ADC, read only)
+    // REG_11: VBUS Voltage (ADC, read only)
+    // REG_12: Charge Current (ADC, read only)
+    // REG_13: DPM Status (read only)
+    // REG_14: Reset/Rev (read only)
+
+    ESP_LOGI(TAG, "SY6970 set to factory defaults");
 }
 
 i2c_master_bus_handle_t sy6970_get_bus_handle(void)
@@ -96,7 +138,8 @@ esp_err_t sy6970_set_input_current_limit(uint16_t current_ma) {
     if (current_ma > 3250) current_ma = 3250;
     
     uint8_t val = (current_ma - 100) / 50;
-    // Also clear EN_ILIM (Bit 6) to use register setting? Datasheet says "Actual input current limit is the lower of I2C or ILIM pin"
+    // Also clear EN_ILIM (Bit 6) to use register setting? Datasheet says "Actual input current
+    // limit is the lower of I2C or ILIM pin"
     // If we want to force I2C control, we might need to ensure ILIM pin isn't limiting it lower.
     // But usually we just set the register.
     

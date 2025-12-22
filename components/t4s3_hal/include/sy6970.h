@@ -95,10 +95,14 @@ uint16_t sy6970_get_system_voltage(void);
 uint16_t sy6970_get_charge_current(void);
 uint8_t sy6970_get_ntc_percentage(void);
 
+
 // Status
 sy6970_bus_status_t sy6970_get_bus_status(void);
 sy6970_charge_status_t sy6970_get_charge_status(void);
 bool sy6970_is_power_good(void);
 bool sy6970_is_vbus_connected(void);
+
+// STAT LED control
+esp_err_t sy6970_set_stat_led(bool on);
 
 #endif
