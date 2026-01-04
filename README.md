@@ -200,3 +200,24 @@ If VS Code shows errors like `CONFIG_LOG_MAXIMUM_LEVEL is undefined` but the pro
 1.  Ensure you delete the first build and rebuild at least once (`idf.py build`).
 2.  The `sdkconfig.h` file is generated in `build/config/`.
 3.  Check `.vscode/settings.json` and ensure `compile-commands-dir` uses `${workspaceFolder}/build` instead of a hardcoded absolute path from another machine.
+
+---
+
+## LVGL Integration Notes
+
+For a detailed breakdown of how LVGL 9 was integrated, including the debugging process for display artifacts (skew, rainbow lines) and the specific driver implementation details, please see [docs/LVGL_JOURNEY.md](docs/LVGL_JOURNEY.md).
+
+---
+
+## Display Configuration (RM690B0)
+
+The T4-S3 uses an RM690B0 AMOLED display controller. The physical panel is smaller than the controller's maximum resolution, requiring specific offsets to center the image and avoid artifacts.
+
+**Tuned Configuration (Landscape / USB Bottom):**
+- **Resolution:** 594 x 459 pixels
+- **Offset X:** 4
+- **Offset Y:** 9
+- **Rotation:** 270 degrees (Landscape Inverted)
+
+These values are hardcoded in `components/rm690b0/rm690b0.c` under `RM690B0_ROTATION_270` to ensure pixel-perfect alignment and eliminate edge artifacts ("hair-thin lines").
+

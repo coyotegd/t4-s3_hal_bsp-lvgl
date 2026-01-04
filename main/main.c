@@ -1,62 +1,41 @@
-
 #include <stdio.h>
-#include <stdlib.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "hal_mgr.h"
+#include "lvgl_mgr.h"
+#include "lvgl.h"
+#include "lv_ui.h"
 
-// Static/global declarations after includes
 static const char *TAG = "main";
 
-// Color bars (RGB565)
-const uint16_t rainbow[] = {
-    0xF800, // Red
-    0xFD20, // Orange
-    0xFFE0, // Yellow
-    0x07E0, // Green
-    0x001F, // Blue
-    0x4810, // Indigo
-    0xA81F  // Violet
-};
-
-// Get current dimensions from display driver
-static inline uint16_t get_display_width(void) {
-    return hal_get_display_width();
-}
-
-static inline uint16_t get_display_height(void) {
-    return hal_get_display_height();
-}
-
-void draw_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color) {
-    hal_draw_rect(x, y, w, h, color);
-}
-
-void cycle_rotation(void) {
-    hal_cycle_rotation();
-    ESP_LOGI(TAG, "Rotation cycled via HAL");
-}
-
-void redraw_screen(void) {
-    hal_redraw_screen();
+// Minimal USB handler
+static void my_usb_handler(bool plugged, void *user_ctx) {
+    ESP_LOGI(TAG, "USB %s", plugged ? "Plugged" : "Unplugged");
 }
 
 void app_main(void) {
-    ESP_LOGI(TAG, "Starting App...");
-    
+    ESP_LOGI(TAG, "Starting T4-S3 BSP Project...");
+    ESP_LOGI(TAG, "LVGL Version: %d.%d.%d", LVGL_VERSION_MAJOR, LVGL_VERSION_MINOR, LVGL_VERSION_PATCH);
 
-    // Initialize all hardware via HAL
-    hal_init();
+    // Initialize BSP (which inits LVGL, HAL, and shows test rainbow 3s from driver)
+    if (bsp_init() != ESP_OK) {
+        ESP_LOGE(TAG, "BSP Initialization failed! System halted.");
+        while(1) vTaskDelay(1000);
+    }
 
-    // Draw initial screen
-    redraw_screen();
+    // Register callbacks to the HAL via the manager if needed
+    hal_mgr_register_usb_callback(my_usb_handler, NULL);
 
-    // Touch and button handling loop
+    // Create the UI
+    lvgl_mgr_lock();
+    lv_ui_init(lv_display_get_default());
+    lvgl_mgr_unlock();
+
+    ESP_LOGI(TAG, "System ready.");
+
+    // Main task can be deleted, sleep forever, or run your app logic here
     while (1) {
-        hal_handle_touch();
-        hal_button_poll();
-        vTaskDelay(pdMS_TO_TICKS(20));
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }

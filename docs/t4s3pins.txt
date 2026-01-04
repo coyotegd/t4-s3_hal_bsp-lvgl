@@ -28,7 +28,7 @@ Reset Button
 Mos! 1002
 
 MISO 1004 v \ Battery Switch
-SCK 1003 }
+SCK 1003 
 
 cs 1001
 MicroSD Card

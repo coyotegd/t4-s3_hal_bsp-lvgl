@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS "hal_mgr.c" "rm690b0.c" "sy6970.c" "cst226se.c" "button.c"
-    INCLUDE_DIRS "include"
-    REQUIRES driver freertos
+    SRCS "hal_mgr.c"
+    INCLUDE_DIRS "."
+    REQUIRES rm690b0 cst226se sy6970 freertos espressif__button sd_card
 )
