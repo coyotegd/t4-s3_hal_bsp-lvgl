@@ -26,20 +26,22 @@ void populate_sd_files_list(void) {
                 lv_obj_set_height(btn, LV_SIZE_CONTENT);
                 lv_obj_add_event_cb(btn, file_btn_event_handler, LV_EVENT_CLICKED, NULL);
 
-                // Style: Outline only (Transparent bg, Blue border) by default, Blue bg when pressed
+                // Style: List item style (Transparent, Left aligned, No border)
                 lv_obj_set_style_bg_opa(btn, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
-                lv_obj_set_style_border_width(btn, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
-                lv_obj_set_style_border_color(btn, lv_palette_main(LV_PALETTE_BLUE), LV_PART_MAIN | LV_STATE_DEFAULT);
+                lv_obj_set_style_shadow_width(btn, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+                lv_obj_set_style_border_width(btn, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+                lv_obj_set_style_radius(btn, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
                 lv_obj_set_style_text_color(btn, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);
+                lv_obj_set_style_pad_all(btn, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
 
+                // Pressed style: Dark Grey background
                 lv_obj_set_style_bg_opa(btn, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
-                lv_obj_set_style_bg_color(btn, lv_palette_main(LV_PALETTE_BLUE), LV_PART_MAIN | LV_STATE_PRESSED);
-                lv_obj_set_style_border_color(btn, lv_palette_main(LV_PALETTE_BLUE), LV_PART_MAIN | LV_STATE_PRESSED);
+                lv_obj_set_style_bg_color(btn, lv_palette_darken(LV_PALETTE_GREY, 2), LV_PART_MAIN | LV_STATE_PRESSED);
                 lv_obj_set_style_text_color(btn, lv_color_white(), LV_PART_MAIN | LV_STATE_PRESSED);
 
                 lv_obj_t * lbl = lv_label_create(btn);
-                lv_label_set_text(lbl, dir->d_name);
-                lv_obj_center(lbl);
+                lv_label_set_text_fmt(lbl, "%s  %s", LV_SYMBOL_FILE, dir->d_name);
+                lv_obj_align(lbl, LV_ALIGN_LEFT_MID, 0, 0);
             }
         }
         closedir(d);
@@ -52,7 +54,9 @@ void populate_sd_files_list(void) {
 
 void show_media_view(lv_event_t * e) {
     if(home_cont) lv_obj_add_flag(home_cont, LV_OBJ_FLAG_HIDDEN);
-    if(system_cont) lv_obj_add_flag(system_cont, LV_OBJ_FLAG_HIDDEN);
+    if(pmic_cont) lv_obj_add_flag(pmic_cont, LV_OBJ_FLAG_HIDDEN);
+    if(settings_cont) lv_obj_add_flag(settings_cont, LV_OBJ_FLAG_HIDDEN);
+    if(sys_info_cont) lv_obj_add_flag(sys_info_cont, LV_OBJ_FLAG_HIDDEN);
     if(media_cont) lv_obj_remove_flag(media_cont, LV_OBJ_FLAG_HIDDEN);
     
     populate_sd_files_list();

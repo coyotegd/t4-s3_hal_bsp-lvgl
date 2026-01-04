@@ -2,8 +2,46 @@
 
 void show_home_view(lv_event_t * e) {
     if(home_cont) lv_obj_remove_flag(home_cont, LV_OBJ_FLAG_HIDDEN);
-    if(system_cont) lv_obj_add_flag(system_cont, LV_OBJ_FLAG_HIDDEN);
+    if(pmic_cont) lv_obj_add_flag(pmic_cont, LV_OBJ_FLAG_HIDDEN);
+    if(settings_cont) lv_obj_add_flag(settings_cont, LV_OBJ_FLAG_HIDDEN);
+    if(sys_info_cont) lv_obj_add_flag(sys_info_cont, LV_OBJ_FLAG_HIDDEN);
     if(media_cont) lv_obj_add_flag(media_cont, LV_OBJ_FLAG_HIDDEN);
+}
+
+static void create_neon_btn(lv_obj_t * parent, const char * icon, const char * text, lv_color_t color, lv_event_cb_t event_cb) {
+    lv_obj_t * btn = lv_button_create(parent);
+    lv_obj_set_height(btn, 100);
+    lv_obj_set_width(btn, LV_PCT(30));
+    lv_obj_add_event_cb(btn, event_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_set_flex_flow(btn, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(btn, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_all(btn, 5, 0);
+    lv_obj_set_style_pad_gap(btn, 5, 0);
+
+    // Default Style
+    lv_obj_set_style_bg_opa(btn, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(btn, color, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(btn, 3, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(btn, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(btn, 15, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    // Pressed Style
+    lv_obj_set_style_bg_opa(btn, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(btn, color, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_shadow_width(btn, 30, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_shadow_color(btn, color, LV_PART_MAIN | LV_STATE_PRESSED);
+    
+    // Icon
+    lv_obj_t * lbl_icon = lv_label_create(btn);
+    lv_label_set_text(lbl_icon, icon);
+    lv_obj_set_style_text_font(lbl_icon, &lv_font_montserrat_30, 0);
+    lv_obj_set_style_text_color(lbl_icon, lv_color_white(), 0);
+
+    // Label
+    lv_obj_t * lbl_text = lv_label_create(btn);
+    lv_label_set_text(lbl_text, text);
+    lv_obj_set_style_text_font(lbl_text, &lv_font_montserrat_18, 0);
+    lv_obj_set_style_text_color(lbl_text, lv_color_white(), 0);
 }
 
 void ui_home_create(lv_obj_t * parent) {
@@ -13,50 +51,19 @@ void ui_home_create(lv_obj_t * parent) {
     lv_obj_remove_flag(home_cont, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_bg_opa(home_cont, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(home_cont, 0, 0);
-    lv_obj_set_style_pad_all(home_cont, 0, 0);
-    lv_obj_set_style_pad_bottom(home_cont, 10, 0); 
-    lv_obj_set_style_pad_left(home_cont, 10, 0);
-    lv_obj_set_style_pad_top(home_cont, 10, 0);
-    lv_obj_set_style_pad_right(home_cont, 10, 0);
+    lv_obj_set_style_pad_all(home_cont, 20, 0);
+    lv_obj_set_style_pad_row(home_cont, 10, 0);
     lv_obj_set_flex_flow(home_cont, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(home_cont, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     
-    // Create a container for the header
-    lv_obj_t * header_cont = lv_obj_create(home_cont);
-    lv_obj_set_size(header_cont, LV_PCT(100), LV_SIZE_CONTENT);
-    lv_obj_set_style_bg_opa(header_cont, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_border_width(header_cont, 0, 0);
-    lv_obj_set_flex_flow(header_cont, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(header_cont, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    lv_obj_set_style_pad_all(header_cont, 0, 0);
-    lv_obj_set_style_margin_top(header_cont, 0, 0);
-
-    // 1. Left Button Wrapper
-    lv_obj_t * left_wrapper = lv_obj_create(header_cont);
-    lv_obj_set_height(left_wrapper, LV_SIZE_CONTENT);
-    lv_obj_set_flex_grow(left_wrapper, 1);
-    lv_obj_set_style_bg_opa(left_wrapper, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_border_width(left_wrapper, 0, 0);
-    lv_obj_remove_flag(left_wrapper, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_flex_flow(left_wrapper, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(left_wrapper, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-
-    lv_obj_t * btn_left = lv_button_create(left_wrapper);
-    lv_obj_set_width(btn_left, LV_PCT(90));
-    lv_obj_set_height(btn_left, 80);
-    lv_obj_remove_flag(btn_left, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_add_event_cb(btn_left, show_system_view, LV_EVENT_CLICKED, NULL);
-    lv_obj_t * lbl_btn_left = lv_label_create(btn_left);
-    lv_label_set_text(lbl_btn_left, "System Info");
-    lv_obj_center(lbl_btn_left);
-
-    // 2. Title Container (Center)
-    lv_obj_t * title_cont = lv_obj_create(header_cont);
+    // 1. Title Container (Top)
+    lv_obj_t * title_cont = lv_obj_create(home_cont);
     lv_obj_set_size(title_cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
     lv_obj_set_style_bg_opa(title_cont, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(title_cont, 0, 0);
     lv_obj_set_flex_flow(title_cont, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(title_cont, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    lv_obj_set_style_pad_row(title_cont, 0, 0);
+    lv_obj_set_style_pad_bottom(title_cont, 10, 0);
 
     // Create a spangroup for the title
     lv_obj_t * spangroup = lv_spangroup_create(title_cont);
@@ -128,32 +135,40 @@ void ui_home_create(lv_obj_t * parent) {
     lv_obj_set_style_text_align(subtitle, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_set_style_text_font(subtitle, &lv_font_montserrat_22, 0);
     lv_obj_set_style_text_color(subtitle, lv_color_hex(0xFFD700), 0); // Gold
-    lv_obj_set_style_margin_bottom(subtitle, -5, 0); // Pull content below it closer
+    lv_obj_set_style_margin_bottom(subtitle, -5, 0);
 
-    // 3. Right Button Wrapper
-    lv_obj_t * right_wrapper = lv_obj_create(header_cont);
-    lv_obj_set_height(right_wrapper, LV_SIZE_CONTENT);
-    lv_obj_set_flex_grow(right_wrapper, 1);
-    lv_obj_set_style_bg_opa(right_wrapper, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_border_width(right_wrapper, 0, 0);
-    lv_obj_remove_flag(right_wrapper, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_flex_flow(right_wrapper, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(right_wrapper, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    // 2. Button Container (Row 1)
+    lv_obj_t * btn_row1 = lv_obj_create(home_cont);
+    lv_obj_set_width(btn_row1, LV_PCT(100));
+    lv_obj_set_height(btn_row1, LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(btn_row1, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(btn_row1, 0, 0);
+    lv_obj_set_flex_flow(btn_row1, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(btn_row1, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_gap(btn_row1, 10, 0);
 
-    lv_obj_t * btn_right = lv_button_create(right_wrapper);
-    lv_obj_set_width(btn_right, LV_PCT(90));
-    lv_obj_set_height(btn_right, 80);
-    lv_obj_remove_flag(btn_right, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_add_event_cb(btn_right, show_media_view, LV_EVENT_CLICKED, NULL);
-    lv_obj_t * lbl_btn_right = lv_label_create(btn_right);
-    lv_label_set_text(lbl_btn_right, "Media & Display");
-    lv_obj_center(lbl_btn_right);
-    
-    // Border Frame (Matches GIF view style)
-    lv_obj_t * frame = lv_obj_create(home_cont);
-    lv_obj_set_size(frame, LV_PCT(100), LV_FLEX_GROW);
-    lv_obj_set_style_bg_opa(frame, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_border_width(frame, 2, 0);
-    lv_obj_set_style_border_color(frame, lv_color_hex(0x404040), 0);
-    lv_obj_set_style_radius(frame, 10, 0);
+    // Button 1: PMIC (Neon Red/Orange)
+    create_neon_btn(btn_row1, LV_SYMBOL_CHARGE, "PMIC", lv_color_hex(0xFF3300), show_pmic_view);
+
+    // Button 2: SD Card (Neon Cyan)
+    create_neon_btn(btn_row1, LV_SYMBOL_SD_CARD, "SD Card", lv_color_hex(0x00FFFF), show_media_view);
+
+    // Button 3: Display (Neon Green)
+    create_neon_btn(btn_row1, LV_SYMBOL_EYE_OPEN, "Display", lv_color_hex(0x39FF14), show_media_view);
+
+    // 3. Button Container (Row 2)
+    lv_obj_t * btn_row2 = lv_obj_create(home_cont);
+    lv_obj_set_width(btn_row2, LV_PCT(100));
+    lv_obj_set_height(btn_row2, LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(btn_row2, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(btn_row2, 0, 0);
+    lv_obj_set_flex_flow(btn_row2, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(btn_row2, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_gap(btn_row2, 10, 0);
+
+    // Button 4: System (Neon Purple)
+    create_neon_btn(btn_row2, LV_SYMBOL_SETTINGS, "System", lv_color_hex(0x9D00FF), show_sys_info_view);
+
+    // Button 5: Settings (Neon Pink)
+    create_neon_btn(btn_row2, LV_SYMBOL_WIFI, "Settings", lv_color_hex(0xFF007F), show_settings_view);
 }

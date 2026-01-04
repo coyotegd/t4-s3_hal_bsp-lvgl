@@ -6,7 +6,9 @@ static const char *TAG = "lv_ui";
 
 // Global Definitions
 lv_obj_t * home_cont = NULL;
-lv_obj_t * system_cont = NULL;
+lv_obj_t * pmic_cont = NULL;
+lv_obj_t * settings_cont = NULL;
+lv_obj_t * sys_info_cont = NULL;
 lv_obj_t * media_cont = NULL;
 
 lv_obj_t * lbl_batt = NULL;
@@ -19,6 +21,7 @@ lv_obj_t * lbl_sys_volts = NULL;
 lv_obj_t * lbl_ntc = NULL;
 lv_obj_t * lbl_sd = NULL;
 lv_obj_t * lbl_disp_info = NULL;
+lv_obj_t * lbl_sys_info = NULL;
 
 lv_obj_t * cont_sd_files = NULL;
 lv_obj_t * cont_pmic_details = NULL;

@@ -3,7 +3,9 @@
 
 // Global Containers
 extern lv_obj_t * home_cont;
-extern lv_obj_t * system_cont;
+extern lv_obj_t * pmic_cont;
+extern lv_obj_t * settings_cont;
+extern lv_obj_t * sys_info_cont;
 extern lv_obj_t * media_cont;
 
 // Global Labels (for updates)
@@ -17,6 +19,7 @@ extern lv_obj_t * lbl_sys_volts;
 extern lv_obj_t * lbl_ntc;
 extern lv_obj_t * lbl_sd;
 extern lv_obj_t * lbl_disp_info;
+extern lv_obj_t * lbl_sys_info;
 
 // Other containers needed for updates
 extern lv_obj_t * cont_sd_files;
@@ -30,7 +33,9 @@ void ui_system_create(lv_obj_t * parent);
 void ui_media_create(lv_obj_t * parent);
 
 void show_home_view(lv_event_t * e);
-void show_system_view(lv_event_t * e);
+void show_pmic_view(lv_event_t * e);
+void show_settings_view(lv_event_t * e);
+void show_sys_info_view(lv_event_t * e);
 void show_media_view(lv_event_t * e);
 
 void populate_sd_files_list(void);

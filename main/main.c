@@ -29,12 +29,12 @@ void app_main(void) {
 
     // Create the UI
     lvgl_mgr_lock();
-    lv_ui_init(lv_display_get_default());
+    lv_ui_init();
     lvgl_mgr_unlock();
 
-    ESP_LOGI(TAG, "System ready.");
+    ESP_LOGI(TAG, "HAL & BSP Systems ready . . .");
 
-    // Main task can be deleted, sleep forever, or run your app logic here
+    // Main task can be deleted, sleep forever, or run your loop() app logic here
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
