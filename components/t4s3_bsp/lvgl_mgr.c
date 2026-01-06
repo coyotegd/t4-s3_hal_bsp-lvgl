@@ -231,7 +231,7 @@ esp_err_t bsp_init(void) {
     lv_display_set_flush_cb(lv_disp, lvgl_flush_cb);
     lv_display_add_event_cb(lv_disp, lvgl_rounder_cb, LV_EVENT_INVALIDATE_AREA, NULL);
     
-    // Force RGB565 format for the display
+    // Force RGB565 format for the display. You need an esp32-p4 for RGB888 support.
     lv_display_set_color_format(lv_disp, LV_COLOR_FORMAT_RGB565);
     
     ESP_LOGI(TAG, "LVGL Config: LV_COLOR_DEPTH=%d, Native Format=%d", LV_COLOR_DEPTH, LV_COLOR_FORMAT_NATIVE);
@@ -275,7 +275,7 @@ esp_err_t bsp_init(void) {
 
     // Show Rainbow Test Pattern (Hardware diagnostic)
     lvgl_mgr_show_rainbow();
-    vTaskDelay(pdMS_TO_TICKS(1500)); // Show for 1.5 seconds as requested
+    vTaskDelay(pdMS_TO_TICKS(750)); // Show rainbow for 0.75 seconds
 
     // Start LVGL Task
     // Increased stack to 32KB for GIF decoding and file operations

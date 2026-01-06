@@ -1,18 +1,31 @@
 #include "ui_private.h"
 
+LV_IMG_DECLARE(img_watermelon);
+LV_IMG_DECLARE(img_venezuela);
+
 void show_home_view(lv_event_t * e) {
-    if(home_cont) lv_obj_remove_flag(home_cont, LV_OBJ_FLAG_HIDDEN);
-    if(pmic_cont) lv_obj_add_flag(pmic_cont, LV_OBJ_FLAG_HIDDEN);
-    if(settings_cont) lv_obj_add_flag(settings_cont, LV_OBJ_FLAG_HIDDEN);
-    if(sys_info_cont) lv_obj_add_flag(sys_info_cont, LV_OBJ_FLAG_HIDDEN);
-    if(media_cont) lv_obj_add_flag(media_cont, LV_OBJ_FLAG_HIDDEN);
+    clear_current_view();
+    ui_home_create(lv_screen_active());
+}
+
+static void delayed_switch_timer_cb(lv_timer_t * timer) {
+    lv_event_cb_t target_cb = (lv_event_cb_t)lv_timer_get_user_data(timer);
+    if(target_cb) {
+        target_cb(NULL);
+    }
+}
+
+static void delayed_switch_event_handler(lv_event_t * e) {
+    lv_event_cb_t target_cb = (lv_event_cb_t)lv_event_get_user_data(e);
+    lv_timer_t * timer = lv_timer_create(delayed_switch_timer_cb, 150, (void*)target_cb);
+    lv_timer_set_repeat_count(timer, 1);
 }
 
 static void create_neon_btn(lv_obj_t * parent, const char * icon, const char * text, lv_color_t color, lv_event_cb_t event_cb) {
     lv_obj_t * btn = lv_button_create(parent);
     lv_obj_set_height(btn, 100);
     lv_obj_set_width(btn, LV_PCT(30));
-    lv_obj_add_event_cb(btn, event_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(btn, delayed_switch_event_handler, LV_EVENT_CLICKED, (void*)event_cb);
     lv_obj_set_flex_flow(btn, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(btn, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_all(btn, 5, 0);
@@ -147,14 +160,14 @@ void ui_home_create(lv_obj_t * parent) {
     lv_obj_set_flex_align(btn_row1, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_gap(btn_row1, 10, 0);
 
-    // Button 1: PMIC (Neon Red/Orange)
-    create_neon_btn(btn_row1, LV_SYMBOL_CHARGE, "PMIC", lv_color_hex(0xFF3300), show_pmic_view);
+    // Button 1: PM Status (Neon Red/Orange)
+    create_neon_btn(btn_row1, LV_SYMBOL_CHARGE, "PM Status", lv_color_hex(0xFF3300), show_pmic_view);
 
-    // Button 2: SD Card (Neon Cyan)
+    // Button 2: Set PM (Neon Blue)
+    create_neon_btn(btn_row1, LV_SYMBOL_SETTINGS, "Set PM", lv_color_hex(0x007FFF), show_settings_view);
+
+    // Button 3: SD Card (Neon Cyan)
     create_neon_btn(btn_row1, LV_SYMBOL_SD_CARD, "SD Card", lv_color_hex(0x00FFFF), show_media_view);
-
-    // Button 3: Display (Neon Green)
-    create_neon_btn(btn_row1, LV_SYMBOL_EYE_OPEN, "Display", lv_color_hex(0x39FF14), show_media_view);
 
     // 3. Button Container (Row 2)
     lv_obj_t * btn_row2 = lv_obj_create(home_cont);
@@ -166,9 +179,19 @@ void ui_home_create(lv_obj_t * parent) {
     lv_obj_set_flex_align(btn_row2, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_gap(btn_row2, 10, 0);
 
-    // Button 4: System (Neon Purple)
-    create_neon_btn(btn_row2, LV_SYMBOL_SETTINGS, "System", lv_color_hex(0x9D00FF), show_sys_info_view);
+    // Watermelon Image
+    lv_obj_t * icon_watermelon = lv_image_create(btn_row2);
+    lv_image_set_src(icon_watermelon, &img_watermelon);
+    lv_obj_set_style_align(icon_watermelon, LV_ALIGN_CENTER, 0);
 
-    // Button 5: Settings (Neon Pink)
-    create_neon_btn(btn_row2, LV_SYMBOL_WIFI, "Settings", lv_color_hex(0xFF007F), show_settings_view);
+    // Display (Neon Green)
+    create_neon_btn(btn_row2, LV_SYMBOL_EYE_OPEN, "Display", lv_color_hex(0x39FF14), show_display_view);
+
+    // Button 5: System (Neon Purple)
+    create_neon_btn(btn_row2, LV_SYMBOL_FILE, "System", lv_color_hex(0x9D00FF), show_sys_info_view);
+
+    // Venezuela Flag Image
+    lv_obj_t * icon_venezuela = lv_image_create(btn_row2);
+    lv_image_set_src(icon_venezuela, &img_venezuela);
+    lv_obj_set_style_align(icon_venezuela, LV_ALIGN_CENTER, 0);
 }

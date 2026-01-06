@@ -32,9 +32,9 @@ void app_main(void) {
     lv_ui_init();
     lvgl_mgr_unlock();
 
-    ESP_LOGI(TAG, "HAL & BSP Systems ready . . .");
+    ESP_LOGI(TAG, "HAL & BSP + LVGL Systems ready . . .");
 
-    // Main task can be deleted, sleep forever, or run your loop() app logic here
+    // Main task can be deleted, sleep forever, or run your Arduino loop() app logic here
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(1000));
     }

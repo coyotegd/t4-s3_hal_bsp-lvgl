@@ -15,12 +15,26 @@ void update_stats_timer_cb(lv_timer_t * timer) {
         esp_chip_info_t chip_info;
         esp_chip_info(&chip_info);
 
+        const char * model_str = "Unknown";
+        const char * bt_ver = "";
+        
+        switch(chip_info.model) {
+            case CHIP_ESP32:   model_str = "ESP32";    bt_ver = "BT 4.2 "; break;
+            case CHIP_ESP32S2: model_str = "ESP32-S2"; bt_ver = "";        break;
+            case CHIP_ESP32S3: model_str = "ESP32-S3"; bt_ver = "BLE 5.0 "; break;
+            case CHIP_ESP32C3: model_str = "ESP32-C3"; bt_ver = "BLE 5.0 "; break;
+            case CHIP_ESP32C2: model_str = "ESP32-C2"; bt_ver = "BLE 5.0 "; break;
+            case CHIP_ESP32C6: model_str = "ESP32-C6"; bt_ver = "BLE 5.3 "; break;
+            case CHIP_ESP32H2: model_str = "ESP32-H2"; bt_ver = "BLE 5.3 "; break;
+            default:           model_str = "Generic";  bt_ver = "BLE ";     break;
+        }
+
         lv_label_set_text_fmt(lbl_sys_info, 
             "System Info:\n"
             "Free Heap: %" PRIu32 " bytes\n"
             "Min Free Heap: %" PRIu32 " bytes\n"
             "Uptime: %" PRId64 " s\n\n"
-            "Chip: ESP32-S3\n"
+            "Chip: %s\n"
             "Cores: %d\n"
             "Revision: %d\n"
             "Features: %s%s%s\n\n"
@@ -30,10 +44,11 @@ void update_stats_timer_cb(lv_timer_t * timer) {
             "- Touch: CST226SE\n"
             "- SD Card: SPI Mode",
             free_heap, min_free_heap, uptime,
+            model_str,
             chip_info.cores, chip_info.revision,
-            (chip_info.features & CHIP_FEATURE_WIFI_BGN) ? "WiFi " : "",
-            (chip_info.features & CHIP_FEATURE_BLE) ? "BLE " : "",
-            (chip_info.features & CHIP_FEATURE_IEEE802154) ? "802.15.4" : "");
+            (chip_info.features & CHIP_FEATURE_WIFI_BGN) ? "WiFi - " : "No WiFi - ",
+            (chip_info.features & CHIP_FEATURE_BLE) ? bt_ver : "No BLE",
+            (chip_info.features & CHIP_FEATURE_IEEE802154) ? "- Zigbee/Thread" : "- No Zigbee/Thread ");
     }
 
     // Update PMIC Info
@@ -66,7 +81,7 @@ void update_stats_timer_cb(lv_timer_t * timer) {
              // Let's just show VBUS status for now or remove it if not useful.
              // Or maybe "Power Good" status
              bool pg = sy6970_is_power_good();
-             lv_label_set_text_fmt(lbl_usb_pg, "Power Good:\n%s", pg ? "Yes" : "No");
+             lv_label_set_text_fmt(lbl_usb_pg, "USB Power:\n%s", pg ? "Yes" : "No");
         }
     }
 }
