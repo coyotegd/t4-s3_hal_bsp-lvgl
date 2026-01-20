@@ -30,16 +30,7 @@ void show_sys_info_view(lv_event_t * e) {
     ui_sys_info_create(lv_screen_active());
 }
 
-static void create_back_btn(lv_obj_t * parent) {
-    lv_obj_t * btn_back = lv_button_create(parent);
-    lv_obj_set_size(btn_back, 60, 60);
-    lv_obj_add_flag(btn_back, LV_OBJ_FLAG_FLOATING);
-    lv_obj_align(btn_back, LV_ALIGN_TOP_LEFT, 0, 0);
-    lv_obj_add_event_cb(btn_back, show_home_view, LV_EVENT_CLICKED, NULL);
-    lv_obj_t * lbl_back = lv_label_create(btn_back);
-    lv_label_set_text(lbl_back, LV_SYMBOL_LEFT);
-    lv_obj_center(lbl_back);
-}
+
 
 void ui_pmic_create(lv_obj_t * parent) {
     // --- PMIC Container ---
@@ -228,4 +219,9 @@ void ui_sys_info_create(lv_obj_t * parent) {
     lv_label_set_text(lbl_sys_info, "System Info:\nLoading...");
     lv_obj_set_style_text_color(lbl_sys_info, lv_color_white(), 0);
     lv_obj_set_style_text_font(lbl_sys_info, &lv_font_montserrat_22, 0);
+
+    lbl_fault = lv_label_create(cont_sys_details);
+    lv_label_set_text(lbl_fault, "Fault:\nNone");
+    lv_obj_set_style_text_color(lbl_fault, lv_color_hex(0x00FF00), 0); // Green for no faults
+    lv_obj_set_style_text_font(lbl_fault, &lv_font_montserrat_22, 0);
 }

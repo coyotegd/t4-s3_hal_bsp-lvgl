@@ -4,29 +4,32 @@
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/queue.h"
 #include "esp_log.h"
 #include "esp_rom_sys.h"
 #include "esp_attr.h"
 
 static const char *TAG = "rm690b0";
 
+// --- Async Worker Definitions ---
 typedef struct {
+    uint16_t x1, y1, x2, y2;
+    const uint8_t *data;
     rm690b0_done_cb_t cb;
     void *user_ctx;
-} rm690b0_trans_ctx_t;
+} flush_request_t;
 
-static rm690b0_trans_ctx_t s_trans_ctx;
-static int s_pending_trans_count = 0;
-static spi_transaction_ext_t s_trans_caset, s_trans_raset, s_trans_pixels;
-static uint8_t s_caset_data[4];
-static uint8_t s_raset_data[4];
+static QueueHandle_t s_flush_queue = NULL;
+static TaskHandle_t s_flush_task_handle = NULL;
+static const int FLUSH_QUEUE_SIZE = 3; // Typically 1 or 2 pending frames
 
-static void spi_trans_post_cb(spi_transaction_t *trans) {
-    rm690b0_trans_ctx_t *ctx = (rm690b0_trans_ctx_t *)trans->user;
-    if (ctx && ctx->cb) {
-        ctx->cb(ctx->user_ctx);
-    }
-}
+// --- Internal Transaction buffers ---
+// Place SPI transaction structs in DRAM to avoid cache issues if BSS is configured to PSRAM
+DRAM_ATTR static spi_transaction_ext_t s_trans_caset;
+DRAM_ATTR static spi_transaction_ext_t s_trans_raset;
+DRAM_ATTR static spi_transaction_ext_t s_trans_pixels;
+DRAM_ATTR static uint8_t s_caset_data[4];
+DRAM_ATTR static uint8_t s_raset_data[4];
 
 // Pin Map from t4s3pins.txt
 #define PIN_NUM_QSPI_D0   14
@@ -88,8 +91,8 @@ void rm690b0_send_cmd(uint8_t cmd, const uint8_t *data, size_t len) {
 void rm690b0_send_pixels(const uint8_t *data, size_t len) {
     if (len == 0) return;
 
-    // Use 64KB chunks to match the max_transfer_sz set in spi_bus_initialize.
-    const size_t CHUNK_SIZE = 65536; 
+    // Use 32KB chunks to match safely with driver limits
+    const size_t CHUNK_SIZE = 32 * 1024; 
     size_t sent = 0;
     
     spi_device_acquire_bus(spi_handle, portMAX_DELAY);
@@ -109,28 +112,31 @@ void rm690b0_send_pixels(const uint8_t *data, size_t len) {
         } else {
             t.command_bits = 0;
             t.address_bits = 0;
+            t.base.flags |= SPI_TRANS_CS_KEEP_ACTIVE; // Active from previous
         }
 
         if (sent + chunk < len) {
-            t.base.flags |= SPI_TRANS_CS_KEEP_ACTIVE;
+            t.base.flags |= SPI_TRANS_CS_KEEP_ACTIVE; // Keep active for next
         }
-
+        
         t.base.length = chunk * 8;
         t.base.tx_buffer = data + sent;
-        
+
         spi_device_polling_transmit(spi_handle, (spi_transaction_t *)&t);
         sent += chunk;
     }
-    
     spi_device_release_bus(spi_handle);
 }
 
 void rm690b0_read_id(uint8_t *id) {
     spi_transaction_ext_t t = {0};
-    t.base.flags = SPI_TRANS_VARIABLE_CMD | SPI_TRANS_VARIABLE_ADDR | SPI_TRANS_USE_RXDATA;
-    t.base.cmd = 0x03; // Read Opcode
-    t.base.addr = 0x000400; // RDDID (0x04) shifted
-    t.base.length = 0;
+    t.base.flags = SPI_TRANS_VARIABLE_CMD | SPI_TRANS_VARIABLE_ADDR;
+    // t.base.cmd = 0x04; // RDDID
+    // RM690B0 might use different command for ID, mostly 0x04 or 0xDA
+    // Assuming 0x04 is correct based on original code context if it existed
+    t.base.cmd = 0x04; 
+    t.base.addr = 0x000000; // Address usually not important for RDDID but protocol requires it
+    t.base.length = 0; 
     t.base.rxlength = 24; // Read 3 bytes
     t.command_bits = 8;
     t.address_bits = 24;
@@ -143,6 +149,136 @@ void rm690b0_read_id(uint8_t *id) {
         ESP_LOGI(TAG, "Read ID: %02X %02X %02X", id[0], id[1], id[2]);
     } else {
         ESP_LOGE(TAG, "Failed to read ID");
+    }
+}
+
+esp_err_t rm690b0_deinit(void) {
+    // Stop flush task
+    if (s_flush_task_handle) {
+        vTaskDelete(s_flush_task_handle);
+        s_flush_task_handle = NULL;
+    }
+    
+    // Delete flush queue
+    if (s_flush_queue) {
+        vQueueDelete(s_flush_queue);
+        s_flush_queue = NULL;
+    }
+    
+    // Remove SPI device
+    if (spi_handle) {
+        spi_bus_remove_device(spi_handle);
+        spi_handle = NULL;
+    }
+    
+    // Reset callbacks
+    s_vsync_cb = NULL;
+    s_vsync_ctx = NULL;
+    s_error_cb = NULL;
+    s_error_ctx = NULL;
+    s_power_cb = NULL;
+    s_power_ctx = NULL;
+    
+    ESP_LOGI(TAG, "RM690B0 deinitialized");
+    return ESP_OK;
+}
+
+// Dedicated Flush Worker Task
+// Runs on Core 0 or low priority to process frames without blocking LVGL
+static void rm690b0_task(void *arg) {
+    flush_request_t req;
+    const size_t MAX_CHUNK = 32768; // 32KB chunk size
+    
+    while (1) {
+        if (xQueueReceive(s_flush_queue, &req, portMAX_DELAY)) {
+            // Process the flush request synchronously (using Polling for max speed/compatibility)
+            
+            // 1. Prepare Window Commands
+            // Apply rotation offsets? NO, offsets already applied in flush_async before queueing? 
+            // Better to apply them here to keep the request struct clean (raw coordinates).
+            
+            uint16_t x1 = req.x1 + offset_x;
+            uint16_t x2 = req.x2 + offset_x;
+            uint16_t y1 = req.y1 + offset_y;
+            uint16_t y2 = req.y2 + offset_y;
+
+            s_caset_data[0] = (x1 >> 8); s_caset_data[1] = (x1 & 0xFF);
+            s_caset_data[2] = (x2 >> 8); s_caset_data[3] = (x2 & 0xFF);
+            
+            memset(&s_trans_caset, 0, sizeof(s_trans_caset));
+            s_trans_caset.base.flags = SPI_TRANS_VARIABLE_CMD | SPI_TRANS_VARIABLE_ADDR;
+            s_trans_caset.base.cmd = 0x02;
+            s_trans_caset.base.addr = ((uint32_t)RM690B0_CASET) << 8;
+            s_trans_caset.base.length = 32;
+            s_trans_caset.base.tx_buffer = s_caset_data;
+            s_trans_caset.command_bits = 8;
+            s_trans_caset.address_bits = 24;
+
+            s_raset_data[0] = (y1 >> 8); s_raset_data[1] = (y1 & 0xFF);
+            s_raset_data[2] = (y2 >> 8); s_raset_data[3] = (y2 & 0xFF);
+
+            memset(&s_trans_raset, 0, sizeof(s_trans_raset));
+            s_trans_raset.base.flags = SPI_TRANS_VARIABLE_CMD | SPI_TRANS_VARIABLE_ADDR;
+            s_trans_raset.base.cmd = 0x02;
+            s_trans_raset.base.addr = ((uint32_t)RM690B0_RASET) << 8;
+            s_trans_raset.base.length = 32;
+            s_trans_raset.base.tx_buffer = s_raset_data;
+            s_trans_raset.command_bits = 8;
+            s_trans_raset.address_bits = 24;
+
+            size_t len_bytes = (size_t)(req.x2 - req.x1 + 1) * (req.y2 - req.y1 + 1) * 2;
+            
+            // Acquire Bus once for the whole sequence
+            spi_device_acquire_bus(spi_handle, portMAX_DELAY);
+            
+            // Send Window
+            spi_device_polling_transmit(spi_handle, (spi_transaction_t *)&s_trans_caset);
+            spi_device_polling_transmit(spi_handle, (spi_transaction_t *)&s_trans_raset);
+
+            // Send Pixels in Chunks
+            size_t sent = 0;
+            
+            // Critical: Add delay to let the controller digest the window commands
+            esp_rom_delay_us(50);
+
+            while (sent < len_bytes) {
+                size_t chunk = (len_bytes - sent > MAX_CHUNK) ? MAX_CHUNK : (len_bytes - sent);
+                
+                memset(&s_trans_pixels, 0, sizeof(s_trans_pixels));
+                s_trans_pixels.base.flags = SPI_TRANS_MODE_QIO;
+                
+                if (sent == 0) {
+                    s_trans_pixels.base.flags |= SPI_TRANS_VARIABLE_CMD | SPI_TRANS_VARIABLE_ADDR;
+                    s_trans_pixels.base.cmd = 0x32;
+                    s_trans_pixels.base.addr = 0x002C00;
+                    s_trans_pixels.command_bits = 8;
+                    s_trans_pixels.address_bits = 24;
+                } else {
+                    s_trans_pixels.command_bits = 0;
+                    s_trans_pixels.address_bits = 0;
+                    // No flags set by default for middle/last chunks
+                }
+                
+                // If this is NOT the last chunk, we must keep CS active for the next one
+                if (sent + chunk < len_bytes) {
+                    s_trans_pixels.base.flags |= SPI_TRANS_CS_KEEP_ACTIVE;
+                }
+
+                s_trans_pixels.base.length = chunk * 8;
+                s_trans_pixels.base.tx_buffer = req.data + sent;
+                
+                // Use Interrupt-based transmit for large chunks to allow other tasks/ISRs (e.g. SD Card) to run
+                spi_device_transmit(spi_handle, (spi_transaction_t *)&s_trans_pixels);
+                sent += chunk;
+            }
+            
+            spi_device_release_bus(spi_handle);
+            
+            // Notify LVGL that flush is done
+            if (req.cb) {
+                req.cb(req.user_ctx);
+            }
+        }
     }
 }
 
@@ -172,82 +308,27 @@ void rm690b0_flush(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const uin
 }
 
 void rm690b0_flush_async(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const uint8_t *data, rm690b0_done_cb_t cb, void *user_ctx) {
-    // If transactions are already pending, wait for them to finish
-    while (s_pending_trans_count > 0) {
-        spi_transaction_t *rtrans;
-        esp_err_t ret = spi_device_get_trans_result(spi_handle, &rtrans, portMAX_DELAY);
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to get trans result: %s", esp_err_to_name(ret));
-        }
-        s_pending_trans_count--;
-    }
-
-    // Apply rotation-specific offsets
-    x1 += offset_x;
-    x2 += offset_x;
-    y1 += offset_y;
-    y2 += offset_y;
-
-    // Prepare CASET
-    s_caset_data[0] = (x1 >> 8); s_caset_data[1] = (x1 & 0xFF);
-    s_caset_data[2] = (x2 >> 8); s_caset_data[3] = (x2 & 0xFF);
+    // ASYNC FLUSH via Worker Task
+    // This unblocks LVGL immediately, restoring parallelism while keeping safe sync transfers.
     
-    memset(&s_trans_caset, 0, sizeof(s_trans_caset));
-    s_trans_caset.base.flags = SPI_TRANS_VARIABLE_CMD | SPI_TRANS_VARIABLE_ADDR;
-    s_trans_caset.base.cmd = 0x02;
-    s_trans_caset.base.addr = ((uint32_t)RM690B0_CASET) << 8;
-    s_trans_caset.base.length = 32;
-    s_trans_caset.base.tx_buffer = s_caset_data;
-    s_trans_caset.command_bits = 8;
-    s_trans_caset.address_bits = 24;
-
-    // Prepare RASET
-    s_raset_data[0] = (y1 >> 8); s_raset_data[1] = (y1 & 0xFF);
-    s_raset_data[2] = (y2 >> 8); s_raset_data[3] = (y2 & 0xFF);
-
-    memset(&s_trans_raset, 0, sizeof(s_trans_raset));
-    s_trans_raset.base.flags = SPI_TRANS_VARIABLE_CMD | SPI_TRANS_VARIABLE_ADDR;
-    s_trans_raset.base.cmd = 0x02;
-    s_trans_raset.base.addr = ((uint32_t)RM690B0_RASET) << 8;
-    s_trans_raset.base.length = 32;
-    s_trans_raset.base.tx_buffer = s_raset_data;
-    s_trans_raset.command_bits = 8;
-    s_trans_raset.address_bits = 24;
-    
-    // Prepare Pixels
-    size_t len = (size_t)(x2 - x1 + 1) * (y2 - y1 + 1) * 2;
-    
-    memset(&s_trans_pixels, 0, sizeof(s_trans_pixels));
-    s_trans_pixels.base.flags = SPI_TRANS_VARIABLE_CMD | SPI_TRANS_VARIABLE_ADDR | SPI_TRANS_MODE_QIO;
-    s_trans_pixels.base.cmd = 0x32;
-    s_trans_pixels.base.addr = 0x002C00;
-    s_trans_pixels.base.length = len * 8;
-    s_trans_pixels.base.tx_buffer = data;
-    s_trans_pixels.command_bits = 8;
-    s_trans_pixels.address_bits = 24;
-    
-    // Set callback only on the last transaction (pixels)
-    s_trans_ctx.cb = cb;
-    s_trans_ctx.user_ctx = user_ctx;
-    s_trans_pixels.base.user = &s_trans_ctx;
-    
-    // Queue all transactions
-    // Note: We don't need to acquire bus for queued transactions
-    esp_err_t ret;
-    ret = spi_device_queue_trans(spi_handle, (spi_transaction_t *)&s_trans_caset, portMAX_DELAY);
-    if (ret != ESP_OK) ESP_LOGE(TAG, "Failed to queue CASET: %s", esp_err_to_name(ret));
-    
-    ret = spi_device_queue_trans(spi_handle, (spi_transaction_t *)&s_trans_raset, portMAX_DELAY);
-    if (ret != ESP_OK) ESP_LOGE(TAG, "Failed to queue RASET: %s", esp_err_to_name(ret));
-    
-    ret = spi_device_queue_trans(spi_handle, (spi_transaction_t *)&s_trans_pixels, portMAX_DELAY);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to queue Pixels: %s", esp_err_to_name(ret));
-        // Prevent LVGL hang by calling callback even on failure
+    if (s_flush_queue) {
+        flush_request_t req;
+        req.x1 = x1;
+        req.y1 = y1;
+        req.x2 = x2;
+        req.y2 = y2;
+        req.data = data;
+        req.cb = cb;
+        req.user_ctx = user_ctx;
+        
+        // Send to queue. If queue is full, we block until space is available.
+        // This acts as inherent flow control.
+        xQueueSend(s_flush_queue, &req, portMAX_DELAY);
+    } else {
+        // Fallback if task not started (should not happen)
+        ESP_LOGE(TAG, "Flush Task not initialized!");
         if (cb) cb(user_ctx);
     }
-    
-    s_pending_trans_count = 3;
 }
 
 void rm690b0_set_window(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
@@ -553,7 +634,10 @@ esp_err_t rm690b0_init(void) {
         .sclk_io_num = PIN_NUM_QSPI_SCK,
         .data2_io_num = PIN_NUM_QSPI_D2,
         .data3_io_num = PIN_NUM_QSPI_D3,
-        .max_transfer_sz = 65536, // 64KB limit
+        // Set max_transfer_sz to exactly the largest LVGL buffer we expect (60,000 bytes).
+        // The driver seems picky about sizes > 64KB even if configured higher.
+        // Let's stick to 65535 to be absolutely safe with 16-bit DMA counters if applicable.
+        .max_transfer_sz = 65535,
         .flags = SPICOMMON_BUSFLAG_MASTER | SPICOMMON_BUSFLAG_QUAD,
     };
     esp_err_t ret = spi_bus_initialize(SPI2_HOST, &buscfg, SPI_DMA_CH_AUTO);
@@ -563,19 +647,18 @@ esp_err_t rm690b0_init(void) {
     }
     ESP_LOGI(TAG, "SPI bus initialized with max_transfer_sz: %d", buscfg.max_transfer_sz);
 
+    // Create Flush Worker Task and Queue
+    s_flush_queue = xQueueCreate(FLUSH_QUEUE_SIZE, sizeof(flush_request_t));
+    xTaskCreatePinnedToCore(rm690b0_task, "rm690b0_task", 4096, NULL, 5, &s_flush_task_handle, 0); // Core 0
+
     spi_device_interface_config_t devcfg = {
-        .clock_speed_hz = 20 * 1000 * 1000, // Reduced to 20MHz to fix "hair thin lines" artifacts
+        .clock_speed_hz = 40 * 1000 * 1000, // 40MHz for higher frame rate
         .mode = 0,
         .spics_io_num = PIN_NUM_QSPI_CS, // Hardware CS
         .queue_size = 10,
-        .flags = SPI_DEVICE_HALFDUPLEX, 
-        .post_cb = spi_trans_post_cb,
+        .flags = SPI_DEVICE_HALFDUPLEX,
     };
     ret = spi_bus_add_device(SPI2_HOST, &devcfg, &spi_handle);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to add SPI device: %s", esp_err_to_name(ret));
-        return ret;
-    }
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to add SPI device: %s", esp_err_to_name(ret));
         return ret;

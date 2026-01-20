@@ -61,6 +61,7 @@ void rm690b0_register_error_callback(rm690b0_error_cb_t cb, void *user_ctx);
 void rm690b0_register_power_callback(rm690b0_power_cb_t cb, void *user_ctx);
 
 esp_err_t rm690b0_init(void);
+esp_err_t rm690b0_deinit(void);
 void rm690b0_send_cmd(uint8_t cmd, const uint8_t *data, size_t len);
 void rm690b0_send_pixels(const uint8_t *data, size_t len);
 void rm690b0_set_window(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);

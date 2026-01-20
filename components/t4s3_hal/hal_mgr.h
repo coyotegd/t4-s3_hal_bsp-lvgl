@@ -34,6 +34,31 @@ void hal_mgr_register_display_error_callback(rm690b0_error_cb_t cb, void *user_c
 esp_err_t hal_mgr_sd_init(void);
 bool hal_mgr_sd_is_mounted(void);
 
+// --- LED Control ---
+typedef enum {
+    HAL_LED_STATUS_OFF,
+    HAL_LED_STATUS_CHARGING,      // Breath (PWM)
+    HAL_LED_STATUS_FULL,          // Solid On
+    HAL_LED_STATUS_FAULT_GENERIC, // 500ms blink
+    HAL_LED_STATUS_FAULT_WDT,     // 100ms frantic blink
+    HAL_LED_STATUS_FAULT_OVP,     // 2000ms slow blink
+    HAL_LED_STATUS_FAULT_TEMP,    // 1000ms standard blink
+} hal_led_status_t;
+
+/**
+ * @brief Set the Status LED to a specific system state.
+ * This encapsulates the blink patterns and PWM logic.
+ * @param status The target system status to indicate.
+ */
+void hal_mgr_set_led_status(hal_led_status_t status);
+
+/**
+ * @brief Lock the LED control to manual mode.
+ * When locked, the auto-status task will not update the LED state.
+ * @param locked true to lock (manual control), false to unlock (auto status indication)
+ */
+void hal_mgr_lock_led(bool locked);
+
 // --- GFX Stack Integration (LVGL/BSP) ---
 typedef void (*hal_mgr_done_cb_t)(void *user_ctx);
 

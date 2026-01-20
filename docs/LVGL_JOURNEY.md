@@ -53,6 +53,22 @@ static void lvgl_rounder_cb(lv_event_t *e) {
 - Reduced QSPI clock speed to **20MHz**.
 - Increased `esp_rom_delay_us` after setting the window address to allow the controller to stabilize before receiving high-speed pixel data.
 
+### D. The Coordinate System Chaos (XY Swap/Mirror)
+**Symptom**: Touch inputs were inverted or mirrored relative to the visual display. Sometimes up was down, left was right, or the axes were completely swapped (portrait touch on landscape display).
+**Context**: This system involves three distinct layers of coordinate transformation:
+1. **The Physical Display (RM690B0)**: Has hardware registers (`MADCTL`) for memory access control (Exchange X/Y, Mirror X, Mirror Y).
+2. **The Touch Controller (CST226SE)**: Reports coordinates based on its own physical orientation, which often differs from the screen.
+3. **The Graphics Library (LVGL)**: Manages rotation logically (`LV_DISPLAY_ROTATION_0`, etc.).
+
+**The Chaos**:
+- Fixing the display visuals often broke the touch correlation.
+- Fixing the touch correlation often broke the display visuals (e.g., text rendering backwards).
+- The correct configuration was not found by logic alone but through an iterative process where `xy_swap` and `xy_mirror` settings had to be flipped back and forth multiple times across all three layers until they finally aligned. **It seemed that the X/Y swap and mirror settings were switched not just once, but twice across the three layers before stabilizing.**
+
+**Solution**:
+- Settled on a configuration where the Display Driver handles the hardware rotation setup via `rm690b0_set_rotation`, ensuring `MADCTL` is correct for 0/90/180/270 degrees.
+- Touch coordinates are mapped to the display resolution *after* receiving them, applying specific swaps matching the visual rotation.
+
 ## 3. Architecture Highlights
 
 ### Async DMA Flushing

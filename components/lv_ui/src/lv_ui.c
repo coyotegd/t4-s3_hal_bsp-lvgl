@@ -10,6 +10,7 @@ lv_obj_t * pmic_cont = NULL;
 lv_obj_t * settings_cont = NULL;
 lv_obj_t * sys_info_cont = NULL;
 lv_obj_t * media_cont = NULL;
+lv_obj_t * play_cont = NULL;
 lv_obj_t * display_cont = NULL;
 
 lv_obj_t * lbl_batt = NULL;
@@ -23,6 +24,7 @@ lv_obj_t * lbl_ntc = NULL;
 lv_obj_t * lbl_sd = NULL;
 lv_obj_t * lbl_disp_info = NULL;
 lv_obj_t * lbl_sys_info = NULL;
+lv_obj_t * lbl_fault = NULL;
 
 lv_obj_t * cont_sd_files = NULL;
 lv_obj_t * cont_pmic_details = NULL;
@@ -35,6 +37,7 @@ void clear_current_view(void) {
     if (settings_cont) { lv_obj_delete(settings_cont); settings_cont = NULL; }
     if (sys_info_cont) { lv_obj_delete(sys_info_cont); sys_info_cont = NULL; }
     if (media_cont) { lv_obj_delete(media_cont); media_cont = NULL; }
+    if (play_cont) { lv_obj_delete(play_cont); play_cont = NULL; }
     if (display_cont) { lv_obj_delete(display_cont); display_cont = NULL; }
 
     // Clear pointers to avoid invalid access in timer

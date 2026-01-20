@@ -10,8 +10,6 @@
 extern "C" {
 #endif
 
-esp_err_t sy6970_init(void);
-
 #define SY6970_I2C_ADDR 0x6A
 #define SY6970_SDA_PIN  6
 #define SY6970_SCL_PIN  7
@@ -80,6 +78,7 @@ typedef enum {
 
 // API Functions
 esp_err_t sy6970_init(void);
+esp_err_t sy6970_deinit(void);
 
 // Return the I2C bus handle created by `sy6970_init()` so other components
 // can share the same I2C bus. Returns NULL if the bus hasn't been created.
@@ -92,36 +91,50 @@ esp_err_t sy6970_set_input_current_limit(uint16_t current_ma);
 esp_err_t sy6970_read_reg(uint8_t reg_addr, uint8_t *data);
 esp_err_t sy6970_write_reg(uint8_t reg_addr, uint8_t data);
 esp_err_t sy6970_update_reg(uint8_t reg_addr, uint8_t mask, uint8_t val);
-esp_err_t sy6970_set_input_voltage_limit(uint16_t voltage_mv); // VINDPM
+// Configuration
+esp_err_t sy6970_enable_adc(bool enable, bool continuous);
 esp_err_t sy6970_enable_otg(bool enable);
 esp_err_t sy6970_enable_charging(bool enable);
+esp_err_t sy6970_enable_hiz_mode(bool enable);
+esp_err_t sy6970_set_input_voltage_limit(uint16_t voltage_mv); // VINDPM
 esp_err_t sy6970_set_charge_current(uint16_t current_ma);
 esp_err_t sy6970_set_precharge_current(uint16_t current_ma);
 esp_err_t sy6970_set_termination_current(uint16_t current_ma);
 esp_err_t sy6970_set_charge_voltage(uint16_t voltage_mv);
-esp_err_t sy6970_set_min_system_voltage(uint16_t voltage_mv);  // /w USB & low bat min voltage
+esp_err_t sy6970_set_min_system_voltage(uint16_t voltage_mv);  // when USB & low bat min voltage
 esp_err_t sy6970_set_boost_voltage(uint16_t voltage_mv);
-esp_err_t sy6970_enable_hiz_mode(bool enable);
-esp_err_t sy6970_disable_batfet(bool disable); // Ship, storage, complete shutdown USB to enable
-esp_err_t sy6970_reset_watchdog(void);
 esp_err_t sy6970_set_watchdog_timer(sy6970_wdt_t timeout);
 
+esp_err_t sy6970_reset_watchdog(void);
+esp_err_t sy6970_disable_batfet(bool disable); // Ship, storage, complete shutdown USB to enable
+
 // ADC / Monitoring
-esp_err_t sy6970_enable_adc(bool enable, bool continuous);
 uint16_t sy6970_get_vbus_voltage(void);  // USB VBUS voltage in mV
 uint16_t sy6970_get_battery_voltage(void);
 uint16_t sy6970_get_system_voltage(void);
 uint16_t sy6970_get_charge_current(void);
 uint8_t sy6970_get_ntc_percentage(void);
+const char* sy6970_get_ntc_temperature_status(uint8_t ntc_percent);  // Temperature status from NTC%
 uint8_t sy6970_get_faults(void);
-
-// Status
+const char* sy6970_decode_faults(uint8_t fault_reg);  // Human-readable fault description
 sy6970_charge_status_t sy6970_get_charge_status(void);
 bool sy6970_is_power_good(void);
 bool sy6970_is_vbus_connected(void);  // USB VBUS present plugged or unplugged
 
-// STAT LED control
-esp_err_t sy6970_set_stat_led(bool on);
+// STAT LED Pattern Control (via STAT_DIS toggling)
+// The physical LED1 (red) is connected to the SY6970 STAT pin (pin 4).
+// Hardware provides 1Hz blinking when faults exist; software creates burst patterns
+// by toggling STAT_DIS (REG_07 bit 6) to enable/disable the hardware blink.
+//
+// Pattern encoding for BLINK mode: period_ms = (on_seconds << 16) | (off_seconds)
+// Example: 0x00020004 = 2 sec on (2 blinks at 1Hz), 4 sec pause
+typedef enum {
+    SY6970_LED_OFF,     // STAT disabled (LED off)
+    SY6970_LED_ON,      // STAT enabled (continuous 1Hz blink if fault/charging present)
+    SY6970_LED_BLINK    // Burst pattern: hardware 1Hz blinking, pause, repeat (period_ms to specify)
+} sy6970_led_mode_t;
+
+esp_err_t sy6970_led_set_mode(sy6970_led_mode_t mode, uint32_t period_ms);
 
 #ifdef __cplusplus
 }

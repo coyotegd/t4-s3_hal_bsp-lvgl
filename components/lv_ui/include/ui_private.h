@@ -7,6 +7,7 @@ extern lv_obj_t * pmic_cont;
 extern lv_obj_t * settings_cont;
 extern lv_obj_t * sys_info_cont;
 extern lv_obj_t * media_cont;
+extern lv_obj_t * play_cont;
 extern lv_obj_t * display_cont;
 
 // Global Labels (for updates)
@@ -21,6 +22,7 @@ extern lv_obj_t * lbl_ntc;
 extern lv_obj_t * lbl_sd;
 extern lv_obj_t * lbl_disp_info;
 extern lv_obj_t * lbl_sys_info;
+extern lv_obj_t * lbl_fault;
 
 // Other containers needed for updates
 extern lv_obj_t * cont_sd_files;
@@ -34,6 +36,7 @@ void ui_pmic_create(lv_obj_t * parent);
 void ui_settings_create(lv_obj_t * parent);
 void ui_sys_info_create(lv_obj_t * parent);
 void ui_media_create(lv_obj_t * parent);
+void ui_play_create(lv_obj_t * parent, const char * file_path);
 void ui_display_create(lv_obj_t * parent);
 
 void clear_current_view(void);
@@ -43,6 +46,7 @@ void show_pmic_view(lv_event_t * e);
 void show_settings_view(lv_event_t * e);
 void show_sys_info_view(lv_event_t * e);
 void show_media_view(lv_event_t * e);
+void show_play_view(const char * path);
 void show_display_view(lv_event_t * e);
 
 void populate_sd_files_list(void);

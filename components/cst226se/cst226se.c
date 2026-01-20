@@ -273,6 +273,33 @@ void cst226se_set_i2c_bus(i2c_master_bus_handle_t bus)
     // Deprecated: bus sharing is now always via PMIC. Do nothing.
 }
 
+esp_err_t cst226se_deinit(void) {
+    // Remove ISR handler
+    gpio_isr_handler_remove(CST226SE_IRQ_PIN);
+    
+    // Delete semaphore
+    if (s_touch_sem) {
+        vSemaphoreDelete(s_touch_sem);
+        s_touch_sem = NULL;
+    }
+    
+    // Remove I2C device (note: bus is owned by sy6970)
+    if (s_dev) {
+        i2c_master_bus_rm_device(s_dev);
+        s_dev = NULL;
+    }
+    
+    // Note: s_bus is shared with sy6970, don't delete it here
+    s_bus = NULL;
+    
+    // Reset callback
+    s_touch_callback = NULL;
+    s_touch_callback_ctx = NULL;
+    
+    ESP_LOGI(TAG, "CST226SE deinitialized");
+    return ESP_OK;
+}
+
 bool cst226se_read(cst226se_data_t *data)
 {
     // Log IRQ pin state for hardware diagnosis, but only periodically
@@ -352,7 +379,7 @@ bool cst226se_read(cst226se_data_t *data)
 
 
     uint8_t point = buffer[5] & 0x7F;
-    ESP_LOGI(TAG, "Touch: point count = %u", point);
+    // ESP_LOGI(TAG, "Touch: point count = %u", point);
     if (point > 5 || point == 0) {
         ESP_LOGI(TAG, "Touch: point out of range or zero, writing 0xAB");
         write_single(0x00, 0xAB);
@@ -371,11 +398,11 @@ bool cst226se_read(cst226se_data_t *data)
     uint8_t index = 0;
     uint16_t x = 0, y = 0;
     for (int i = 0; i < point; i++) {
-        uint8_t id = buffer[index] >> 4;
-        uint8_t status = buffer[index] & 0x0F;
+        // uint8_t id = buffer[index] >> 4;
+        // uint8_t status = buffer[index] & 0x0F;
         uint16_t px = (uint16_t)((buffer[index + 1] << 4) | ((buffer[index + 3] >> 4) & 0x0F));
         uint16_t py = (uint16_t)((buffer[index + 2] << 4) | (buffer[index + 3] & 0x0F));
-        ESP_LOGI(TAG, "Touch: i=%d id=%u status=%u px=%u py=%u", i, id, status, px, py);
+        // ESP_LOGI(TAG, "Touch: i=%d id=%u status=%u px=%u py=%u", i, id, status, px, py);
         if (i == 0) { x = px; y = py; }
         index = (i == 0) ? (index + 7) : (index + 5);
     }
@@ -411,7 +438,7 @@ bool cst226se_read(cst226se_data_t *data)
     if (s_mirrorX && s_xMax) tx = s_xMax - tx;
     if (s_mirrorY && s_yMax) ty = s_yMax - ty;
 
-    ESP_LOGI(TAG, "Touch: transformed tx=%d ty=%d", tx, ty);
+    // ESP_LOGI(TAG, "Touch: transformed tx=%d ty=%d", tx, ty);
 
     // Filter out out-of-bounds values (Should be handled by clamp above, but keeping for safety)
     if (tx < 0 || (s_xMax && tx > s_xMax) || ty < 0 || (s_yMax && ty > s_yMax)) {
@@ -437,7 +464,7 @@ bool cst226se_read(cst226se_data_t *data)
     data->y = (uint16_t)ty;
     data->id = 0;
     last_pressed = true;
-    ESP_LOGI(TAG, "Touch: pressed at (%u, %u)", data->x, data->y);
+    // ESP_LOGI(TAG, "Touch: pressed at (%u, %u)", data->x, data->y);
     if (s_touch_callback) s_touch_callback(data, s_touch_callback_ctx);
     return true;
 }

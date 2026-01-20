@@ -23,6 +23,16 @@ dependencies:
       registry_url: https://components.espressif.com
       type: service
     version: 1.1.1
+  espressif/libjpeg-turbo:
+    component_hash: 41100fd5c4fe44e3f4754a60b2828ed018b42ecce799bf0e2993d5a1977c8913
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.0.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 3.1.1~1
   idf:
     source:
       type: idf
@@ -36,7 +46,8 @@ dependencies:
     version: 9.4.0
 direct_dependencies:
 - espressif/button
+- espressif/libjpeg-turbo
 - lvgl/lvgl
-manifest_hash: f4aab1a2853812dac38b17bc2fda93123fd44654bbc5e1d22d61a3d07e1d1efd
+manifest_hash: e3fc84928778f23e9349aecbd2e6baacb1cb55f29dbb755ffed71f1b5a02dce6
 target: esp32s3
 version: 2.0.0

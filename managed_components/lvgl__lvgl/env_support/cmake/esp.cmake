@@ -59,10 +59,13 @@ else()
   endif()
 
   if(CONFIG_LV_USE_PPA)
-    set(IDF_COMPONENTS esp_driver_ppa esp_mm esp_timer log)
+    set(IDF_COMPONENTS esp_driver_ppa esp_mm esp_timer log espressif__libjpeg-turbo)
   else()
-    set(IDF_COMPONENTS esp_timer log)
+    set(IDF_COMPONENTS esp_timer log espressif__libjpeg-turbo)
   endif()
+
+  # Force add libjpeg-turbo requirement if configured (or always for now to fix build)
+  list(APPEND IDF_COMPONENTS espressif__libjpeg-turbo)
 
   idf_component_register(SRCS ${SOURCES} ${EXAMPLE_SOURCES} ${DEMO_SOURCES}
       INCLUDE_DIRS ${LVGL_ROOT_DIR} ${LVGL_ROOT_DIR}/src ${LVGL_ROOT_DIR}/../

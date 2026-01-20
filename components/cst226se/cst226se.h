@@ -36,6 +36,7 @@ bool cst226se_wait_event(uint32_t timeout_ms);
 
 // Power management
 esp_err_t cst226se_init(void);
+esp_err_t cst226se_deinit(void);
 void cst226se_reset(void);
 void cst226se_sleep(void);
 void cst226se_wake(void);

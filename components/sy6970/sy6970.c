@@ -1,23 +1,142 @@
 #include "sy6970.h"
 #include <stdbool.h>
+#include <string.h>
 #include <esp_err.h>
 #include "driver/i2c_master.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 
 #define I2C_MASTER_FREQ_HZ          400000 // 400kHz
 
 static const char *TAG = "sy6970";
 
-// Forward declaration for static function used before definition
-// static esp_err_t sy6970_update_reg(uint8_t reg, uint8_t mask, uint8_t val);
 static i2c_master_bus_handle_t bus_handle = NULL;
 static i2c_master_dev_handle_t dev_handle = NULL;
 
-// Control STAT LED (true = ON, false = OFF)
-esp_err_t sy6970_set_stat_led(bool on) {
-    // STAT_DIS bit (bit 6) in REG_07: 0 = enable STAT, 1 = disable STAT
-    // So to turn ON, clear bit; to turn OFF, set bit
-    return sy6970_update_reg(SY6970_REG_07, SY6970_REG07_STAT_DIS, on ? 0 : SY6970_REG07_STAT_DIS);
+// LED State (STAT_DIS based control)
+static esp_timer_handle_t s_led_timer = NULL;
+static sy6970_led_mode_t s_cur_mode = SY6970_LED_OFF;
+static uint32_t s_blink_count = 0;
+static uint32_t s_blink_on_count = 0;  // How many blinks in the burst
+static uint32_t s_blink_off_count = 0; // How long to pause between bursts
+
+static void led_timer_callback(void* arg) {
+    // Timer fires every 500ms (half of 1Hz period)
+    // We toggle STAT_DIS to create burst patterns
+    
+    if (s_cur_mode == SY6970_LED_BLINK) {
+        // Burst pattern: N blinks, then pause
+        if (s_blink_count < s_blink_on_count) {
+            // Enable STAT pin (allow hardware 1Hz blink)
+            sy6970_update_reg(SY6970_REG_07, SY6970_REG07_STAT_DIS, 0);
+            s_blink_count++;
+        } else if (s_blink_count < (s_blink_on_count + s_blink_off_count)) {
+            // Disable STAT pin (LED off during pause)
+            sy6970_update_reg(SY6970_REG_07, SY6970_REG07_STAT_DIS, SY6970_REG07_STAT_DIS);
+            s_blink_count++;
+        } else {
+            // Reset for next burst
+            s_blink_count = 0;
+        }
+    }
+}
+
+static void led_timer_callback(void* arg) {
+    // Timer fires every 500ms (half of 1Hz period)
+    // We toggle STAT_DIS to create burst patterns
+    
+    if (s_cur_mode == SY6970_LED_BLINK) {
+        // Burst pattern: N blinks, then pause
+        if (s_blink_count < s_blink_on_count) {
+            // Enable STAT pin (allow hardware 1Hz blink)
+            sy6970_update_reg(SY6970_REG_07, SY6970_REG07_STAT_DIS, 0);
+            s_blink_count++;
+        } else if (s_blink_count < (s_blink_on_count + s_blink_off_count)) {
+            // Disable STAT pin (LED off during pause)
+            sy6970_update_reg(SY6970_REG_07, SY6970_REG07_STAT_DIS, SY6970_REG07_STAT_DIS);
+            s_blink_count++;
+        } else {
+            // Reset for next burst
+            s_blink_count = 0;
+        }
+    }
+}
+
+esp_err_t sy6970_led_set_mode(sy6970_led_mode_t mode, uint32_t period_ms) {
+    // Stop existing timer
+    if (s_led_timer) {
+        esp_timer_stop(s_led_timer);
+    } else {
+        const esp_timer_create_args_t timer_args = {
+            .callback = &led_timer_callback,
+            .name = "sy6970_led"
+        };
+        esp_timer_create(&timer_args, &s_led_timer);
+    }
+
+    s_cur_mode = mode;
+    s_blink_count = 0;
+
+    ESP_LOGI(TAG, "sy6970_led_set_mode: mode=%d, period_ms=%lu", mode, period_ms);
+
+    switch(mode) {
+        case SY6970_LED_OFF:
+            // Disable STAT pin completely
+            sy6970_update_reg(SY6970_REG_07, SY6970_REG07_STAT_DIS, SY6970_REG07_STAT_DIS);
+            ESP_LOGI(TAG, "LED OFF: STAT pin disabled");
+            return ESP_OK;
+        
+        case SY6970_LED_ON:
+            // Enable STAT pin for hardware control (continuous blinking if fault present)
+            sy6970_update_reg(SY6970_REG_07, SY6970_REG07_STAT_DIS, 0);
+            ESP_LOGI(TAG, "LED ON: STAT pin enabled (hardware-controlled)");
+            return ESP_OK;
+            
+        case SY6970_LED_BLINK:
+            // Burst pattern - period_ms encodes the pattern
+            // period_ms = (on_seconds << 16) | (off_seconds)
+            // Example: 0x00020004 = 2 seconds on (4 blinks), 4 seconds off
+            s_blink_on_count = (period_ms >> 16) * 2;   // Convert seconds to 500ms ticks (2 ticks = 1 second = 1 blink)
+            s_blink_off_count = (period_ms & 0xFFFF) * 2;
+            
+            if (s_blink_on_count == 0) s_blink_on_count = 4; // Default: 2 blinks
+            if (s_blink_off_count == 0) s_blink_off_count = 4; // Default: 2 second pause
+            
+            ESP_LOGI(TAG, "LED BLINK: %lu blinks (%.1fs on), %.1fs pause", 
+                     s_blink_on_count/2, s_blink_on_count/2.0, s_blink_off_count/2.0);
+            
+            // Start timer at 500ms intervals
+            esp_timer_start_periodic(s_led_timer, 500 * 1000);
+            return ESP_OK;
+    }
+    return ESP_ERR_INVALID_ARG;
+}
+
+esp_err_t sy6970_deinit(void) {
+    // Stop and delete LED timer
+    if (s_led_timer) {
+        esp_timer_stop(s_led_timer);
+        esp_timer_delete(s_led_timer);
+        s_led_timer = NULL;
+    }
+    
+    // Re-enable STAT pin for hardware control
+    sy6970_update_reg(SY6970_REG_07, SY6970_REG07_STAT_DIS, 0);
+    
+    // Delete I2C device handle
+    if (dev_handle) {
+        i2c_master_bus_rm_device(dev_handle);
+        dev_handle = NULL;
+    }
+    
+    // Delete I2C bus handle
+    if (bus_handle) {
+        i2c_del_master_bus(bus_handle);
+        bus_handle = NULL;
+    }
+    
+    ESP_LOGI(TAG, "SY6970 deinitialized");
+    return ESP_OK;
 }
 
 esp_err_t sy6970_write_reg(uint8_t reg, uint8_t data) {
@@ -284,10 +403,76 @@ uint8_t sy6970_get_ntc_percentage(void) {
     return 21 + (val * 465 / 1000);
 }
 
+const char* sy6970_get_ntc_temperature_status(uint8_t ntc_percent) {
+    // JEITA Temperature Thresholds (typical values as % of REGN):
+    // T1 (0°C)  = 73.25% - Below this: COLD (charge suspended)
+    // T2 (10°C) = 68.25% - Below this: COOL (reduced charge current)
+    // T3 (45°C) = 44.75% - Above this: WARM (reduced charge voltage)
+    // T5 (60°C) = 37.75% - Above this: HOT (charge suspended)
+    //
+    // NTC is a negative temperature coefficient thermistor:
+    // High % = Cold temperature (high resistance)
+    // Low % = Hot temperature (low resistance)
+    
+    if (ntc_percent >= 73) {
+        return "COLD (<0°C)";
+    } else if (ntc_percent >= 68) {
+        return "COOL (0-10°C)";
+    } else if (ntc_percent >= 45) {
+        return "NORMAL (10-45°C)";
+    } else if (ntc_percent >= 38) {
+        return "WARM (45-60°C)";
+    } else {
+        return "HOT (>60°C)";
+    }
+}
+
 uint8_t sy6970_get_faults(void) {
     uint8_t val;
     sy6970_read_reg(SY6970_REG_0C, &val);
     return val;
+}
+
+const char* sy6970_decode_faults(uint8_t fault_reg) {
+    static char fault_str[128];
+    fault_str[0] = '\0';
+    
+    if (fault_reg == 0) {
+        return "No faults";
+    }
+    
+    if (fault_reg & SY6970_FAULT_WDT) {
+        strcat(fault_str, "WDT_Expired ");
+    }
+    if (fault_reg & SY6970_FAULT_BOOST) {
+        strcat(fault_str, "BOOST_Fault ");
+    }
+    
+    uint8_t chg_fault = (fault_reg & SY6970_FAULT_CHG_MASK) >> 4;
+    if (chg_fault == 0x01) {
+        strcat(fault_str, "CHG_Input_Fault ");
+    } else if (chg_fault == 0x02) {
+        strcat(fault_str, "CHG_Thermal_Shutdown ");
+    } else if (chg_fault == 0x03) {
+        strcat(fault_str, "CHG_Timer_Expired ");
+    }
+    
+    if (fault_reg & SY6970_FAULT_BAT_OVP) {
+        strcat(fault_str, "BAT_OVP ");
+    }
+    
+    uint8_t ntc_fault = fault_reg & SY6970_FAULT_NTC_MASK;
+    if (ntc_fault == 0x02) {
+        strcat(fault_str, "NTC_Warm ");
+    } else if (ntc_fault == 0x03) {
+        strcat(fault_str, "NTC_Cool ");
+    } else if (ntc_fault == 0x05) {
+        strcat(fault_str, "NTC_Cold ");
+    } else if (ntc_fault == 0x06) {
+        strcat(fault_str, "NTC_Hot ");
+    }
+    
+    return fault_str;
 }
 
 sy6970_charge_status_t sy6970_get_charge_status(void) {

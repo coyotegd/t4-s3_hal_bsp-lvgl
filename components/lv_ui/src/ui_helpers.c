@@ -4,6 +4,7 @@
 #include "esp_system.h"
 #include "esp_chip_info.h"
 #include "sy6970.h"
+#include "sd_card.h"
 
 void update_stats_timer_cb(lv_timer_t * timer) {
     // Update System Info
@@ -29,6 +30,8 @@ void update_stats_timer_cb(lv_timer_t * timer) {
             default:           model_str = "Generic";  bt_ver = "BLE ";     break;
         }
 
+        bool sd_mounted = sd_card_is_mounted();
+        
         lv_label_set_text_fmt(lbl_sys_info, 
             "System Info:\n"
             "Free Heap: %" PRIu32 " bytes\n"
@@ -42,13 +45,14 @@ void update_stats_timer_cb(lv_timer_t * timer) {
             "- PMIC: SY6970\n"
             "- Display: RM690B0 (AMOLED)\n"
             "- Touch: CST226SE\n"
-            "- SD Card: SPI Mode",
+            "- SD Card: %s",
             free_heap, min_free_heap, uptime,
             model_str,
             chip_info.cores, chip_info.revision,
             (chip_info.features & CHIP_FEATURE_WIFI_BGN) ? "WiFi - " : "No WiFi - ",
             (chip_info.features & CHIP_FEATURE_BLE) ? bt_ver : "No BLE",
-            (chip_info.features & CHIP_FEATURE_IEEE802154) ? "- Zigbee/Thread" : "- No Zigbee/Thread ");
+            (chip_info.features & CHIP_FEATURE_IEEE802154) ? "- Zigbee/Thread" : "- No Zigbee/Thread ",
+            sd_mounted ? "Mounted" : "Unmounted");
     }
 
     // Update PMIC Info
@@ -72,7 +76,28 @@ void update_stats_timer_cb(lv_timer_t * timer) {
         if (lbl_chg_curr) lv_label_set_text_fmt(lbl_chg_curr, "Charging Current:\n%d mA", chg_curr);
         if (lbl_usb) lv_label_set_text_fmt(lbl_usb, "USB:\n%s", vbus_conn ? "Connected" : "Disconnected");
         if (lbl_usb_volts) lv_label_set_text_fmt(lbl_usb_volts, "USB Volts:\n%d mV", usb_volts);
-        if (lbl_ntc) lv_label_set_text_fmt(lbl_ntc, "Temperature:\n%d %%", ntc_pct);
+        if (lbl_ntc) {
+            const char* temp_status = sy6970_get_ntc_temperature_status(ntc_pct);
+            lv_label_set_text_fmt(lbl_ntc, "Temperature: %d%%\n%s", ntc_pct, temp_status);
+            
+            // Set color based on temperature status
+            if (ntc_pct >= 73) {
+                // COLD (<0°C) - Blue
+                lv_obj_set_style_text_color(lbl_ntc, lv_color_hex(0x4DA6FF), 0);
+            } else if (ntc_pct >= 68) {
+                // COOL (0-10°C) - Light Blue
+                lv_obj_set_style_text_color(lbl_ntc, lv_color_hex(0x80D4FF), 0);
+            } else if (ntc_pct >= 45) {
+                // NORMAL (10-45°C) - Green
+                lv_obj_set_style_text_color(lbl_ntc, lv_color_hex(0x00FF00), 0);
+            } else if (ntc_pct >= 38) {
+                // WARM (45-60°C) - Orange
+                lv_obj_set_style_text_color(lbl_ntc, lv_color_hex(0xFFA500), 0);
+            } else {
+                // HOT (>60°C) - Red
+                lv_obj_set_style_text_color(lbl_ntc, lv_color_hex(0xFF0000), 0);
+            }
+        }
         
         // USB Wattage (Approx)
         if (lbl_usb_pg) {
@@ -82,6 +107,19 @@ void update_stats_timer_cb(lv_timer_t * timer) {
              // Or maybe "Power Good" status
              bool pg = sy6970_is_power_good();
              lv_label_set_text_fmt(lbl_usb_pg, "USB Power:\n%s", pg ? "Yes" : "No");
+        }
+        
+        // Fault Status
+        if (lbl_fault) {
+            uint8_t faults = sy6970_get_faults();
+            if (faults == 0) {
+                lv_label_set_text(lbl_fault, "Fault:\nNone");
+                lv_obj_set_style_text_color(lbl_fault, lv_color_hex(0x00FF00), 0); // Green
+            } else {
+                const char* fault_desc = sy6970_decode_faults(faults);
+                lv_label_set_text_fmt(lbl_fault, "Fault:\n%s", fault_desc);
+                lv_obj_set_style_text_color(lbl_fault, lv_color_hex(0xFF0000), 0); // Red
+            }
         }
     }
 }

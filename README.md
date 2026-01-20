@@ -16,18 +16,17 @@ All of these are provided by the HAL manager:
 #include "hal_mgr.h"
 
 void app_main(void) {
-    hal_init();
-    hal_set_brightness(128);
-    hal_clear_full_display(0x0000); // Black
+    hal_mgr_init();
+    // Note: Use LVGL BSP functions for display/brightness control
+    // hal_mgr primarily provides callbacks and status monitoring
     while (1) {
-        if (hal_handle_touch()) {
-            // Use hal_touch_data_t for coordinates/press state
-        }
+        // Touch and other events are handled via registered callbacks
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
 ```
 
-The HAL manager internally calls the appropriate driver APIs (e.g., `rm690b0_set_brightness`, `cst226se_read`, `sy6970_set_stat_led`) but only exposes what the application actually uses. This design keeps the app logic clean and focused on high-level tasks, not hardware details.
+The HAL manager internally calls the appropriate driver APIs (e.g., `rm690b0_set_brightness`, `cst226se_read`, `sy6970_set_charge_current`) and provides callback registration for events. This design keeps the app logic clean and focused on high-level tasks, not hardware details.
 ---
 
 ## Hardware Abstraction Layer (HAL) Manager (`hal_mgr.h`)
@@ -36,26 +35,24 @@ The `hal_mgr` provides a unified interface for display, touch, and power managem
 
 **Key HAL API Functions:**
 
-- `void hal_init(void);`  // Initialize all hardware (display, touch, PMIC)
-- `void hal_set_rotation(uint8_t rot);`  // Set display/touch rotation
-- `void hal_redraw_screen(void);`
-- `void hal_set_brightness(uint8_t brightness);`
-- `uint16_t hal_get_display_width(void);`
-- `uint16_t hal_get_display_height(void);`
-- `void hal_draw_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);`
-- `void hal_clear_full_display(uint16_t color);`
-- `void hal_cycle_rotation(void);`
-- `bool hal_handle_touch(void);`  // Poll and update touch state
-- `esp_err_t hal_set_stat_led(bool on);`  // Control PMIC STAT LED
+- `esp_err_t hal_mgr_init(void);`  // Initialize all hardware (display, touch, PMIC)
+- `void hal_mgr_set_rotation(rm690b0_rotation_t rot);`  // Set display/touch rotation
+- `rm690b0_rotation_t hal_mgr_get_rotation(void);`  // Get current rotation
+- `void hal_mgr_display_flush(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const void *color_p);`  // LVGL flush callback
+- `void hal_mgr_display_flush_async(...);`  // Async flush for DMA
+- `bool hal_mgr_touch_read(int16_t *x, int16_t *y);`  // LVGL touch read callback
+- `void hal_mgr_set_led_status(hal_led_status_t status);`  // Set user-defined status LED pattern
+- `void hal_mgr_lock_led(bool locked);`  // Lock LED for manual control
+- `esp_err_t hal_mgr_sd_init(void);`  // Initialize SD card
+- `bool hal_mgr_sd_is_mounted(void);`  // Check SD card status
 
-**Touch Data Structure:**
-```c
-typedef struct {
-    uint16_t x;
-    uint16_t y;
-    bool pressed;
-} hal_touch_data_t;
-```
+**Callback Registration:**
+- `void hal_mgr_register_touch_callback(cst226se_event_callback_t cb, void *user_ctx);`
+- `void hal_mgr_register_display_vsync_callback(rm690b0_vsync_cb_t cb, void *user_ctx);`
+- `void hal_mgr_register_usb_callback(hal_mgr_usb_event_cb_t cb, void *user_ctx);`
+- `void hal_mgr_register_charge_callback(hal_mgr_charge_event_cb_t cb, void *user_ctx);`
+- `void hal_mgr_register_battery_callback(hal_mgr_battery_event_cb_t cb, void *user_ctx);`
+- `void hal_mgr_register_rotation_callback(hal_mgr_rotation_cb_t cb, void *user_ctx);`
 
 ---
 
@@ -63,15 +60,25 @@ typedef struct {
 
 ```c
 #include "hal_mgr.h"
+#include "lvgl_mgr.h"  // BSP provides LVGL integration
 
 void app_main(void) {
-    hal_init();
-    hal_set_brightness(128);
-    hal_clear_full_display(0x0000); // Black
+    // Initialize hardware (display, touch, PMIC, SD card)
+    hal_mgr_init();
+    
+    // Initialize LVGL and display subsystem
+    bsp_init();
+    
+    // Register callbacks for system events
+    hal_mgr_register_usb_callback(usb_event_handler, NULL);
+    hal_mgr_register_charge_callback(charge_event_handler, NULL);
+    
+    // Set LED status
+    hal_mgr_set_led_status(HAL_LED_STATUS_CHARGING);
+    
+    // Application loop handled by LVGL timer
     while (1) {
-        if (hal_handle_touch()) {
-            // Use hal_touch_data_t for coordinates/press state
-        }
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
 ```
@@ -107,6 +114,20 @@ The board uses an SY6970 PMIC which has a default watchdog enabled.
 - **Issue:** The board would reset or power cycle if the watchdog wasn't fed or disabled.
 - **Fix:** The driver initializes the SY6970 over I2C (`0x6A`) and explicitly disables the watchdog in Register `0x07`.
 
+### 4. Status LED Architecture (GPIO 38)
+This project implements a **custom user-defined status LED** for enhanced system feedback:
+- **Hardware:** GPIO 38 is connected to an external LED (active-low)
+- **Not the PMIC STAT Pin:** The SY6970's internal STAT LED (controlled via REG_07[6]) is separate
+- **Enhanced Functionality:** The ESP32 interprets PMIC status and drives GPIO 38 with:
+  - **Breathing** (PWM) for charging indication
+  - **Solid On** for fully charged
+  - **Custom blink rates** for different fault conditions:
+    - 100ms (Watchdog fault)
+    - 500ms (Generic fault)
+    - 1000ms (Temperature fault)
+    - 2000ms (Overvoltage fault)
+- **Implementation:** See `hal_mgr.c` for auto-status task and fault interpretation logic
+- **Control:** Use `hal_mgr_set_led_status()` for manual control or `hal_mgr_lock_led()` to disable auto-updates
 
 ---
 
@@ -163,7 +184,6 @@ The board uses an SY6970 PMIC which has a default watchdog enabled.
 - `sy6970_charge_status_t sy6970_get_charge_status(void);`
 - `bool sy6970_is_power_good(void);`
 - `bool sy6970_is_vbus_connected(void);`
-- `esp_err_t sy6970_set_stat_led(bool on);`
 
 ---
 

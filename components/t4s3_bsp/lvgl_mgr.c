@@ -1,3 +1,4 @@
+#include "esp_heap_caps.h"
 #include "lvgl_mgr.h"
 #include "hal_mgr.h"
 #include "esp_log.h"
@@ -237,18 +238,25 @@ esp_err_t bsp_init(void) {
     ESP_LOGI(TAG, "LVGL Config: LV_COLOR_DEPTH=%d, Native Format=%d", LV_COLOR_DEPTH, LV_COLOR_FORMAT_NATIVE);
     ESP_LOGI(TAG, "Display Format set to: %d (RGB565=%d)", lv_display_get_color_format(lv_disp), LV_COLOR_FORMAT_RGB565);
 
-    // Allocate draw buffers (Internal RAM for speed and DMA compatibility)
-    // Using ~24KB buffer (approx 20 lines at 600px width) to be safe and avoid SPI transaction limits
-    // 600 * 20 * 2 = 24,000 bytes
-    size_t buf_size = w * 20 * 2; // Explicitly 2 bytes per pixel
-    ESP_LOGI(TAG, "Allocating LVGL draw buffers: %d bytes (Explicit 2 bytes/px)", (int)buf_size);
+    // Allocate draw buffers in PSRAM for larger size/performance
+    // Using FULL SCREEN buffers to eliminate tearing/banding artifacts
+    // 600 * 450 * 2 = 540,000 bytes per buffer (x2 = 1.08MB total)
+    // We expect the driver to chunk this into 32KB safe segments automatically.
+    size_t buf_size = w * h * 2; 
+    ESP_LOGI(TAG, "Allocating LVGL draw buffers: %d bytes (PSRAM)", (int)buf_size);
 
-    void *buf1 = heap_caps_malloc(buf_size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-    if (!buf1) return ESP_ERR_NO_MEM;
+    // Use MALLOC_CAP_SPIRAM for PSRAM. 
+    // Ensure MALLOC_CAP_INTERNAL is NOT set so we don't eat precious SRAM.
+    // The ESP32-S3 EDMA or standard DMA can transfer from PSRAM to LCD peripheral just fine.
+    void *buf1 = heap_caps_malloc(buf_size, MALLOC_CAP_SPIRAM);
+    if (!buf1) {
+        ESP_LOGE(TAG, "Failed to allocate buf1 in PSRAM");
+        return ESP_ERR_NO_MEM;
+    }
 
-    void *buf2 = heap_caps_malloc(buf_size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    void *buf2 = heap_caps_malloc(buf_size, MALLOC_CAP_SPIRAM);
     if (!buf2) {
-        ESP_LOGW(TAG, "Failed to allocate second buffer, using single buffer mode");
+        ESP_LOGW(TAG, "Failed to allocate second buffer in PSRAM, using single buffer mode");
         lv_display_set_buffers(lv_disp, buf1, NULL, buf_size, LV_DISPLAY_RENDER_MODE_PARTIAL);
     } else {
         lv_display_set_buffers(lv_disp, buf1, buf2, buf_size, LV_DISPLAY_RENDER_MODE_PARTIAL);
@@ -273,9 +281,8 @@ esp_err_t bsp_init(void) {
         ESP_LOGE(TAG, "Failed to create LVGL input device!");
     }
 
-    // Show Rainbow Test Pattern (Hardware diagnostic)
-    lvgl_mgr_show_rainbow();
-    vTaskDelay(pdMS_TO_TICKS(750)); // Show rainbow for 0.75 seconds
+    // Rainbow test pattern already shown during hal_mgr_init()
+    // No need to redraw here (prevents flicker)
 
     // Start LVGL Task
     // Increased stack to 32KB for GIF decoding and file operations

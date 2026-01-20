@@ -3,12 +3,22 @@
 #include <sys/stat.h>
 #include "sd_card.h" // Assuming this is available via REQUIRES sd_card
 #include <stdio.h> // For snprintf
+#include <string.h>
+#include "esp_log.h"
+#include "ui_avi.h"
 
 LV_IMG_DECLARE(swipeL34);
+LV_IMG_DECLARE(swipeR34);
 
 static void media_swipe_event_cb(lv_event_t * e) {
     if(lv_indev_get_gesture_dir(lv_indev_get_act()) == LV_DIR_LEFT) {
         show_home_view(e);
+    }
+}
+
+static void play_swipe_event_cb(lv_event_t * e) {
+    if(lv_indev_get_gesture_dir(lv_indev_get_act()) == LV_DIR_RIGHT) {
+        show_media_view(e);
     }
 }
 
@@ -17,15 +27,53 @@ static void file_btn_event_handler(lv_event_t * e) {
     // Child 0 is file name, Child 1 is size (if added correctly)
     lv_obj_t * lbl = lv_obj_get_child(btn, 0); 
     const char * txt = lv_label_get_text(lbl);
-    LV_LOG_USER("Clicked file: %s", txt);
-    (void)txt; /* Silence warning if logging is disabled */
-    // TODO: Implement file action (e.g. play GIF)
+    
+    // Parse filename from format "%s  %s", LV_SYMBOL_FILE, dir->d_name
+    // Skip the symbol (3 bytes usually for unicode, plus 2 spaces)
+    // Actually LV_SYMBOL_FILE is equivalent to "\xEF\x85\x9B" (3 bytes)
+    // Based on populate_sd_files_list: "%s  %s" -> Symbol + "  " + name
+    // We can just find the first double space or just offset.
+    // Safer: strstr(txt, "  ") + 2.
+    
+    const char * filename = strstr(txt, "  ");
+    if (!filename) {
+        ESP_LOGW("ui_media", "Failed to parse filename from button text");
+        return;
+    }
+    filename += 2; // Skip "  "
+    if (*filename) {
+        
+        char full_path[512];
+        snprintf(full_path, sizeof(full_path), "S:/sdcard/%s", filename); // LVGL drive prefix 'S:' might be needed or just /sdcard depending on fs
+        // In previous code populate used /sdcard/name for stat, but LVGL file system might need drive letter if registered.
+        // Assuming standard POSIX if no LVGL driver used, but lv_gif uses LVGL file system abstraction?
+        // Actually lv_gif uses lv_image_decoder which uses lv_fs. 
+        // If LVGL fs is not set up for /sdcard, we might have issues. 
+        // However, if we assume standard stdio is hooked or similar.
+        // Let's use the path as constructed in populate: "/sdcard/%s".
+        // If LVGL is configured to use stdio (CONFIG_LV_USE_FS_STDIO), we might need to prefix "A:" or similar?
+        // Use LVGL path with Drive letter 'S:' mapping to stdio (fopen)
+        // This is required for lv_image/tjpgd
+        snprintf(full_path, sizeof(full_path), "S:%s", filename);
+        LV_LOG_USER("Playing file: %s", full_path);
+        
+        show_play_view(full_path);
+    }
 }
 
 void populate_sd_files_list(void) {
     if (!cont_sd_files) return;
     
     lv_obj_clean(cont_sd_files);
+    
+    // Check if SD card is mounted
+    if (!sd_card_is_mounted()) {
+        lv_obj_t * lbl = lv_label_create(cont_sd_files);
+        lv_label_set_text(lbl, LV_SYMBOL_SD_CARD "  SD Card Not Found");
+        lv_obj_set_style_text_color(lbl, lv_palette_main(LV_PALETTE_ORANGE), 0);
+        lv_obj_center(lbl);
+        return;
+    }
 
     DIR *d;
     struct dirent *dir;
@@ -149,17 +197,6 @@ void ui_media_create(lv_obj_t * parent) {
     lv_obj_set_style_text_font(lbl_sd, &lv_font_montserrat_22, 0);
 }
 
-static void create_back_btn_display(lv_obj_t * parent) {
-    lv_obj_t * btn_back = lv_button_create(parent);
-    lv_obj_set_size(btn_back, 60, 60);
-    lv_obj_add_flag(btn_back, LV_OBJ_FLAG_FLOATING);
-    lv_obj_align(btn_back, LV_ALIGN_TOP_LEFT, 0, 0);
-    lv_obj_add_event_cb(btn_back, show_home_view, LV_EVENT_CLICKED, NULL);
-    lv_obj_t * lbl_back = lv_label_create(btn_back);
-    lv_label_set_text(lbl_back, LV_SYMBOL_LEFT);
-    lv_obj_center(lbl_back);
-}
-
 void show_display_view(lv_event_t * e) {
     clear_current_view();
     ui_display_create(lv_screen_active());
@@ -220,4 +257,91 @@ void ui_display_create(lv_obj_t * parent) {
     lv_label_set_text(lbl_disp_info, "Display Info:\nResolution: --x--\nDriver: RM690B0\nInterface: QSPI");
     lv_obj_set_style_text_color(lbl_disp_info, lv_color_white(), 0);
     lv_obj_set_style_text_font(lbl_disp_info, &lv_font_montserrat_22, 0);
+}
+
+void show_play_view(const char * path) {
+    clear_current_view();
+    ui_play_create(lv_screen_active(), path);
+}
+
+void ui_play_create(lv_obj_t * parent, const char * file_path) {
+    play_cont = lv_obj_create(parent);
+    lv_obj_set_size(play_cont, LV_PCT(100), LV_PCT(100));
+    lv_obj_remove_flag(play_cont, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_bg_opa(play_cont, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(play_cont, 0, 0);
+    lv_obj_set_style_pad_all(play_cont, 0, 0);
+    lv_obj_add_event_cb(play_cont, play_swipe_event_cb, LV_EVENT_GESTURE, NULL);
+    lv_obj_clear_flag(play_cont, LV_OBJ_FLAG_GESTURE_BUBBLE);
+    lv_obj_add_flag(play_cont, LV_OBJ_FLAG_CLICKABLE);
+
+    // Swipe Right Icon to indicate return
+    lv_obj_t * img_swipe = lv_image_create(play_cont);
+    lv_image_set_src(img_swipe, &swipeR34);
+    lv_obj_add_flag(img_swipe, LV_OBJ_FLAG_FLOATING);
+    lv_obj_align(img_swipe, LV_ALIGN_TOP_LEFT, 0, 15);
+
+    // Title (Filename)
+    lv_obj_t * title = lv_label_create(play_cont);
+    // Extract filename from path
+    const char * fname = NULL; 
+    if(file_path) {
+        // Find last slash or colon (for S:file.avi)
+        const char * slash = strrchr(file_path, '/');
+        const char * colon = strrchr(file_path, ':');
+        
+        if (slash && colon) {
+            fname = (slash > colon) ? slash + 1 : colon + 1;
+        } else if (slash) {
+            fname = slash + 1;
+        } else if (colon) {
+            fname = colon + 1;
+        } else {
+            fname = file_path;
+        }
+    } else {
+        fname = "Unknown";
+    }
+
+    lv_label_set_text(title, fname);
+    lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 15);
+    lv_obj_set_style_text_font(title, &lv_font_montserrat_22, 0);
+    lv_obj_set_style_text_color(title, lv_color_hex(0xFFD700), 0);
+
+    // Generic Image Display (GIF/AVI/JPG)
+    if(file_path) {
+        ESP_LOGI("ui_media", "Opening media file: %s", file_path);
+
+        lv_obj_t * img = NULL;
+        
+        // Simple extension check
+        const char * ext = strrchr(file_path, '.');
+        int is_avi = 0;
+        
+        if(ext) {
+            if(strcasecmp(ext, ".avi") == 0) is_avi = 1;
+        }
+
+        if(is_avi) {
+            // New AVI (MJPEG) handling
+            ESP_LOGI("ui_media", "Creating AVI player for %s", file_path);
+            img = ui_avi_create(play_cont);
+            if (img) {
+                ui_avi_set_src(img, file_path);
+            } else {
+                ESP_LOGE("ui_media", "Failed to create AVI object");
+            }
+        } else {
+            // Assume JPG or others handled by lv_image
+            img = lv_image_create(play_cont);
+            lv_image_set_src(img, file_path);
+        }
+
+        if(img) {
+            lv_obj_center(img);
+            // Clean up gesture bubble
+            lv_obj_clear_flag(img, LV_OBJ_FLAG_GESTURE_BUBBLE);
+            lv_obj_add_event_cb(img, play_swipe_event_cb, LV_EVENT_GESTURE, NULL);
+        }
+    }
 }
