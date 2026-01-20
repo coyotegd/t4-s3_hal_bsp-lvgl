@@ -41,27 +41,6 @@ static void led_timer_callback(void* arg) {
     }
 }
 
-static void led_timer_callback(void* arg) {
-    // Timer fires every 500ms (half of 1Hz period)
-    // We toggle STAT_DIS to create burst patterns
-    
-    if (s_cur_mode == SY6970_LED_BLINK) {
-        // Burst pattern: N blinks, then pause
-        if (s_blink_count < s_blink_on_count) {
-            // Enable STAT pin (allow hardware 1Hz blink)
-            sy6970_update_reg(SY6970_REG_07, SY6970_REG07_STAT_DIS, 0);
-            s_blink_count++;
-        } else if (s_blink_count < (s_blink_on_count + s_blink_off_count)) {
-            // Disable STAT pin (LED off during pause)
-            sy6970_update_reg(SY6970_REG_07, SY6970_REG07_STAT_DIS, SY6970_REG07_STAT_DIS);
-            s_blink_count++;
-        } else {
-            // Reset for next burst
-            s_blink_count = 0;
-        }
-    }
-}
-
 esp_err_t sy6970_led_set_mode(sy6970_led_mode_t mode, uint32_t period_ms) {
     // Stop existing timer
     if (s_led_timer) {
