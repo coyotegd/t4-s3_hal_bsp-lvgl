@@ -1,33 +1,35 @@
 #include "ui_private.h"
+#include "esp_log.h"
+
+static const char *TAG = "ui_system";
 
 LV_IMG_DECLARE(swipeL34);
 LV_IMG_DECLARE(swipeR34);
 
 static void pmic_swipe_event_cb(lv_event_t * e) {
     if(lv_indev_get_gesture_dir(lv_indev_get_act()) == LV_DIR_LEFT) {
-        show_home_view(e);
+        show_home_view(NULL);
     }
 }
 
 static void settings_swipe_event_cb(lv_event_t * e) {
     if(lv_indev_get_gesture_dir(lv_indev_get_act()) == LV_DIR_RIGHT) {
-        show_home_view(e);
+        show_home_view(NULL);
     }
 }
 
+// These are now only called from swipe gestures
 void show_pmic_view(lv_event_t * e) {
-    clear_current_view();
-    ui_pmic_create(lv_screen_active());
+    (void)e;
+    // Swipe gestures go through show_home_view which uses the timer
 }
 
 void show_settings_view(lv_event_t * e) {
-    clear_current_view();
-    ui_settings_create(lv_screen_active());
+    (void)e;
 }
 
 void show_sys_info_view(lv_event_t * e) {
-    clear_current_view();
-    ui_sys_info_create(lv_screen_active());
+    (void)e;
 }
 
 

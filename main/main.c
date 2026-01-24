@@ -24,13 +24,15 @@ void app_main(void) {
         while(1) vTaskDelay(1000);
     }
 
-    // Register callbacks to the HAL via the manager if needed
-    hal_mgr_register_usb_callback(my_usb_handler, NULL);
-
     // Create the UI
     lvgl_mgr_lock();
     lv_ui_init();
     lvgl_mgr_unlock();
+
+    ESP_LOGI(TAG, "UI initialized");
+
+    // Register callbacks to the HAL via the manager if needed
+    hal_mgr_register_usb_callback(my_usb_handler, NULL);
 
     ESP_LOGI(TAG, "HAL & BSP + LVGL Systems ready . . .");
 
@@ -39,3 +41,4 @@ void app_main(void) {
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
+

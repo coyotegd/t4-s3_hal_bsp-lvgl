@@ -12,7 +12,7 @@ LV_IMG_DECLARE(swipeR34);
 
 static void media_swipe_event_cb(lv_event_t * e) {
     if(lv_indev_get_gesture_dir(lv_indev_get_act()) == LV_DIR_LEFT) {
-        show_home_view(e);
+        show_home_view(NULL);
     }
 }
 
@@ -139,6 +139,7 @@ void populate_sd_files_list(void) {
 }
 
 void show_media_view(lv_event_t * e) {
+    (void)e;  // Unused
     clear_current_view();
     ui_media_create(lv_screen_active());
     
@@ -198,6 +199,7 @@ void ui_media_create(lv_obj_t * parent) {
 }
 
 void show_display_view(lv_event_t * e) {
+    (void)e;  // Unused
     clear_current_view();
     ui_display_create(lv_screen_active());
 

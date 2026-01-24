@@ -370,3 +370,4 @@ esp_err_t hal_mgr_sd_init(void) {
 bool hal_mgr_sd_is_mounted(void) {
     return sd_card_is_mounted();
 }
+
