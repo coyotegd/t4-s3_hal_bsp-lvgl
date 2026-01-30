@@ -290,6 +290,25 @@ void ui_settings_create(lv_obj_t * parent); // Forward declaration
 static lv_obj_t * pmic_parent_obj = NULL; // Store parent for recreation
 static lv_obj_t * settings_parent_obj = NULL; // Store parent for settings recreation
 
+// Timer callback to scroll efficiently after layout is ready
+static void scroll_timer_cb(lv_timer_t * t) {
+    if(cont_chg_settings) {
+         // Find the scrollable parent
+        lv_obj_t * scrollable_parent = cont_chg_settings;
+        while(scrollable_parent) {
+            if(lv_obj_has_flag(scrollable_parent, LV_OBJ_FLAG_SCROLLABLE)) {
+                break;
+            }
+            scrollable_parent = lv_obj_get_parent(scrollable_parent);
+        }
+
+        if(scrollable_parent) {
+            // Scroll to the absolute bottom (Y=10000 is safe)
+            lv_obj_scroll_to_y(scrollable_parent, 10000, LV_ANIM_ON);
+        }
+    }
+}
+
 static void defaults_btn_cb(lv_event_t * e) {
     // 1. Input Current Limit: 3000mA (Max available from weak sources via VINDPM throttling)
     sy6970_set_input_current_limit(3000);
@@ -344,11 +363,9 @@ static void defaults_btn_cb(lv_event_t * e) {
         
         ui_settings_create(settings_parent_obj);
     
-        // Scroll to bottom to show the button
-        if(cont_chg_settings) {
-            lv_obj_update_layout(settings_cont);
-            lv_obj_scroll_to_view(lv_obj_get_child(cont_chg_settings, -1), LV_ANIM_OFF);
-        }
+        // Trigger a scroll update slightly later to ensure layout is calculated
+        lv_timer_t * t = lv_timer_create(scroll_timer_cb, 50, NULL);
+        lv_timer_set_repeat_count(t, 1);
     }
     
     ESP_LOGI("ui_system", "SY6970 Defaults Applied & UI Settings Page Reloaded");
@@ -766,14 +783,27 @@ void ui_settings_create(lv_obj_t * parent) {
     lv_obj_add_event_cb(sw_off, shutdown_switch_cb, LV_EVENT_VALUE_CHANGED, NULL);
 
     // 12. Defaults Button
-    lv_obj_t * btn_defaults = lv_button_create(cont_chg_settings);
-    lv_obj_set_width(btn_defaults, LV_PCT(90));
+    // We wrap it in a container to center it properly in the flex list
+    lv_obj_t * row_defaults = lv_obj_create(cont_chg_settings);
+    lv_obj_set_width(row_defaults, LV_PCT(100));
+    lv_obj_set_height(row_defaults, LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(row_defaults, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(row_defaults, 0, 0);
+    lv_obj_set_style_pad_all(row_defaults, 5, 0);
+    lv_obj_set_flex_flow(row_defaults, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(row_defaults, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+
+    lv_obj_t * btn_defaults = lv_button_create(row_defaults);
+    lv_obj_set_width(btn_defaults, LV_SIZE_CONTENT);
     lv_obj_set_height(btn_defaults, 50);
-    lv_obj_set_style_bg_color(btn_defaults, lv_color_hex(0xFF4500), 0); // Orange-Red
+    lv_obj_set_style_bg_color(btn_defaults, lv_color_black(), 0); // Black Background
+    lv_obj_set_style_border_color(btn_defaults, lv_color_hex(0xFF4500), 0); // Orange Border
+    lv_obj_set_style_bg_color(btn_defaults, lv_color_hex(0xFF4500), LV_STATE_PRESSED); // Pressed: Orange Background
+    lv_obj_set_style_border_width(btn_defaults, 2, 0);
+    lv_obj_set_style_pad_hor(btn_defaults, 20, 0); // Padding for content width
     lv_obj_set_style_radius(btn_defaults, 10, 0);
-    lv_obj_set_align(btn_defaults, LV_ALIGN_CENTER);
-    lv_obj_set_style_margin_top(btn_defaults, 20, 0);
-    lv_obj_set_style_margin_bottom(btn_defaults, 20, 0);
+    lv_obj_set_style_margin_top(btn_defaults, 10, 0);
+    lv_obj_set_style_margin_bottom(btn_defaults, 10, 0);
     
     lv_obj_t * lbl_defaults = lv_label_create(btn_defaults);
     lv_label_set_text(lbl_defaults, "PMIC Defaults (Best Practices)");

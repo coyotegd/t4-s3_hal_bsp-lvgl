@@ -196,16 +196,22 @@ uint16_t sy6970_get_input_current_limit(void) {
 esp_err_t sy6970_set_input_voltage_limit(uint16_t voltage_mv) {
     if (voltage_mv < 3900) voltage_mv = 3900;
     if (voltage_mv > 15300) voltage_mv = 15300;
-    uint8_t val = (voltage_mv - 3900) / 100;
     
-    // Direct write to ensure bits are set (ignoring reserved bit 7)
-    // Using update_reg might fail if read fails or masking is weird.
-    // Bit 7 is reserved (0), so writing val (0-127) is safe.
-    esp_err_t ret = sy6970_write_reg(SY6970_REG_0D, val);
+    // Formula: VINDPM = 2.6V + (Code * 100mV)
+    // Range: 3.9V (Code 13) to 15.3V
+    uint8_t val = (voltage_mv - 2600) / 100;
     
-    // Verification log
+    // Set Bit 7 to Force Absolute VINDPM
+    uint8_t write_val = val | 0x80;
+
+    esp_err_t ret = sy6970_write_reg(SY6970_REG_0D, write_val);
+    
+    // Immediate Readback Verification
+    uint8_t verify_val = 0;
+    sy6970_read_reg(SY6970_REG_0D, &verify_val);
+    
     if (ret == ESP_OK) {
-        ESP_LOGI(TAG, "Set VINDPM to %d mV (Reg: 0x%02X)", voltage_mv, val);
+        ESP_LOGI(TAG, "Set VINDPM to %d mV (Write: 0x%02X). Readback: 0x%02X", voltage_mv, write_val, verify_val);
     } else {
         ESP_LOGE(TAG, "Failed to set VINDPM: %d", ret);
     }
@@ -213,10 +219,17 @@ esp_err_t sy6970_set_input_voltage_limit(uint16_t voltage_mv) {
 }
 
 uint16_t sy6970_get_input_voltage_limit(void) {
-    uint8_t val;
-    sy6970_read_reg(SY6970_REG_0D, &val);
-    val &= 0x7F;
-    return 3900 + (val * 100);
+    uint8_t val = 0;
+    esp_err_t ret = sy6970_read_reg(SY6970_REG_0D, &val);
+    if(ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to read VINDPM!");
+        return 4400; 
+    }
+    
+    val &= 0x7F; // Mask out enable bit
+    
+    // Formula: VINDPM = 2.6V + (Code * 100mV)
+    return 2600 + (val * 100);
 }
 
 esp_err_t sy6970_enable_otg(bool enable) {
