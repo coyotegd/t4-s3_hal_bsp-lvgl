@@ -1,6 +1,6 @@
 # LilyGo T4-S3 ESP-IDF Starter with BSP-LVGL & HAL
 
-This project is a complete (except for PM Status readings and display), working starter template for the **LilyGo T4-S3** (2.41" AMOLED) development board using **ESP-IDF** and **LVGL**.
+This project is a complete (except for OTA implementation, PM Status readings/display checks and balances), working starter template for the **LilyGo T4-S3** (2.41" AMOLED) development board using **ESP-IDF** and **LVGL**.
 
 It features a robust **Hardware Abstraction Layer (HAL)** that handles the complex low-level drivers for the display, touch screen, and power management IC (PMIC), allowing you to focus on building your application.
 
