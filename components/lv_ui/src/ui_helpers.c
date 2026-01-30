@@ -58,9 +58,7 @@ void update_stats_timer_cb(lv_timer_t * timer) {
     // Update PMIC Info
     if (lbl_sys_volts) { // Check one label to assume others are ready (or check all if safer)
         uint16_t sys_volts = sy6970_get_system_voltage();
-        // Use get_battery_voltage_accurate() to get true battery voltage even when charging.
-        // This function briefly pauses charging to take the reading, ensuring we don't just see the system/charging voltage.
-        uint16_t batt_volts = sy6970_get_battery_voltage_accurate();
+        uint16_t batt_volts = sy6970_get_battery_voltage();
         uint16_t chg_curr = sy6970_get_charge_current();
         uint16_t usb_volts = sy6970_get_vbus_voltage();
         uint8_t ntc_pct = sy6970_get_ntc_percentage();
@@ -106,6 +104,8 @@ void update_stats_timer_cb(lv_timer_t * timer) {
         if (lbl_batt) {
             if (battery_disconnected) {
                 lv_label_set_text(lbl_batt, "Battery Volts:\nNo Battery");
+            } else if (vbus_conn) {
+                lv_label_set_text(lbl_batt, "Battery Volts:\nUSB Powered");
             } else {
                 lv_label_set_text_fmt(lbl_batt, "Battery Volts:\n%d mV", batt_volts);
             }

@@ -375,40 +375,6 @@ uint16_t sy6970_get_battery_voltage(void) {
     return 2304 + (val * 20);
 }
 
-uint16_t sy6970_get_battery_voltage_accurate(void) {
-    // For accurate battery voltage reading during charging, we need to
-    // briefly pause charging, wait for voltage to settle, read, then resume.
-    // This gives the true battery voltage without charging influence.
-    
-    uint8_t chg_status;
-    sy6970_read_reg(SY6970_REG_0B, &chg_status);
-    uint8_t chg_stat = (chg_status >> 3) & 0x03;
-    
-    // Only pause if actively charging
-    bool was_charging = (chg_stat == SY6970_CHG_PRE_CHARGE || chg_stat == SY6970_CHG_FAST_CHARGE);
-    
-    if (was_charging) {
-        // Temporarily disable charging
-        sy6970_enable_charging(false);
-        
-        // Wait for voltage to settle (20ms should be enough)
-        vTaskDelay(pdMS_TO_TICKS(20));
-    }
-    
-    // Read battery voltage
-    uint8_t val;
-    sy6970_read_reg(SY6970_REG_0E, &val);
-    val &= 0x7F;
-    uint16_t voltage = 2304 + (val * 20);
-    
-    if (was_charging) {
-        // Re-enable charging
-        sy6970_enable_charging(true);
-    }
-    
-    return voltage;
-}
-
 uint16_t sy6970_get_system_voltage(void) {
     uint8_t val;
     sy6970_read_reg(SY6970_REG_0F, &val);
@@ -538,6 +504,9 @@ bool sy6970_is_vbus_connected(void) {
     
     // Check VBUS_STAT (Bits 7:6): 00 = No Input, 01/10/11 = Connected
     // Also check PG_STAT (Bit 2) for valid power source
-    // Return true if VBUS is physically present (VBUS_STAT != 0)
-    return (val & SY6970_REG0B_VBUS_STAT_MASK) != 0;
+    // Return true if VBUS is physically present (VBUS_STAT != 0) OR Power Good is set
+    bool vbus_stat = (val & SY6970_REG0B_VBUS_STAT_MASK) != 0;
+    bool pg_stat = (val & SY6970_REG0B_PG_STAT) != 0;
+    
+    return vbus_stat || pg_stat;
 }

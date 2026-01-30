@@ -132,7 +132,6 @@ esp_err_t sy6970_reset_watchdog(void);                      // or "kick", "feed"
 // ADC Monitoring
 uint16_t sy6970_get_vbus_voltage(void);  // USB VBUS voltage in mV
 uint16_t sy6970_get_battery_voltage(void);  // Battery voltage (may show elevated during charging)
-uint16_t sy6970_get_battery_voltage_accurate(void);  // Accurate battery voltage (pauses charging briefly)
 uint16_t sy6970_get_system_voltage(void);
 uint16_t sy6970_get_charge_current(void);
 uint8_t sy6970_get_ntc_percentage(void);
