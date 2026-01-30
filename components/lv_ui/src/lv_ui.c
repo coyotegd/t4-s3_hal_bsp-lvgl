@@ -74,6 +74,9 @@ void clear_current_view(void) {
 
 void lv_ui_init(void) {
     ESP_LOGI(TAG, "Initializing UI...");
+
+    // Restore PMIC settings from NVS at startup
+    ui_pmic_restore_settings();
     
     lv_obj_t * scr = lv_screen_active();
     lv_obj_set_style_bg_color(scr, lv_color_hex(0x101010), 0); // Darker Grey
@@ -90,3 +93,6 @@ void lv_ui_init(void) {
     
     ESP_LOGI(TAG, "UI Initialized");
 }
+
+// Define new switch
+lv_obj_t * sw_disable_led = NULL;

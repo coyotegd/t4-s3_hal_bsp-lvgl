@@ -5,101 +5,25 @@
 #include "driver/i2c_master.h"
 #include "esp_log.h"
 #include "esp_timer.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 #define I2C_MASTER_FREQ_HZ          400000 // 400kHz
+#define I2C_TIMEOUT_MS              1000   // 1 second timeout for I2C operations
 
 static const char *TAG = "sy6970";
 
 static i2c_master_bus_handle_t bus_handle = NULL;
 static i2c_master_dev_handle_t dev_handle = NULL;
 
-// LED State (STAT_DIS based control)
-static esp_timer_handle_t s_led_timer = NULL;
-static sy6970_led_mode_t s_cur_mode = SY6970_LED_OFF;
-static uint32_t s_blink_count = 0;
-static uint32_t s_blink_on_count = 0;  // How many blinks in the burst
-static uint32_t s_blink_off_count = 0; // How long to pause between bursts
-
-static void led_timer_callback(void* arg) {
-    // Timer fires every 500ms (half of 1Hz period)
-    // We toggle STAT_DIS to create burst patterns
-    
-    if (s_cur_mode == SY6970_LED_BLINK) {
-        // Burst pattern: N blinks, then pause
-        if (s_blink_count < s_blink_on_count) {
-            // Enable STAT pin (allow hardware 1Hz blink)
-            sy6970_update_reg(SY6970_REG_07, SY6970_REG07_STAT_DIS, 0);
-            s_blink_count++;
-        } else if (s_blink_count < (s_blink_on_count + s_blink_off_count)) {
-            // Disable STAT pin (LED off during pause)
-            sy6970_update_reg(SY6970_REG_07, SY6970_REG07_STAT_DIS, SY6970_REG07_STAT_DIS);
-            s_blink_count++;
-        } else {
-            // Reset for next burst
-            s_blink_count = 0;
-        }
-    }
-}
-
-esp_err_t sy6970_led_set_mode(sy6970_led_mode_t mode, uint32_t period_ms) {
-    // Stop existing timer
-    if (s_led_timer) {
-        esp_timer_stop(s_led_timer);
-    } else {
-        const esp_timer_create_args_t timer_args = {
-            .callback = &led_timer_callback,
-            .name = "sy6970_led"
-        };
-        esp_timer_create(&timer_args, &s_led_timer);
-    }
-
-    s_cur_mode = mode;
-    s_blink_count = 0;
-
-    ESP_LOGI(TAG, "sy6970_led_set_mode: mode=%d, period_ms=%lu", mode, period_ms);
-
-    switch(mode) {
-        case SY6970_LED_OFF:
-            // Disable STAT pin completely
-            sy6970_update_reg(SY6970_REG_07, SY6970_REG07_STAT_DIS, SY6970_REG07_STAT_DIS);
-            ESP_LOGI(TAG, "LED OFF: STAT pin disabled");
-            return ESP_OK;
-        
-        case SY6970_LED_ON:
-            // Enable STAT pin for hardware control (continuous blinking if fault present)
-            sy6970_update_reg(SY6970_REG_07, SY6970_REG07_STAT_DIS, 0);
-            ESP_LOGI(TAG, "LED ON: STAT pin enabled (hardware-controlled)");
-            return ESP_OK;
-            
-        case SY6970_LED_BLINK:
-            // Burst pattern - period_ms encodes the pattern
-            // period_ms = (on_seconds << 16) | (off_seconds)
-            // Example: 0x00020004 = 2 seconds on (4 blinks), 4 seconds off
-            s_blink_on_count = (period_ms >> 16) * 2;   // Convert seconds to 500ms ticks (2 ticks = 1 second = 1 blink)
-            s_blink_off_count = (period_ms & 0xFFFF) * 2;
-            
-            if (s_blink_on_count == 0) s_blink_on_count = 4; // Default: 2 blinks
-            if (s_blink_off_count == 0) s_blink_off_count = 4; // Default: 2 second pause
-            
-            ESP_LOGI(TAG, "LED BLINK: %lu blinks (%.1fs on), %.1fs pause", 
-                     s_blink_on_count/2, s_blink_on_count/2.0, s_blink_off_count/2.0);
-            
-            // Start timer at 500ms intervals
-            esp_timer_start_periodic(s_led_timer, 500 * 1000);
-            return ESP_OK;
-    }
-    return ESP_ERR_INVALID_ARG;
+esp_err_t sy6970_enable_stat_led(bool enable) {
+    // STAT_DIS bit: 0 = Enable STAT output (hardware-controlled), 1 = Disable STAT output
+    uint8_t val = enable ? 0 : SY6970_REG07_STAT_DIS;
+    return sy6970_update_reg(SY6970_REG_07, SY6970_REG07_STAT_DIS, val);
 }
 
 esp_err_t sy6970_deinit(void) {
-    // Stop and delete LED timer
-    if (s_led_timer) {
-        esp_timer_stop(s_led_timer);
-        esp_timer_delete(s_led_timer);
-        s_led_timer = NULL;
-    }
-    
-    // Re-enable STAT pin for hardware control
+    // Enable STAT pin for hardware control on cleanup
     sy6970_update_reg(SY6970_REG_07, SY6970_REG07_STAT_DIS, 0);
     
     // Delete I2C device handle
@@ -120,11 +44,11 @@ esp_err_t sy6970_deinit(void) {
 
 esp_err_t sy6970_write_reg(uint8_t reg, uint8_t data) {
     uint8_t write_buf[2] = {reg, data};
-    return i2c_master_transmit(dev_handle, write_buf, sizeof(write_buf), -1);
+    return i2c_master_transmit(dev_handle, write_buf, sizeof(write_buf), I2C_TIMEOUT_MS);
 }
 
 esp_err_t sy6970_read_reg(uint8_t reg, uint8_t *data) {
-    return i2c_master_transmit_receive(dev_handle, &reg, 1, data, 1, -1);
+    return i2c_master_transmit_receive(dev_handle, &reg, 1, data, 1, I2C_TIMEOUT_MS);
 }
 
 esp_err_t sy6970_update_reg(uint8_t reg, uint8_t mask, uint8_t val) {
@@ -169,39 +93,46 @@ esp_err_t sy6970_init(void) {
     }
 
     uint8_t chip_id = 0;
-    if (sy6970_read_reg(SY6970_REG_14, &chip_id) == ESP_OK) {
+    ret = sy6970_read_reg(SY6970_REG_14, &chip_id);
+    if (ret == ESP_OK) {
         ESP_LOGI(TAG, "SY6970 Chip ID/Rev: 0x%02X", chip_id);
     } else {
-        ESP_LOGE(TAG, "Failed to read SY6970 Chip ID");
-        return ESP_FAIL;
+        ESP_LOGW(TAG, "Failed to read SY6970 Chip ID: %s (battery disconnected?)", esp_err_to_name(ret));
+        ESP_LOGW(TAG, "Continuing initialization - PMIC may not be accessible");
+        // Don't return error - allow system to continue without PMIC
+        // This allows the system to boot even if battery is disconnected
     }
 
     // Factory default settings (see datasheet)
-    // REG_00: Input Current Limit = 2000mA (0x17), EN_HIZ=0, EN_ILIM=0
-    // 0x17 = 0001 0111 -> 2.0A (Assuming 100mA steps or table lookup, typical for this class)
-    // Let's try a higher limit to prevent input sagging with the screen on.
-    sy6970_update_reg(SY6970_REG_00, 0xFF, 0x17); 
+    // REG_00: Input Current Limit = 3000mA (0x3A), EN_HIZ=0, EN_ILIM=0
+    // 0x3A = 58. 100 + 58*50 = 3000mA. 
+    // Allow high input current dynamic range (let VINDPM throttle if needed)
+    sy6970_update_reg(SY6970_REG_00, 0xFF, 0x3A); 
 
     // REG_01: VINDPM default, temp default (0x1B)
     sy6970_update_reg(SY6970_REG_01, 0xFF, 0x1B);
 
-    // REG_02: ADC/Boost Freq default (0x3C)
-    // Enable ADC (Bit 7) and Continuous Mode (Bit 6) -> 0xFC
+    // REG_02: ADC/Boost Freq default (0x3C in most docs, but we explicitly set ADC bits)
+    // Enable ADC (Bit 7) and Continuous Mode (Bit 6) to ensure all ADC channels are monitored
+    // constantly (VBUS, VBAT, VSYS, IBUS, IBAT, Temp, etc.)
     sy6970_update_reg(SY6970_REG_02, 0xFF, 0x3C | SY6970_REG02_EN_ADC | SY6970_REG02_ADC_CONT);
 
     // REG_03: SYS_MIN=3.5V, OTG=0, CHG=1 (0x18)
     sy6970_update_reg(SY6970_REG_03, 0xFF, 0x18);
 
-    // REG_04: Fast Charge Current default (0x20)
-    sy6970_update_reg(SY6970_REG_04, 0xFF, 0x20);
+    // REG_04: Fast Charge Current to 1024mA (0x10)
+    // Safer default for smaller batteries. 2A (0x20) is too aggressive for generic default.
+    sy6970_update_reg(SY6970_REG_04, 0xFF, 0x10);
 
-    // REG_05: Precharge/Term Current default (0x04)
-    sy6970_update_reg(SY6970_REG_05, 0xFF, 0x04);
+    // REG_05: Precharge/Term Current default (0x11)
+    // Pre-Charge = 128mA (Bits 7:4 = 0001 -> 1. 64 + 1*64 = 128mA)
+    // Termination = 128mA (Bits 3:0 = 0001 -> 1. 64 + 1*64 = 128mA)
+    sy6970_update_reg(SY6970_REG_05, 0xFF, 0x11);
 
-    // REG_07: EN_TERM=1, STAT_DIS=1 (Disable LED), WD=00 (Disable), EN_TIMER=1
-    // 0xC9 = 1100 1001
-    // We disable the STAT LED by default so we can control it manually in HAL.
-    sy6970_update_reg(SY6970_REG_07, 0xFF, 0xC9);
+    // REG_07: EN_TERM=1, STAT_DIS=0 (Enable LED), WD=00 (Disable), EN_TIMER=1
+    // 0x89 = 1000 1001
+    // STAT LED is enabled by default - hardware controls it based on charge/fault state
+    sy6970_update_reg(SY6970_REG_07, 0xFF, 0x89);
 
     // REG_06: Charge Voltage
     // Default was 0xB2 (4.544V) which is too high for standard LiPo (4.2V).
@@ -218,11 +149,13 @@ esp_err_t sy6970_init(void) {
     // REG_0A: Boost Voltage/Current default (0x20)
     sy6970_update_reg(SY6970_REG_0A, 0xFF, 0x20);
 
-    // REG_0B: Status 0 (read only)
     // REG_0C: Status 1 (read only)
-    // REG_0D: VINDPM Threshold default (0x1B)
-    sy6970_update_reg(SY6970_REG_0D, 0xFF, 0x1B);
 
+    // REG_0D: VINDPM Threshold
+    // Default of 4.4V (3900 + 5*100 = 4400mV).
+    // Safer for long/bad cables than 4.5V, but still high enough to protect source.
+    sy6970_update_reg(SY6970_REG_0D, 0x7F, 0x05); // 4400mV
+    
     // REG_0E: Battery Voltage (ADC, read only)
     // REG_0F: System Voltage (ADC, read only)
     // REG_10: NTC % (ADC, read only)
@@ -253,11 +186,37 @@ esp_err_t sy6970_set_input_current_limit(uint16_t current_ma) {
     return sy6970_update_reg(SY6970_REG_00, SY6970_REG00_IINLIM_MASK, val);
 }
 
+uint16_t sy6970_get_input_current_limit(void) {
+    uint8_t val;
+    sy6970_read_reg(SY6970_REG_00, &val);
+    val &= SY6970_REG00_IINLIM_MASK;
+    return 100 + (val * 50);
+}
+
 esp_err_t sy6970_set_input_voltage_limit(uint16_t voltage_mv) {
     if (voltage_mv < 3900) voltage_mv = 3900;
     if (voltage_mv > 15300) voltage_mv = 15300;
     uint8_t val = (voltage_mv - 3900) / 100;
-    return sy6970_update_reg(SY6970_REG_0D, 0x7F, val);
+    
+    // Direct write to ensure bits are set (ignoring reserved bit 7)
+    // Using update_reg might fail if read fails or masking is weird.
+    // Bit 7 is reserved (0), so writing val (0-127) is safe.
+    esp_err_t ret = sy6970_write_reg(SY6970_REG_0D, val);
+    
+    // Verification log
+    if (ret == ESP_OK) {
+        ESP_LOGI(TAG, "Set VINDPM to %d mV (Reg: 0x%02X)", voltage_mv, val);
+    } else {
+        ESP_LOGE(TAG, "Failed to set VINDPM: %d", ret);
+    }
+    return ret;
+}
+
+uint16_t sy6970_get_input_voltage_limit(void) {
+    uint8_t val;
+    sy6970_read_reg(SY6970_REG_0D, &val);
+    val &= 0x7F;
+    return 3900 + (val * 100);
 }
 
 esp_err_t sy6970_enable_otg(bool enable) {
@@ -274,6 +233,13 @@ esp_err_t sy6970_set_charge_current(uint16_t current_ma) {
     return sy6970_update_reg(SY6970_REG_04, 0x7F, val); // Bits 6:0
 }
 
+uint16_t sy6970_get_charge_current_limit(void) {
+    uint8_t val;
+    sy6970_read_reg(SY6970_REG_04, &val);
+    val &= 0x7F;
+    return val * 64;
+}
+
 esp_err_t sy6970_set_precharge_current(uint16_t current_ma) {
     if (current_ma < 64) current_ma = 64;
     if (current_ma > 1024) current_ma = 1024;
@@ -281,11 +247,25 @@ esp_err_t sy6970_set_precharge_current(uint16_t current_ma) {
     return sy6970_update_reg(SY6970_REG_05, 0xF0, val << 4); // Bits 7:4
 }
 
+uint16_t sy6970_get_precharge_current_limit(void) {
+    uint8_t val;
+    sy6970_read_reg(SY6970_REG_05, &val);
+    val = (val & 0xF0) >> 4;
+    return 64 + (val * 64);
+}
+
 esp_err_t sy6970_set_termination_current(uint16_t current_ma) {
     if (current_ma < 64) current_ma = 64;
     if (current_ma > 1024) current_ma = 1024;
     uint8_t val = (current_ma - 64) / 64;
     return sy6970_update_reg(SY6970_REG_05, 0x0F, val); // Bits 3:0
+}
+
+uint16_t sy6970_get_termination_current_limit(void) {
+    uint8_t val;
+    sy6970_read_reg(SY6970_REG_05, &val);
+    val &= 0x0F;
+    return 64 + (val * 64);
 }
 
 esp_err_t sy6970_set_charge_voltage(uint16_t voltage_mv) {
@@ -296,12 +276,26 @@ esp_err_t sy6970_set_charge_voltage(uint16_t voltage_mv) {
     return sy6970_update_reg(SY6970_REG_06, 0xFC, val << 2); // Bits 7:2
 }
 
+uint16_t sy6970_get_charge_voltage_limit(void) {
+    uint8_t val;
+    sy6970_read_reg(SY6970_REG_06, &val);
+    val = (val & 0xFC) >> 2;
+    return 3840 + (val * 16);
+}
+
 esp_err_t sy6970_set_min_system_voltage(uint16_t voltage_mv) {
     if (voltage_mv < 3000) voltage_mv = 3000;
     if (voltage_mv > 3700) voltage_mv = 3700;
     
     uint8_t val = (voltage_mv - 3000) / 100;
     return sy6970_update_reg(SY6970_REG_03, SY6970_REG03_SYS_MIN_MASK, val << 1); // Bits 3:1
+}
+
+uint16_t sy6970_get_min_system_voltage_limit(void) {
+    uint8_t val;
+    sy6970_read_reg(SY6970_REG_03, &val);
+    val = (val & SY6970_REG03_SYS_MIN_MASK) >> 1;
+    return 3000 + (val * 100);
 }
 
 esp_err_t sy6970_set_boost_voltage(uint16_t voltage_mv) {
@@ -311,8 +305,27 @@ esp_err_t sy6970_set_boost_voltage(uint16_t voltage_mv) {
     return sy6970_update_reg(SY6970_REG_0A, 0xF0, val << 4); // Bits 7:4
 }
 
+uint16_t sy6970_get_boost_voltage(void) {
+    uint8_t val;
+    sy6970_read_reg(SY6970_REG_0A, &val);
+    val = (val & 0xF0) >> 4;
+    return 4550 + (val * 64);
+}
+
+bool sy6970_get_otg_status(void) {
+    uint8_t val;
+    sy6970_read_reg(SY6970_REG_03, &val);
+    return (val & SY6970_REG03_OTG_CONFIG) ? true : false;
+}
+
 esp_err_t sy6970_enable_hiz_mode(bool enable) {
     return sy6970_update_reg(SY6970_REG_00, SY6970_REG00_EN_HIZ, enable ? SY6970_REG00_EN_HIZ : 0);
+}
+
+bool sy6970_get_hiz_status(void) {
+    uint8_t val;
+    sy6970_read_reg(SY6970_REG_00, &val);
+    return (val & SY6970_REG00_EN_HIZ) ? true : false;
 }
 
 esp_err_t sy6970_disable_batfet(bool disable) {
@@ -347,6 +360,40 @@ uint16_t sy6970_get_battery_voltage(void) {
     sy6970_read_reg(SY6970_REG_0E, &val);
     val &= 0x7F;
     return 2304 + (val * 20);
+}
+
+uint16_t sy6970_get_battery_voltage_accurate(void) {
+    // For accurate battery voltage reading during charging, we need to
+    // briefly pause charging, wait for voltage to settle, read, then resume.
+    // This gives the true battery voltage without charging influence.
+    
+    uint8_t chg_status;
+    sy6970_read_reg(SY6970_REG_0B, &chg_status);
+    uint8_t chg_stat = (chg_status >> 3) & 0x03;
+    
+    // Only pause if actively charging
+    bool was_charging = (chg_stat == SY6970_CHG_PRE_CHARGE || chg_stat == SY6970_CHG_FAST_CHARGE);
+    
+    if (was_charging) {
+        // Temporarily disable charging
+        sy6970_enable_charging(false);
+        
+        // Wait for voltage to settle (20ms should be enough)
+        vTaskDelay(pdMS_TO_TICKS(20));
+    }
+    
+    // Read battery voltage
+    uint8_t val;
+    sy6970_read_reg(SY6970_REG_0E, &val);
+    val &= 0x7F;
+    uint16_t voltage = 2304 + (val * 20);
+    
+    if (was_charging) {
+        // Re-enable charging
+        sy6970_enable_charging(true);
+    }
+    
+    return voltage;
 }
 
 uint16_t sy6970_get_system_voltage(void) {
@@ -413,7 +460,7 @@ uint8_t sy6970_get_faults(void) {
 }
 
 const char* sy6970_decode_faults(uint8_t fault_reg) {
-    static char fault_str[128];
+    static char fault_str[256];
     fault_str[0] = '\0';
     
     if (fault_reg == 0) {
@@ -421,34 +468,40 @@ const char* sy6970_decode_faults(uint8_t fault_reg) {
     }
     
     if (fault_reg & SY6970_FAULT_WDT) {
-        strcat(fault_str, "WDT_Expired ");
+        strcat(fault_str, "Watchdog Timer Expired\n");
     }
     if (fault_reg & SY6970_FAULT_BOOST) {
-        strcat(fault_str, "BOOST_Fault ");
+        strcat(fault_str, "Boost Converter Fault\n");
     }
     
     uint8_t chg_fault = (fault_reg & SY6970_FAULT_CHG_MASK) >> 4;
     if (chg_fault == 0x01) {
-        strcat(fault_str, "CHG_Input_Fault ");
+        strcat(fault_str, "Charge Input Fault\n");
     } else if (chg_fault == 0x02) {
-        strcat(fault_str, "CHG_Thermal_Shutdown ");
+        strcat(fault_str, "Charge Thermal Shutdown\n");
     } else if (chg_fault == 0x03) {
-        strcat(fault_str, "CHG_Timer_Expired ");
+        strcat(fault_str, "Charge Timer Expired\n");
     }
     
     if (fault_reg & SY6970_FAULT_BAT_OVP) {
-        strcat(fault_str, "BAT_OVP ");
+        strcat(fault_str, "Battery Overvoltage Protection\n");
     }
     
     uint8_t ntc_fault = fault_reg & SY6970_FAULT_NTC_MASK;
     if (ntc_fault == 0x02) {
-        strcat(fault_str, "NTC_Warm ");
+        strcat(fault_str, "NTC Warm (45-60°C)\n");
     } else if (ntc_fault == 0x03) {
-        strcat(fault_str, "NTC_Cool ");
+        strcat(fault_str, "NTC Cool (0-10°C)\n");
     } else if (ntc_fault == 0x05) {
-        strcat(fault_str, "NTC_Cold ");
+        strcat(fault_str, "NTC Cold (<0°C)\n");
     } else if (ntc_fault == 0x06) {
-        strcat(fault_str, "NTC_Hot ");
+        strcat(fault_str, "NTC Hot (>60°C)\n");
+    }
+    
+    // Remove trailing newline if present
+    size_t len = strlen(fault_str);
+    if (len > 0 && fault_str[len-1] == '\n') {
+        fault_str[len-1] = '\0';
     }
     
     return fault_str;
@@ -463,13 +516,15 @@ sy6970_charge_status_t sy6970_get_charge_status(void) {
 bool sy6970_is_power_good(void) {
     uint8_t val;
     sy6970_read_reg(SY6970_REG_0B, &val);
-    return (val & 0x04) ? true : false;
+    return (val & SY6970_REG0B_PG_STAT) ? true : false;
 }
 
 bool sy6970_is_vbus_connected(void) {
     uint8_t val = 0;
-    // Use REG_0B (Status 0) PG_STAT (Bit 2)
-    // This indicates input power is valid (above UVLO and above Battery)
     if (sy6970_read_reg(SY6970_REG_0B, &val) != ESP_OK) return false;
-    return (val & 0x04) != 0;
+    
+    // Check VBUS_STAT (Bits 7:6): 00 = No Input, 01/10/11 = Connected
+    // Also check PG_STAT (Bit 2) for valid power source
+    // Return true if VBUS is physically present (VBUS_STAT != 0)
+    return (val & SY6970_REG0B_VBUS_STAT_MASK) != 0;
 }

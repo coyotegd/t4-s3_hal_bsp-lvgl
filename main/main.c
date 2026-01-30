@@ -6,6 +6,7 @@
 #include "lvgl_mgr.h"
 #include "lvgl.h"
 #include "lv_ui.h"
+#include "ui_private.h"
 
 static const char *TAG = "main";
 
@@ -18,7 +19,7 @@ void app_main(void) {
     ESP_LOGI(TAG, "Starting T4-S3 BSP Project...");
     ESP_LOGI(TAG, "LVGL Version: %d.%d.%d", LVGL_VERSION_MAJOR, LVGL_VERSION_MINOR, LVGL_VERSION_PATCH);
 
-    // Initialize BSP (which inits LVGL, HAL, and shows test rainbow 3s from driver)
+    // Initialize BSP (which inits LVGL, HAL)
     if (bsp_init() != ESP_OK) {
         ESP_LOGE(TAG, "BSP Initialization failed! System halted.");
         while(1) vTaskDelay(1000);
@@ -36,9 +37,8 @@ void app_main(void) {
 
     ESP_LOGI(TAG, "HAL & BSP + LVGL Systems ready . . .");
 
-    // Main task can be deleted, sleep forever, or run your Arduino loop() app logic here
+    // Main loop - UI is now interactive via touch. Put you code here. Arduino style loop.
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
-

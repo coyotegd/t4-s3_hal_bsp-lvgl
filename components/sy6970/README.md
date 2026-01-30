@@ -11,24 +11,21 @@ VSYS → R47 (1K) → LED1 (Red LED) → STAT pin (pin 4 of SY6970) → Open-dra
 
 The LED1 is controlled **DIRECTLY** by the SY6970's STAT pin (open-drain output). There is **no GPIO control** for this LED - it is entirely hardware-controlled by the PMIC.
 
-**SOFTWARE PATTERN CONTROL:** By toggling the STAT_DIS bit (REG_07 bit 6), software can create **burst patterns** to indicate specific faults while leveraging the hardware's fixed 1Hz timing.
-
-## LED Status Codes (STAT Pin)
+## STAT LED Behavior
 
 The SY6970 indicates charging status via the hardware-controlled STAT pin LED:
 
-| LED Behavior | Meaning | Description |
+| LED State | Meaning | Description |
 | :--- | :--- | :--- |
-| **Off** | **Charge Done / Idle** | Battery is fully charged, charging is disabled, or device is in sleep mode. |
-| **Continuous 1Hz Blink** | **Charging / Generic Fault** | Battery is charging OR an unspecified fault has occurred. |
-| **2 Blinks + Pause** | **WDT Fault** | Watchdog timer expired - software pattern. |
-| **3 Blinks + Pause** | **OVP Fault** | Battery overvoltage protection - software pattern. |
-| **6 Blinks + Pause** | **Temperature Fault** | NTC temperature fault (SOS-like pattern) - software pattern. |
+| **Solid ON** | **Charging** | STAT pin LOW - Battery is actively charging (precharge or fast charge). |
+| **OFF** | **Charge Done / Idle** | STAT pin HIGH - Battery is fully charged, charging is disabled, or device is in sleep mode. |
+| **Blinking 1Hz** | **Fault Condition** | Hardware automatic - One or more faults detected (see below). |
 
-### Detailed Fault Conditions (1Hz Blink)
+### Fault Detection
 
-When the LED blinks at 1Hz, one or more of these fault conditions are active (read from **REG_0C** - Fault Status Register):
+When the LED blinks at 1Hz, one or more fault conditions are active. **All faults blink identically at 1Hz** - you must read **REG_0C (Fault Status Register)** via I2C to determine the specific fault:
 
+**Fault Types (REG_0C bits):**
 1. **WDT_Expired** (bit 7) - Watchdog timer expired
 2. **BOOST_Fault** (bit 6) - Boost converter fault
 3. **CHG_Input_Fault** (bits 5:4 = 0x01) - Charge input fault
@@ -41,23 +38,27 @@ When the LED blinks at 1Hz, one or more of these fault conditions are active (re
    - **NTC_Cold** (0x05) - Battery temperature cold
    - **NTC_Hot** (0x06) - Battery temperature hot
 
-Use `sy6970_get_faults()` and `sy6970_decode_faults()` to read and interpret fault conditions in your application.
-
-### Software Pattern Control
-
-By toggling STAT_DIS (REG_07 bit 6), software creates burst patterns:
-- **STAT_DIS = 0** (enabled): Hardware controls LED (1Hz blink when fault exists)
-- **STAT_DIS = 1** (disabled): LED turns off
-
-Software rapidly toggles this bit to create:
-- **N blinks + pause**: Enable STAT for N seconds, disable for pause duration, repeat
-- **Continuous**: Keep STAT enabled for generic fault indication
-
-**Example:**
+**Software API for fault reading:**
 ```c
-// 3 blinks (3 seconds on), then 4 second pause
-sy6970_led_set_mode(SY6970_LED_BLINK, (3 << 16) | 4);
+// Read fault register (returns bitmask)
+uint8_t faults = sy6970_get_faults();
+
+// Get human-readable description
+const char* fault_desc = sy6970_decode_faults(faults);
 ```
+
+### Software Control
+
+Software can only enable/disable the STAT pin output via `STAT_DIS` bit (REG_07[6]):
+```c
+// Enable STAT LED (hardware controls based on charge/fault state)
+sy6970_enable_stat_led(true);
+
+// Disable STAT LED (LED always off)
+sy6970_enable_stat_led(false);
+```
+
+**Note:** The LED behavior (solid/blinking) is determined entirely by the charger IC hardware. Software cannot create custom blink patterns.
 
 ## API Usage
 

@@ -34,31 +34,6 @@ void hal_mgr_register_display_error_callback(rm690b0_error_cb_t cb, void *user_c
 esp_err_t hal_mgr_sd_init(void);
 bool hal_mgr_sd_is_mounted(void);
 
-// --- LED Control ---
-typedef enum {
-    HAL_LED_STATUS_OFF,
-    HAL_LED_STATUS_CHARGING,      // Breath (PWM)
-    HAL_LED_STATUS_FULL,          // Solid On
-    HAL_LED_STATUS_FAULT_GENERIC, // 500ms blink
-    HAL_LED_STATUS_FAULT_WDT,     // 100ms frantic blink
-    HAL_LED_STATUS_FAULT_OVP,     // 2000ms slow blink
-    HAL_LED_STATUS_FAULT_TEMP,    // 1000ms standard blink
-} hal_led_status_t;
-
-/**
- * @brief Set the Status LED to a specific system state.
- * This encapsulates the blink patterns and PWM logic.
- * @param status The target system status to indicate.
- */
-void hal_mgr_set_led_status(hal_led_status_t status);
-
-/**
- * @brief Lock the LED control to manual mode.
- * When locked, the auto-status task will not update the LED state.
- * @param locked true to lock (manual control), false to unlock (auto status indication)
- */
-void hal_mgr_lock_led(bool locked);
-
 // --- GFX Stack Integration (LVGL/BSP) ---
 typedef void (*hal_mgr_done_cb_t)(void *user_ctx);
 
@@ -85,6 +60,37 @@ bool hal_mgr_display_is_busy(void);
  * @return true if pressed, false otherwise
  */
 bool hal_mgr_touch_read(int16_t *x, int16_t *y);
+
+/**
+ * @brief Show rainbow test pattern for 1 second
+ */
+void hal_mgr_show_rainbow_test(void);
+
+/**
+ * @brief Save brightness setting to NVS
+ * @param brightness Brightness value (5-255)
+ * @return ESP_OK on success
+ */
+esp_err_t hal_mgr_save_brightness(uint8_t brightness);
+
+/**
+ * @brief Get saved brightness from NVS
+ * @return Brightness value (5-255), or 128 if not found
+ */
+uint8_t hal_mgr_get_brightness(void);
+
+/**
+ * @brief Save rotation setting to NVS
+ * @param rotation Rotation value (0-3)
+ * @return ESP_OK on success
+ */
+esp_err_t hal_mgr_save_rotation(rm690b0_rotation_t rotation);
+
+/**
+ * @brief Get saved rotation from NVS
+ * @return Rotation value (0-3), or RM690B0_ROTATION_0 if not found
+ */
+rm690b0_rotation_t hal_mgr_get_rotation_nvs(void);
 
 #ifdef __cplusplus
 }

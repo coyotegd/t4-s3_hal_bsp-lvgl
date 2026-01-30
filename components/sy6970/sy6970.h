@@ -54,6 +54,11 @@ extern "C" {
 #define SY6970_REG09_BATFET_DIS     (1 << 5)
 #define SY6970_REG09_BATFET_RST_EN  (1 << 2)
 
+// Status Flags (REG_0B)
+#define SY6970_REG0B_VBUS_STAT_MASK 0xC0
+#define SY6970_REG0B_CHG_STAT_MASK  0x18
+#define SY6970_REG0B_PG_STAT        (1 << 2)
+
 // Fault Flags (REG_0C)
 #define SY6970_FAULT_WDT        (1 << 7)
 #define SY6970_FAULT_BOOST      (1 << 6)
@@ -84,33 +89,50 @@ esp_err_t sy6970_deinit(void);
 // can share the same I2C bus. Returns NULL if the bus hasn't been created.
 i2c_master_bus_handle_t sy6970_get_bus_handle(void);
 
-// Power Control
-esp_err_t sy6970_set_input_current_limit(uint16_t current_ma);
-
 // Register Access (Exposed for debugging)
 esp_err_t sy6970_read_reg(uint8_t reg_addr, uint8_t *data);
 esp_err_t sy6970_write_reg(uint8_t reg_addr, uint8_t data);
 esp_err_t sy6970_update_reg(uint8_t reg_addr, uint8_t mask, uint8_t val);
-// Configuration
-esp_err_t sy6970_enable_adc(bool enable, bool continuous);
-esp_err_t sy6970_enable_otg(bool enable);
-esp_err_t sy6970_enable_charging(bool enable);
-esp_err_t sy6970_enable_hiz_mode(bool enable);
+
+esp_err_t sy6970_enable_adc(bool enable, bool continuous);  // Enable/disable ADC monitoring
+esp_err_t sy6970_enable_charging(bool enable);  
+esp_err_t sy6970_enable_otg(bool enable);  // Enable/disable Boost OTG (On The Go) mode
+// HIZ - enabled the input Field-Effect Transistor turns OFF as if the USB cable is unplugged. Data + & - 
+// still work. SoC runs purely off the battery. It stops charging and stops drawing any power from VBUS.
+esp_err_t sy6970_enable_hiz_mode(bool enable); 
+bool sy6970_get_hiz_status(void); // Getter for HIZ status
+esp_err_t sy6970_disable_batfet(bool disable); // Ship, storage, complete shutdown. Plugin USB to enable
+
+// Power Control
+// -- Charging / Input Control --
+esp_err_t sy6970_set_input_current_limit(uint16_t current_ma);
 esp_err_t sy6970_set_input_voltage_limit(uint16_t voltage_mv); // VINDPM
 esp_err_t sy6970_set_charge_current(uint16_t current_ma);
 esp_err_t sy6970_set_precharge_current(uint16_t current_ma);
 esp_err_t sy6970_set_termination_current(uint16_t current_ma);
 esp_err_t sy6970_set_charge_voltage(uint16_t voltage_mv);
 esp_err_t sy6970_set_min_system_voltage(uint16_t voltage_mv);  // when USB & low bat min voltage
+// Configuration getters
+uint16_t sy6970_get_input_current_limit(void);
+uint16_t sy6970_get_input_voltage_limit(void);
+uint16_t sy6970_get_charge_current_limit(void);
+uint16_t sy6970_get_precharge_current_limit(void);
+uint16_t sy6970_get_termination_current_limit(void);
+uint16_t sy6970_get_charge_voltage_limit(void);
+uint16_t sy6970_get_min_system_voltage_limit(void);
+
+// -- OTG / Boost Control --
 esp_err_t sy6970_set_boost_voltage(uint16_t voltage_mv);
-esp_err_t sy6970_set_watchdog_timer(sy6970_wdt_t timeout);
+uint16_t sy6970_get_boost_voltage(void); // Getter for Boost Voltage
+bool sy6970_get_otg_status(void);        // Getter for OTG Status
 
-esp_err_t sy6970_reset_watchdog(void);
-esp_err_t sy6970_disable_batfet(bool disable); // Ship, storage, complete shutdown USB to enable
+esp_err_t sy6970_set_watchdog_timer(sy6970_wdt_t timeout);  // SY6970_WDT_DISABLE = 0
+esp_err_t sy6970_reset_watchdog(void);                      // or "kick", "feed" the watchdog timer
 
-// ADC / Monitoring
+// ADC Monitoring
 uint16_t sy6970_get_vbus_voltage(void);  // USB VBUS voltage in mV
-uint16_t sy6970_get_battery_voltage(void);
+uint16_t sy6970_get_battery_voltage(void);  // Battery voltage (may show elevated during charging)
+uint16_t sy6970_get_battery_voltage_accurate(void);  // Accurate battery voltage (pauses charging briefly)
 uint16_t sy6970_get_system_voltage(void);
 uint16_t sy6970_get_charge_current(void);
 uint8_t sy6970_get_ntc_percentage(void);
@@ -121,20 +143,16 @@ sy6970_charge_status_t sy6970_get_charge_status(void);
 bool sy6970_is_power_good(void);
 bool sy6970_is_vbus_connected(void);  // USB VBUS present plugged or unplugged
 
-// STAT LED Pattern Control (via STAT_DIS toggling)
-// The physical LED1 (red) is connected to the SY6970 STAT pin (pin 4).
-// Hardware provides 1Hz blinking when faults exist; software creates burst patterns
-// by toggling STAT_DIS (REG_07 bit 6) to enable/disable the hardware blink.
-//
-// Pattern encoding for BLINK mode: period_ms = (on_seconds << 16) | (off_seconds)
-// Example: 0x00020004 = 2 sec on (2 blinks at 1Hz), 4 sec pause
-typedef enum {
-    SY6970_LED_OFF,     // STAT disabled (LED off)
-    SY6970_LED_ON,      // STAT enabled (continuous 1Hz blink if fault/charging present)
-    SY6970_LED_BLINK    // Burst pattern: hardware 1Hz blinking, pause, repeat (period_ms to specify)
-} sy6970_led_mode_t;
-
-esp_err_t sy6970_led_set_mode(sy6970_led_mode_t mode, uint32_t period_ms);
+// STAT LED Control
+// The STAT pin (pin 4) is hardware-controlled by the SY6970 charger IC:
+//   - STAT LOW (LED ON/solid) = Charging in progress
+//   - STAT HIGH (LED OFF) = Charge done or disabled
+//   - STAT blinking at 1Hz = Fault condition (hardware automatic)
+// 
+// Software can only enable/disable the STAT pin output via STAT_DIS bit (REG_07[6]):
+//   - enable=true: STAT pin enabled (hardware controls LED based on charge/fault state)
+//   - enable=false: STAT pin disabled (LED always off)
+esp_err_t sy6970_enable_stat_led(bool enable);
 
 #ifdef __cplusplus
 }

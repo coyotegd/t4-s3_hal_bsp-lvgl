@@ -25,12 +25,6 @@ void lvgl_mgr_lock(void);
  */
 void lvgl_mgr_unlock(void);
 
-/**
- * @brief Show the rainbow test pattern via the hardware driver
- */
-void lvgl_mgr_show_rainbow(void);
-
-
 #ifdef __cplusplus
 }
 #endif

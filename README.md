@@ -41,8 +41,6 @@ The `hal_mgr` provides a unified interface for display, touch, and power managem
 - `void hal_mgr_display_flush(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const void *color_p);`  // LVGL flush callback
 - `void hal_mgr_display_flush_async(...);`  // Async flush for DMA
 - `bool hal_mgr_touch_read(int16_t *x, int16_t *y);`  // LVGL touch read callback
-- `void hal_mgr_set_led_status(hal_led_status_t status);`  // Set user-defined status LED pattern
-- `void hal_mgr_lock_led(bool locked);`  // Lock LED for manual control
 - `esp_err_t hal_mgr_sd_init(void);`  // Initialize SD card
 - `bool hal_mgr_sd_is_mounted(void);`  // Check SD card status
 
@@ -72,9 +70,6 @@ void app_main(void) {
     // Register callbacks for system events
     hal_mgr_register_usb_callback(usb_event_handler, NULL);
     hal_mgr_register_charge_callback(charge_event_handler, NULL);
-    
-    // Set LED status
-    hal_mgr_set_led_status(HAL_LED_STATUS_CHARGING);
     
     // Application loop handled by LVGL timer
     while (1) {
@@ -114,20 +109,31 @@ The board uses an SY6970 PMIC which has a default watchdog enabled.
 - **Issue:** The board would reset or power cycle if the watchdog wasn't fed or disabled.
 - **Fix:** The driver initializes the SY6970 over I2C (`0x6A`) and explicitly disables the watchdog in Register `0x07`.
 
-### 4. Status LED Architecture (GPIO 38)
-This project implements a **custom user-defined status LED** for enhanced system feedback:
-- **Hardware:** GPIO 38 is connected to an external LED (active-low)
-- **Not the PMIC STAT Pin:** The SY6970's internal STAT LED (controlled via REG_07[6]) is separate
-- **Enhanced Functionality:** The ESP32 interprets PMIC status and drives GPIO 38 with:
-  - **Breathing** (PWM) for charging indication
-  - **Solid On** for fully charged
-  - **Custom blink rates** for different fault conditions:
-    - 100ms (Watchdog fault)
-    - 500ms (Generic fault)
-    - 1000ms (Temperature fault)
-    - 2000ms (Overvoltage fault)
-- **Implementation:** See `hal_mgr.c` for auto-status task and fault interpretation logic
-- **Control:** Use `hal_mgr_set_led_status()` for manual control or `hal_mgr_lock_led()` to disable auto-updates
+### 4. STAT LED (SY6970 Hardware-Controlled)
+The SY6970 PMIC has a **hardware-controlled STAT LED** that indicates charging and fault status:
+
+**Hardware Behavior (Automatic):**
+- **STAT pin LOW (LED ON/solid)** → Charging in progress
+- **STAT pin HIGH (LED OFF)** → Charge done or charging disabled  
+- **STAT pin blinking at 1Hz** → Fault condition detected (generic blink - all faults look the same)
+
+**Software Control (Limited):**
+- The ESP32 can only enable/disable the STAT pin output via `STAT_DIS` bit (REG_07[6])
+- `sy6970_enable_stat_led(true)` → Enable STAT output (hardware controls LED state)
+- `sy6970_enable_stat_led(false)` → Disable STAT output (LED always off)
+- **No custom patterns possible** - the LED behavior is determined entirely by the charger IC hardware
+
+**What you'll observe:**
+- Solid red LED when USB is plugged in and battery is charging (normal)
+- LED turns off when charge is complete or USB is unplugged
+- LED blinks at 1Hz if a charge fault is detected (all faults blink the same)
+
+**Reading Fault Status:**
+The STAT LED blinks at 1Hz for **any** fault, but you must read **Register 0x0C (Fault Register)** to determine the **specific fault type**:
+- Use `sy6970_get_faults()` to read fault register (REG_0C) via I2C - returns bitmask
+- Use `sy6970_decode_faults()` to get human-readable fault descriptions
+- Fault types include: Watchdog timer, Boost mode, Charge (input/thermal), Battery overvoltage, NTC temperature (hot/cold)
+- The HAL manager logs fault changes automatically in the status monitoring task
 
 ---
 
@@ -241,3 +247,18 @@ The T4-S3 uses an RM690B0 AMOLED display controller. The physical panel is small
 
 These values are hardcoded in `components/rm690b0/rm690b0.c` under `RM690B0_ROTATION_270` to ensure pixel-perfect alignment and eliminate edge artifacts ("hair-thin lines").
 
+
+---
+## Power Management Status Logic
+To robustly detect the "No Battery" state when running on USB power, a volatility-based heuristic is used. Without a battery, the PMIC (SY6970) charging circuit causes the voltage to fluctuate ("hiccup") as it attempts to charge the capacitors.
+
+**Algorithm: Fast Attack, Slow Release**
+- **Sampling:** Battery voltage is sampled every 500ms.
+- **Detection (Fast Attack):** If the voltage difference between samples exceeds 50mV, the "volatility score" increases by 5.
+- **Recovery (Slow Release):** If the voltage is stable (<50mV diff), the score decreases by 1.
+- **Thresholds:**
+    - The system flags "No Battery" if the detected volatility score >= 5.
+    - Max score cap is 20.
+- **Timing:** 
+    - It triggers essentially immediately (1 unstable sample).
+    - It takes ~10 seconds of perfect stability (20 ticks / 2 ticks per sec) to clear the fault flag. This prevents the status from "flashing" between charging/fault states during momentary stability.

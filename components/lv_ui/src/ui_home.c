@@ -59,7 +59,7 @@ static void view_switch_timer_cb(lv_timer_t * timer) {
             if (lv_display_get_default() && lbl_disp_info) {
                 int32_t w = lv_display_get_horizontal_resolution(lv_display_get_default());
                 int32_t h = lv_display_get_vertical_resolution(lv_display_get_default());
-                lv_label_set_text_fmt(lbl_disp_info, "Display Info:\nResolution: %" LV_PRId32 "x%" LV_PRId32 "\nDriver: RM690B0\nInterface: QSPI", w, h);
+                lv_label_set_text_fmt(lbl_disp_info, "Driver Resolution: 450x600\nActual Pixel Resolution: %" LV_PRId32 "x%" LV_PRId32 "\nDriver: RM690B0\nInterface: QSPI", w, h);
             }
             break;
         case VIEW_SYSINFO:

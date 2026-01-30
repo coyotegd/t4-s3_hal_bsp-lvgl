@@ -9,6 +9,8 @@
 #include "freertos/task.h"
 #include "iot_button.h"
 #include "button_gpio.h"
+#include "nvs_flash.h"
+#include "nvs.h"
 
 static const char *TAG = "hal_mgr";
 
@@ -132,107 +134,44 @@ rm690b0_rotation_t hal_mgr_get_rotation(void) {
 	return rm690b0_get_rotation();
 }
 
-static bool s_led_manual_lock = false;
-static hal_led_status_t s_last_led_status = (hal_led_status_t)-1;
-
-void hal_mgr_lock_led(bool locked) {
-    s_led_manual_lock = locked;
-    // When unlocking, reset last status to force re-evaluation
-    if (!locked) {
-        s_last_led_status = (hal_led_status_t)-1;
-    }
-}
-
-void hal_mgr_set_led_status(hal_led_status_t status) {
-    sy6970_led_mode_t mode = SY6970_LED_OFF;
-    uint32_t pattern = 0;
-
-    ESP_LOGI(TAG, "hal_mgr_set_led_status called: status=%d", status);
-
-    switch (status) {
-        case HAL_LED_STATUS_OFF:
-            mode = SY6970_LED_OFF;
-            break;
-        case HAL_LED_STATUS_CHARGING:
-            mode = SY6970_LED_ON; // Continuous hardware blink
-            break;
-        case HAL_LED_STATUS_FULL:
-            mode = SY6970_LED_OFF; // Charge done - LED off
-            break;
-        case HAL_LED_STATUS_FAULT_GENERIC:
-            mode = SY6970_LED_ON; // Continuous blink for unknown fault
-            break;
-        case HAL_LED_STATUS_FAULT_WDT:
-            mode = SY6970_LED_BLINK;
-            pattern = (2 << 16) | 4; // 2 second on (2 blinks), 4 second pause
-            break;
-        case HAL_LED_STATUS_FAULT_OVP:
-            mode = SY6970_LED_BLINK;
-            pattern = (3 << 16) | 4; // 3 seconds on (3 blinks), 4 second pause
-            break;
-        case HAL_LED_STATUS_FAULT_TEMP:
-            // SOS pattern: use 6 blinks to indicate temperature issue
-            mode = SY6970_LED_BLINK;
-            pattern = (6 << 16) | 4; // 6 seconds on (6 blinks), 4 second pause  
-            break;
-    }
-    
-    ESP_LOGI(TAG, "Calling sy6970_led_set_mode: mode=%d, pattern=0x%08lX", mode, pattern);
-    esp_err_t ret = sy6970_led_set_mode(mode, pattern);
-    ESP_LOGI(TAG, "sy6970_led_set_mode returned: %s", esp_err_to_name(ret));
-}
-
 // --- Polling task for status changes ---
 static void hal_mgr_status_task(void *arg) {
-    // Enable STAT LED on HAL start (Charging = Low/On, Done/Fault = High/Off if pulled up or blink if managed)
-    // We let the hardware handle it by default (SY6970_LED_ON enables STAT pin output)
-    // sy6970_led_set_mode(SY6970_LED_ON, 0); // Logic moved to loop below
+    // STAT LED is hardware-controlled by SY6970 (enabled by default in sy6970_init)
+    // No software intervention needed - LED reflects charge/fault state automatically
 
 	bool last_usb = false, last_charge = false, last_batt = false;
 	static int charge_stable_count = 0;
 	static bool last_reported_charge = false;
 	const int debounce_ticks = 5; // e.g., 5*200ms = 1s
     int log_counter = 0;
+    uint8_t last_faults = 0xFF; // Initialize to invalid value to force first log
+    bool first_read = true;
 
 	while (1) {
 		bool usb = sy6970_is_vbus_connected();
 		bool batt = sy6970_is_power_good();
 
-        // --- LED Control Logic (Software Driven) ---
-        hal_led_status_t target_status = HAL_LED_STATUS_OFF;
-
         uint8_t faults = sy6970_get_faults();
-        sy6970_charge_status_t chg_status = sy6970_get_charge_status();
-
-        if (!s_led_manual_lock) {
-            if (faults != 0) {
-                // sophisticated LED codes
-                if (faults & SY6970_FAULT_WDT) {
-                    target_status = HAL_LED_STATUS_FAULT_WDT;
-                } else if (faults & SY6970_FAULT_BAT_OVP) {
-                    target_status = HAL_LED_STATUS_FAULT_OVP;
-                } else if (faults & SY6970_FAULT_NTC_MASK) {
-                    target_status = HAL_LED_STATUS_FAULT_TEMP;
-                } else {
-                    target_status = HAL_LED_STATUS_FAULT_GENERIC;
-                }
-            } else if (chg_status == SY6970_CHG_FAST_CHARGE || chg_status == SY6970_CHG_PRE_CHARGE) {
-                target_status = HAL_LED_STATUS_CHARGING;
-            } else if (chg_status == SY6970_CHG_TERM_DONE) {
-                target_status = HAL_LED_STATUS_FULL;
+        
+        // Log fault changes immediately (skip confusing initial log)
+        if (faults != last_faults && !first_read) {
+            if (faults == 0) {
+                ESP_LOGI(TAG, "*** FAULT CLEARED *** (was: 0x%02X [%s])", 
+                         last_faults, sy6970_decode_faults(last_faults));
+            } else if (last_faults == 0) {
+                ESP_LOGW(TAG, "*** FAULT DETECTED *** 0x%02X: %s", faults, sy6970_decode_faults(faults));
             } else {
-                target_status = HAL_LED_STATUS_OFF;
-            }
-
-            if (target_status != s_last_led_status) {
-                ESP_LOGI(TAG, "LED status change: %d -> %d (chg_status=%d, faults=0x%02X: %s)", 
-                         s_last_led_status, target_status, chg_status, faults, 
-                         sy6970_decode_faults(faults));
-                hal_mgr_set_led_status(target_status);
-                s_last_led_status = target_status;
+                ESP_LOGW(TAG, "*** FAULT CHANGED *** 0x%02X -> 0x%02X: %s", 
+                         last_faults, faults, sy6970_decode_faults(faults));
             }
         }
-        // -------------------------
+        if (first_read) {
+            first_read = false;
+            if (faults != 0) {
+                ESP_LOGW(TAG, "*** FAULT ON STARTUP *** 0x%02X: %s", faults, sy6970_decode_faults(faults));
+            }
+        }
+        last_faults = faults;
 
         // Periodic logging (approx every 1s)
         if (++log_counter >= 4) {
@@ -281,8 +220,21 @@ static void hal_mgr_btn_double_click_cb(void *arg, void *usr_data) {
 }
 
 esp_err_t hal_mgr_init(void) {
-	esp_err_t ret;
 
+	esp_err_t ret;
+	
+	// Initialize NVS
+	ret = nvs_flash_init();
+	if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+		ESP_LOGW(TAG, "NVS partition was truncated, erasing...");
+		ESP_ERROR_CHECK(nvs_flash_erase());
+		ret = nvs_flash_init();
+	}
+	if (ret != ESP_OK) {
+		ESP_LOGE(TAG, "Failed to initialize NVS: %s", esp_err_to_name(ret));
+		return ret;
+	}
+	
 	// Power/PMIC
 	ret = sy6970_init();
 	if (ret != ESP_OK) {
@@ -319,6 +271,10 @@ esp_err_t hal_mgr_init(void) {
 	if (isr_ret != ESP_OK && isr_ret != ESP_ERR_INVALID_STATE) {
 		ESP_LOGE(TAG, "Failed to install GPIO ISR service: %s", esp_err_to_name(isr_ret));
 	}
+	
+	// Load brightness from NVS and set it
+	uint8_t brightness = hal_mgr_get_brightness();
+	rm690b0_set_brightness(brightness);
 
 	// Touch
 	ret = cst226se_init();
@@ -328,16 +284,12 @@ esp_err_t hal_mgr_init(void) {
 	}
 	cst226se_register_callback(hal_mgr_touch_event_handler, NULL);
 
-	// Set default orientation to Rotation 0 (Landscape 600x450)
+	// Set orientation from NVS (or default to Rotation 0 if not found)
 	// This must be done AFTER touch init because touch init resets rotation
-	hal_mgr_set_rotation(RM690B0_ROTATION_0); 
-	
-	rm690b0_set_brightness(128);
+	rm690b0_rotation_t saved_rotation = hal_mgr_get_rotation_nvs();
+	hal_mgr_set_rotation(saved_rotation); 
 	rm690b0_clear_full_display(0x0000); // Black
 	vTaskDelay(pdMS_TO_TICKS(100));
-	rm690b0_draw_test_pattern();       // Show rainbow bars for edge testing
-	vTaskDelay(pdMS_TO_TICKS(1000));   // Display rainbow for 1 second
-	rm690b0_clear_full_display(0x0000); // Clear to black
 	rm690b0_enable_te(true);
 	rm690b0_register_vsync_callback(hal_mgr_vsync_handler, NULL);
 
@@ -369,5 +321,87 @@ esp_err_t hal_mgr_sd_init(void) {
 
 bool hal_mgr_sd_is_mounted(void) {
     return sd_card_is_mounted();
+}
+
+void hal_mgr_show_rainbow_test(void) {
+    rm690b0_draw_test_pattern();
+    vTaskDelay(pdMS_TO_TICKS(2000));
+    rm690b0_clear_full_display(0x0000);
+}
+
+esp_err_t hal_mgr_save_brightness(uint8_t brightness) {
+    nvs_handle_t nvs_handle;
+    esp_err_t err = nvs_open("settings", NVS_READWRITE, &nvs_handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to open NVS: %s", esp_err_to_name(err));
+        return err;
+    }
+    
+    err = nvs_set_u8(nvs_handle, "brightness", brightness);
+    if (err == ESP_OK) {
+        err = nvs_commit(nvs_handle);
+        if (err == ESP_OK) {
+            ESP_LOGI(TAG, "Brightness %d saved to NVS", brightness);
+        }
+    }
+    
+    nvs_close(nvs_handle);
+    return err;
+}
+
+uint8_t hal_mgr_get_brightness(void) {
+    nvs_handle_t nvs_handle;
+    uint8_t brightness = 128; // Default value
+    
+    esp_err_t err = nvs_open("settings", NVS_READONLY, &nvs_handle);
+    if (err == ESP_OK) {
+        err = nvs_get_u8(nvs_handle, "brightness", &brightness);
+        if (err == ESP_OK) {
+            ESP_LOGI(TAG, "Brightness %d loaded from NVS", brightness);
+        } else if (err == ESP_ERR_NVS_NOT_FOUND) {
+            ESP_LOGI(TAG, "Brightness not found in NVS, using default %d", brightness);
+        }
+        nvs_close(nvs_handle);
+    }
+    
+    return brightness;
+}
+
+esp_err_t hal_mgr_save_rotation(rm690b0_rotation_t rotation) {
+    nvs_handle_t nvs_handle;
+    esp_err_t err = nvs_open("settings", NVS_READWRITE, &nvs_handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to open NVS: %s", esp_err_to_name(err));
+        return err;
+    }
+    
+    err = nvs_set_u8(nvs_handle, "rotation", (uint8_t)rotation);
+    if (err == ESP_OK) {
+        err = nvs_commit(nvs_handle);
+        if (err == ESP_OK) {
+            ESP_LOGI(TAG, "Rotation %d saved to NVS", rotation);
+        }
+    }
+    
+    nvs_close(nvs_handle);
+    return err;
+}
+
+rm690b0_rotation_t hal_mgr_get_rotation_nvs(void) {
+    nvs_handle_t nvs_handle;
+    uint8_t rotation_val = (uint8_t)RM690B0_ROTATION_0; // Default value
+    
+    esp_err_t err = nvs_open("settings", NVS_READONLY, &nvs_handle);
+    if (err == ESP_OK) {
+        err = nvs_get_u8(nvs_handle, "rotation", &rotation_val);
+        if (err == ESP_OK) {
+            ESP_LOGI(TAG, "Rotation %d loaded from NVS", rotation_val);
+        } else if (err == ESP_ERR_NVS_NOT_FOUND) {
+            ESP_LOGI(TAG, "Rotation not found in NVS, using default %d", rotation_val);
+        }
+        nvs_close(nvs_handle);
+    }
+    
+    return (rm690b0_rotation_t)rotation_val;
 }
 

@@ -193,11 +193,6 @@ void lvgl_mgr_unlock(void) {
     if (lvgl_mux) xSemaphoreGiveRecursive(lvgl_mux);
 }
 
-void lvgl_mgr_show_rainbow(void) {
-    // Bypass LVGL to show the hardware test pattern
-    rm690b0_draw_test_pattern();
-}
-
 esp_err_t bsp_init(void) {
 
     // Initialize HAL
@@ -280,9 +275,6 @@ esp_err_t bsp_init(void) {
     } else {
         ESP_LOGE(TAG, "Failed to create LVGL input device!");
     }
-
-    // Rainbow test pattern already shown during hal_mgr_init()
-    // No need to redraw here (prevents flicker)
 
     // Start LVGL Task
     // Increased stack to 32KB for GIF decoding and file operations

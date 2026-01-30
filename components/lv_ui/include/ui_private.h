@@ -39,6 +39,8 @@ void ui_media_create(lv_obj_t * parent);
 void ui_play_create(lv_obj_t * parent, const char * file_path);
 void ui_display_create(lv_obj_t * parent);
 
+void ui_pmic_restore_settings(void);
+
 void clear_current_view(void);
 
 void show_home_view(lv_event_t * e);
@@ -51,3 +53,6 @@ void show_display_view(lv_event_t * e);
 
 void populate_sd_files_list(void);
 void update_stats_timer_cb(lv_timer_t * timer);
+
+// New switch for Disable LED
+extern lv_obj_t * sw_disable_led;
