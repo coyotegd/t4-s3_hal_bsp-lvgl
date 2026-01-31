@@ -1,6 +1,6 @@
 # LilyGo T4-S3 ESP-IDF Starter with BSP-LVGL & HAL
 
-This project is a complete (except for OTA implementation, PM Status readings/display checks and balances), working starter template for the **LilyGo T4-S3** (2.41" AMOLED) development board using **ESP-IDF** and **LVGL**.
+This project is a complete (except for OTA and Bluetooth implementation), working starter template for the **LilyGo T4-S3** (2.41" AMOLED) development board using **ESP-IDF** and **LVGL**.
 
 It features a robust **Hardware Abstraction Layer (HAL)** that handles the complex low-level drivers for the display, touch screen, and power management IC (PMIC), allowing you to focus on building your application.
 
@@ -48,6 +48,19 @@ void app_main(void) {
     // 3. Your app continues...
 }
 ```
+
+## 🌐 WiFi & Auto-Timezone
+
+The project includes a robust WiFi Manager (`wifi_mgr`) that handles:
+*   **Scanning & Connection:** Scans for available networks and manages connection state.
+*   **SNTP Time Sync:** Automatically fetches UTC time from `pool.ntp.org` upon connection.
+*   **Auto-Timezone Detection:**
+    *   After obtaining an IP, the device queries `http://ip-api.com` to determine your location.
+    *   It parses the specific time zone offset from the JSON response.
+    *   System `TZ` environment variable is automatically updated to match your local time (e.g., PST/PDT).
+    *   The UI displays "http requested . . ." until the valid local time is resolved.
+
+## 📂 Project Structure
 
 ## 🧩 Hardware Details & Pin Map
 

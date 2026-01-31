@@ -9,6 +9,7 @@ extern lv_obj_t * sys_info_cont;
 extern lv_obj_t * media_cont;
 extern lv_obj_t * play_cont;
 extern lv_obj_t * display_cont;
+extern lv_obj_t * network_cont;
 
 // Global Labels (for updates)
 extern lv_obj_t * lbl_batt;
@@ -38,6 +39,7 @@ void ui_sys_info_create(lv_obj_t * parent);
 void ui_media_create(lv_obj_t * parent);
 void ui_play_create(lv_obj_t * parent, const char * file_path);
 void ui_display_create(lv_obj_t * parent);
+void ui_network_create(lv_obj_t * parent);
 
 void ui_pmic_restore_settings(void);
 

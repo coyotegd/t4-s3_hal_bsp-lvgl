@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS "hal_mgr.c"
-    INCLUDE_DIRS "."
-    REQUIRES rm690b0 cst226se sy6970 freertos espressif__button sd_card nvs_flash
+    SRCS "src/hal_mgr.c" "src/wifi_mgr.c"
+    INCLUDE_DIRS "include"
+    REQUIRES rm690b0 cst226se sy6970 freertos espressif__button sd_card nvs_flash esp_wifi esp_event lwip esp_http_client json
 )

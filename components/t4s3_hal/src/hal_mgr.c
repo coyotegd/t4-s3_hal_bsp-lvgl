@@ -3,6 +3,7 @@
 #include "rm690b0.h"
 #include "sd_card.h"
 #include "hal_mgr.h"
+#include "wifi_mgr.h"
 #include "esp_log.h"
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
@@ -235,6 +236,14 @@ esp_err_t hal_mgr_init(void) {
 		return ret;
 	}
 	
+	// WiFi
+	ret = wifi_mgr_init();
+	if (ret != ESP_OK) {
+		ESP_LOGE(TAG, "Failed to initialize WiFi");
+		// Don't fail the whole HAL if WiFi fails? Or should we?
+		// For now, let's log error but continue, as device can work without wifi
+	}
+
 	// Power/PMIC
 	ret = sy6970_init();
 	if (ret != ESP_OK) {
@@ -364,6 +373,11 @@ uint8_t hal_mgr_get_brightness(void) {
         nvs_close(nvs_handle);
     }
     
+    // Ensure minimum brightness is 10
+    if (brightness < 10) {
+        brightness = 10;
+    }
+
     return brightness;
 }
 

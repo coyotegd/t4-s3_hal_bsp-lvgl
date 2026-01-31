@@ -393,11 +393,71 @@ void ui_display_create(lv_obj_t * parent) {
     lv_obj_set_style_border_width(cont_display_info, 0, 0);
     lv_obj_set_style_pad_all(cont_display_info, 0, 0);
     lv_obj_set_flex_flow(cont_display_info, LV_FLEX_FLOW_COLUMN);
+    
+    // Rotation Dropdown
+    lv_obj_t * rotation_cont = lv_obj_create(cont_display_info);
+    lv_obj_set_width(rotation_cont, LV_PCT(100));
+    lv_obj_set_height(rotation_cont, LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(rotation_cont, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(rotation_cont, 0, 0);
+    lv_obj_set_style_pad_all(rotation_cont, 5, 0);
+    lv_obj_set_style_margin_top(rotation_cont, 20, 0);
+    lv_obj_set_flex_flow(rotation_cont, LV_FLEX_FLOW_ROW); // Row layout for label + dropdown
+    lv_obj_set_flex_align(rotation_cont, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
-    lbl_disp_info = lv_label_create(cont_display_info);
-    lv_label_set_text(lbl_disp_info, "Driver Resolution: 450x600\nActual Pixel Resolution: --x--\nDriver: RM690B0\nInterface: QSPI");
-    lv_obj_set_style_text_color(lbl_disp_info, lv_color_white(), 0);
-    lv_obj_set_style_text_font(lbl_disp_info, &lv_font_montserrat_22, 0);
+    lv_obj_t * rotation_label = lv_label_create(rotation_cont);
+    lv_label_set_text(rotation_label, "Rotation:");
+    lv_obj_set_style_text_color(rotation_label, lv_color_white(), 0);
+    lv_obj_set_style_text_font(rotation_label, &lv_font_montserrat_22, 0);
+
+    lv_obj_t * rotation_dropdown = lv_dropdown_create(rotation_cont);
+    lv_dropdown_set_options(rotation_dropdown, "0° USB Bottom\n90° USB Right\n180° USB Top\n270° USB Left");
+    lv_obj_set_width(rotation_dropdown, LV_PCT(50)); // Limit to half screen width
+    lv_obj_set_style_text_font(rotation_dropdown, &lv_font_montserrat_22, 0); // Larger font on main box
+    
+    // Style: Black background, Silver text/arrow
+    lv_obj_set_style_bg_color(rotation_dropdown, lv_color_black(), LV_PART_MAIN);
+    lv_obj_set_style_text_color(rotation_dropdown, lv_color_hex(0xC0C0C0), LV_PART_MAIN);
+    lv_obj_set_style_text_color(rotation_dropdown, lv_color_hex(0xC0C0C0), LV_PART_INDICATOR);
+    
+    // Style List
+    lv_obj_t * list = lv_dropdown_get_list(rotation_dropdown);
+    lv_obj_set_style_text_font(list, &lv_font_montserrat_22, 0); // Larger font on list
+    lv_obj_set_style_bg_color(list, lv_color_black(), LV_PART_MAIN);
+    lv_obj_set_style_text_color(list, lv_color_hex(0xC0C0C0), LV_PART_MAIN);
+    lv_obj_set_style_border_color(list, lv_color_hex(0x808080), LV_PART_MAIN); // Gray border to see it
+    
+    // Set current rotation from hardware
+    rm690b0_rotation_t current_rot = hal_mgr_get_rotation();
+    lv_dropdown_set_selected(rotation_dropdown, (uint16_t)current_rot);
+    
+    lv_obj_add_event_cb(rotation_dropdown, rotation_dropdown_cb, LV_EVENT_VALUE_CHANGED, NULL);
+
+    // Brightness Slider
+    lv_obj_t * brightness_cont = lv_obj_create(cont_display_info);
+    lv_obj_set_width(brightness_cont, LV_PCT(100));
+    lv_obj_set_height(brightness_cont, LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(brightness_cont, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(brightness_cont, 0, 0);
+    lv_obj_set_style_pad_all(brightness_cont, 5, 0);
+    lv_obj_set_style_margin_top(brightness_cont, 20, 0);
+    lv_obj_set_flex_flow(brightness_cont, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(brightness_cont, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+
+    // Initialize brightness from NVS on first use
+    init_brightness();
+
+    lv_obj_t * brightness_label = lv_label_create(brightness_cont);
+    lv_label_set_text_fmt(brightness_label, "Brightness: %d", s_current_brightness);
+    lv_obj_set_style_text_color(brightness_label, lv_color_white(), 0);
+    lv_obj_set_style_text_font(brightness_label, &lv_font_montserrat_22, 0);
+
+    brightness_slider = lv_slider_create(brightness_cont);
+    lv_obj_set_width(brightness_slider, LV_PCT(50));
+    lv_obj_set_height(brightness_slider, 20); // Matches Driver Test Switch height
+    lv_slider_set_range(brightness_slider, 10, 255);
+    lv_slider_set_value(brightness_slider, s_current_brightness, LV_ANIM_OFF);
+    lv_obj_add_event_cb(brightness_slider, brightness_slider_cb, LV_EVENT_VALUE_CHANGED, brightness_label);
 
     // Driver Test Toggle
     lv_obj_t * rainbow_cont = lv_obj_create(cont_display_info);
@@ -418,57 +478,8 @@ void ui_display_create(lv_obj_t * parent) {
     lv_obj_t * rainbow_switch = lv_switch_create(rainbow_cont);
     lv_obj_set_size(rainbow_switch, 80, 40); // Make switch twice as big (default is ~40x20)
     lv_obj_add_event_cb(rainbow_switch, rainbow_test_cb, LV_EVENT_VALUE_CHANGED, NULL);
-
-    // Brightness Slider
-    lv_obj_t * brightness_cont = lv_obj_create(cont_display_info);
-    lv_obj_set_width(brightness_cont, LV_PCT(100));
-    lv_obj_set_height(brightness_cont, LV_SIZE_CONTENT);
-    lv_obj_set_style_bg_opa(brightness_cont, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_border_width(brightness_cont, 0, 0);
-    lv_obj_set_style_pad_all(brightness_cont, 5, 0);
-    lv_obj_set_style_margin_top(brightness_cont, 20, 0);
-    lv_obj_set_flex_flow(brightness_cont, LV_FLEX_FLOW_COLUMN);
-
-    // Initialize brightness from NVS on first use
-    init_brightness();
-
-    lv_obj_t * brightness_label = lv_label_create(brightness_cont);
-    lv_label_set_text_fmt(brightness_label, "Brightness: %d", s_current_brightness);
-    lv_obj_set_style_text_color(brightness_label, lv_color_white(), 0);
-    lv_obj_set_style_text_font(brightness_label, &lv_font_montserrat_18, 0);
-
-    brightness_slider = lv_slider_create(brightness_cont);
-    lv_obj_set_width(brightness_slider, LV_PCT(100));
-    lv_obj_set_height(brightness_slider, 40); // Matches Driver Test Switch height
-    lv_slider_set_range(brightness_slider, 5, 255);
-    lv_slider_set_value(brightness_slider, s_current_brightness, LV_ANIM_OFF);
-    lv_obj_add_event_cb(brightness_slider, brightness_slider_cb, LV_EVENT_VALUE_CHANGED, brightness_label);
-
-    // Rotation Dropdown
-    lv_obj_t * rotation_cont = lv_obj_create(cont_display_info);
-    lv_obj_set_width(rotation_cont, LV_PCT(100));
-    lv_obj_set_height(rotation_cont, LV_SIZE_CONTENT);
-    lv_obj_set_style_bg_opa(rotation_cont, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_border_width(rotation_cont, 0, 0);
-    lv_obj_set_style_pad_all(rotation_cont, 5, 0);
-    lv_obj_set_style_margin_top(rotation_cont, 20, 0);
-    lv_obj_set_flex_flow(rotation_cont, LV_FLEX_FLOW_COLUMN);
-
-    lv_obj_t * rotation_label = lv_label_create(rotation_cont);
-    lv_label_set_text(rotation_label, "Rotation:");
-    lv_obj_set_style_text_color(rotation_label, lv_color_white(), 0);
-    lv_obj_set_style_text_font(rotation_label, &lv_font_montserrat_18, 0);
-
-    lv_obj_t * rotation_dropdown = lv_dropdown_create(rotation_cont);
-    lv_dropdown_set_options(rotation_dropdown, "0° (USB Bottom)\n90° (USB Left)\n180° (USB Top)\n270° (USB Right)");
-    lv_obj_set_width(rotation_dropdown, LV_PCT(100));
-    
-    // Set current rotation from hardware
-    rm690b0_rotation_t current_rot = hal_mgr_get_rotation();
-    lv_dropdown_set_selected(rotation_dropdown, (uint16_t)current_rot);
-    
-    lv_obj_add_event_cb(rotation_dropdown, rotation_dropdown_cb, LV_EVENT_VALUE_CHANGED, NULL);
 }
+
 
 void show_play_view(const char * path) {
     clear_current_view();

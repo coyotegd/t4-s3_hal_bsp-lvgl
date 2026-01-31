@@ -1,10 +1,52 @@
 #include "ui_private.h"
 #include "esp_log.h"
+#include "wifi_mgr.h"
+#include <time.h>
+#include <sys/time.h>
 
 static const char *TAG = "ui_home";
 
 LV_IMG_DECLARE(img_watermelon);
 LV_IMG_DECLARE(img_venezuela);
+
+static lv_obj_t * lbl_header_time = NULL;
+static lv_obj_t * lbl_header_wifi = NULL;
+static lv_timer_t * status_timer = NULL;
+
+static void status_bar_timer_cb(lv_timer_t * t) {
+    // Update Time
+    time_t now;
+    struct tm timeinfo;
+    time(&now);
+    localtime_r(&now, &timeinfo);
+    
+    // Check if time is set (year > 2020) - otherwise show --:--
+    if (timeinfo.tm_year > (2020 - 1900)) {
+        lv_label_set_text_fmt(lbl_header_time, "%02d/%02d/%04d %02d:%02d", 
+            timeinfo.tm_mon + 1, timeinfo.tm_mday, timeinfo.tm_year + 1900,
+            timeinfo.tm_hour, timeinfo.tm_min);
+    } else {
+        lv_label_set_text(lbl_header_time, "http requested . . .");
+    }
+    
+    // Update WiFi Icon
+    if (wifi_mgr_is_connected()) {
+        lv_label_set_text(lbl_header_wifi, LV_SYMBOL_WIFI);
+        lv_obj_set_style_text_color(lbl_header_wifi, lv_palette_main(LV_PALETTE_GREEN), 0);
+    } else {
+        lv_label_set_text(lbl_header_wifi, LV_SYMBOL_WIFI);
+        lv_obj_set_style_text_color(lbl_header_wifi, lv_palette_main(LV_PALETTE_RED), 0);
+    }
+}
+
+static void home_cleanup_cb(lv_event_t * e) {
+    if (status_timer) {
+        lv_timer_del(status_timer);
+        status_timer = NULL;
+    }
+    lbl_header_time = NULL;
+    lbl_header_wifi = NULL;
+}
 
 // View IDs for safe view switching
 typedef enum {
@@ -14,6 +56,7 @@ typedef enum {
     VIEW_SETTINGS,
     VIEW_MEDIA,
     VIEW_DISPLAY,
+    VIEW_NETWORK,
     VIEW_SYSINFO
 } view_id_t;
 
@@ -61,6 +104,9 @@ static void view_switch_timer_cb(lv_timer_t * timer) {
                 int32_t h = lv_display_get_vertical_resolution(lv_display_get_default());
                 lv_label_set_text_fmt(lbl_disp_info, "Driver Resolution: 450x600\nActual Pixel Resolution: %" LV_PRId32 "x%" LV_PRId32 "\nDriver: RM690B0\nInterface: QSPI", w, h);
             }
+            break;
+        case VIEW_NETWORK:
+            ui_network_create(scr);
             break;
         case VIEW_SYSINFO:
             ui_sys_info_create(scr);
@@ -129,7 +175,7 @@ static void btn_sysinfo_cb(lv_event_t * e) {
 static void btn_ota_cb(lv_event_t * e) {
     (void)e;
     ESP_LOGI(TAG, "OTA button clicked");
-    // TODO: Implement OTA view/functionality
+    request_view_switch(VIEW_NETWORK);
 }
 
 static void create_neon_btn(lv_obj_t * parent, const char * icon, const char * text, lv_color_t color, lv_event_cb_t event_cb) {
@@ -179,6 +225,40 @@ void ui_home_create(lv_obj_t * parent) {
     lv_obj_set_style_pad_row(home_cont, 10, 0);
     lv_obj_set_flex_flow(home_cont, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(home_cont, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+
+    // --- Status Bar (Floating) ---
+    lv_obj_t * header_row = lv_obj_create(home_cont);
+    lv_obj_set_width(header_row, LV_PCT(100));
+    lv_obj_set_height(header_row, LV_SIZE_CONTENT);
+    lv_obj_add_flag(header_row, LV_OBJ_FLAG_FLOATING);
+    lv_obj_set_align(header_row, LV_ALIGN_TOP_MID);
+    lv_obj_set_style_bg_opa(header_row, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(header_row, 0, 0);
+    lv_obj_set_style_pad_all(header_row, 5, 0); // Padding from edge
+    
+    // Time Label (Top Left)
+    lbl_header_time = lv_label_create(header_row);
+    lv_obj_set_align(lbl_header_time, LV_ALIGN_LEFT_MID);
+    lv_label_set_text(lbl_header_time, "http requested . . .");
+    lv_obj_set_style_text_font(lbl_header_time, &lv_font_montserrat_22, 0);
+    lv_obj_set_style_text_color(lbl_header_time, lv_color_white(), 0);
+
+    // WiFi Icon (Top Right)
+    lbl_header_wifi = lv_label_create(header_row);
+    lv_obj_set_align(lbl_header_wifi, LV_ALIGN_RIGHT_MID);
+    lv_label_set_text(lbl_header_wifi, LV_SYMBOL_WIFI);
+    lv_obj_set_style_text_font(lbl_header_wifi, &lv_font_montserrat_24, 0); // Larger icon
+    lv_obj_set_style_text_color(lbl_header_wifi, lv_palette_main(LV_PALETTE_RED), 0);
+
+    // Cleanup callback
+    lv_obj_add_event_cb(home_cont, home_cleanup_cb, LV_EVENT_DELETE, NULL);
+    
+    // Timer
+    if (status_timer) {
+        lv_timer_del(status_timer);
+    }
+    status_timer = lv_timer_create(status_bar_timer_cb, 1000, NULL);
+    status_bar_timer_cb(NULL); // Initial update
     
     // 1. Title/Image Row Container
     lv_obj_t * title_row = lv_obj_create(home_cont);

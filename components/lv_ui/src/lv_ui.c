@@ -12,6 +12,7 @@ lv_obj_t * sys_info_cont = NULL;
 lv_obj_t * media_cont = NULL;
 lv_obj_t * play_cont = NULL;
 lv_obj_t * display_cont = NULL;
+lv_obj_t * network_cont = NULL;
 
 lv_obj_t * lbl_batt = NULL;
 lv_obj_t * lbl_chg_stat = NULL;
@@ -46,6 +47,7 @@ void clear_current_view(void) {
     if (media_cont) { lv_obj_delete(media_cont); media_cont = NULL; }
     if (play_cont) { lv_obj_delete(play_cont); play_cont = NULL; }
     if (display_cont) { lv_obj_delete(display_cont); display_cont = NULL; }
+    if (network_cont) { lv_obj_delete(network_cont); network_cont = NULL; }
 
     // Clear pointers to avoid invalid access in timer
     lbl_batt = NULL;
