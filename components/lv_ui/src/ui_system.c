@@ -66,25 +66,43 @@ static void btn_start_update_cb(lv_event_t * e) {
     // Show Modal
     if (!ota_modal) {
         ota_modal = lv_obj_create(lv_layer_top());
-        lv_obj_set_size(ota_modal, LV_PCT(80), LV_PCT(50));
+        lv_obj_set_size(ota_modal, LV_PCT(85), LV_PCT(60));
         lv_obj_center(ota_modal);
         lv_obj_set_flex_flow(ota_modal, LV_FLEX_FLOW_COLUMN);
         lv_obj_set_flex_align(ota_modal, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+        lv_obj_set_style_bg_color(ota_modal, lv_color_hex(0x101010), 0);
+        lv_obj_set_style_border_color(ota_modal, lv_color_hex(0xCD00CD), 0);
+        lv_obj_set_style_border_width(ota_modal, 2, 0);
+        lv_obj_set_style_shadow_width(ota_modal, 20, 0);
+        lv_obj_set_style_shadow_color(ota_modal, lv_color_hex(0xCD00CD), 0);
         
         lbl_ota_status = lv_label_create(ota_modal);
         lv_label_set_text(lbl_ota_status, "Starting Update...");
+        lv_obj_set_style_text_color(lbl_ota_status, lv_color_white(), 0);
+        lv_obj_set_style_text_align(lbl_ota_status, LV_TEXT_ALIGN_CENTER, 0);
         
         bar_ota_progress = lv_bar_create(ota_modal);
         lv_obj_set_width(bar_ota_progress, LV_PCT(90));
         lv_obj_set_height(bar_ota_progress, 20);
         lv_bar_set_range(bar_ota_progress, 0, 100);
+        lv_obj_set_style_bg_color(bar_ota_progress, lv_color_hex(0x303030), LV_PART_MAIN);
+        lv_obj_set_style_bg_color(bar_ota_progress, lv_color_hex(0xCD00CD), LV_PART_INDICATOR);
 
         btn_ota_close = lv_btn_create(ota_modal);
-        lv_obj_set_width(btn_ota_close, 100);
+        lv_obj_set_width(btn_ota_close, 120);
+        lv_obj_set_height(btn_ota_close, 50);
         lv_obj_add_event_cb(btn_ota_close, ota_close_event_cb, LV_EVENT_CLICKED, NULL);
+        lv_obj_set_style_bg_color(btn_ota_close, lv_color_hex(0x000000), 0);
+        lv_obj_set_style_border_color(btn_ota_close, lv_color_hex(0xFF0000), 0); // Red for Close
+        lv_obj_set_style_border_width(btn_ota_close, 2, 0);
+        lv_obj_set_style_shadow_width(btn_ota_close, 10, 0);
+        lv_obj_set_style_shadow_color(btn_ota_close, lv_color_hex(0xFF0000), 0);
+
         lv_obj_t * lbl_close = lv_label_create(btn_ota_close);
         lv_label_set_text(lbl_close, "Close");
         lv_obj_center(lbl_close);
+        lv_obj_set_style_text_color(lbl_close, lv_color_white(), 0);
+        
         lv_obj_add_flag(btn_ota_close, LV_OBJ_FLAG_HIDDEN);
     }
     
