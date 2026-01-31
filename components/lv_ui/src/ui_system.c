@@ -15,6 +15,13 @@ static lv_obj_t * roller_boost_volt = NULL; // Global handle for boost voltage r
 static lv_obj_t * lbl_ota_status = NULL;
 static lv_obj_t * bar_ota_progress = NULL;
 static lv_obj_t * ota_modal = NULL;
+static lv_obj_t * btn_ota_close = NULL;
+
+static void ota_close_event_cb(lv_event_t * e) {
+    if (ota_modal) {
+        lv_obj_add_flag(ota_modal, LV_OBJ_FLAG_HIDDEN);
+    }
+}
 
 // --- OTA Callbacks ---
 static void ota_progress_cb(int percent, void *user_ctx) {
@@ -36,18 +43,16 @@ static void ota_complete_cb(esp_err_t err, void *user_ctx) {
     lvgl_mgr_lock();
     if (err == ESP_OK) {
         if (lbl_ota_status) lv_label_set_text(lbl_ota_status, "Success! Rebooting...");
-    } else if (err == ESP_ERR_OTA_UP_TO_DATE) {
-        if (lbl_ota_status) lv_label_set_text(lbl_ota_status, "System is Up To Date");
-        if (ota_modal) {
-            lv_obj_add_flag(ota_modal, LV_OBJ_FLAG_CLICKABLE); // Allow click to close
-        }
     } else {
-        if (lbl_ota_status) lv_label_set_text_fmt(lbl_ota_status, "Failed: %s", esp_err_to_name(err));
+        if (err == ESP_ERR_OTA_UP_TO_DATE) {
+            if (lbl_ota_status) lv_label_set_text(lbl_ota_status, "System is Up To Date");
+        } else {
+            if (lbl_ota_status) lv_label_set_text_fmt(lbl_ota_status, "Failed: %s", esp_err_to_name(err));
+        }
         
-        // Hide modal after delay? or let user close
-        // For now, let user see error
-        if (ota_modal) {
-            lv_obj_add_flag(ota_modal, LV_OBJ_FLAG_CLICKABLE); // Allow click to close
+        // Show close button
+        if (btn_ota_close) {
+            lv_obj_remove_flag(btn_ota_close, LV_OBJ_FLAG_HIDDEN);
         }
     }
     lvgl_mgr_unlock();
@@ -73,9 +78,18 @@ static void btn_start_update_cb(lv_event_t * e) {
         lv_obj_set_width(bar_ota_progress, LV_PCT(90));
         lv_obj_set_height(bar_ota_progress, 20);
         lv_bar_set_range(bar_ota_progress, 0, 100);
+
+        btn_ota_close = lv_btn_create(ota_modal);
+        lv_obj_set_width(btn_ota_close, 100);
+        lv_obj_add_event_cb(btn_ota_close, ota_close_event_cb, LV_EVENT_CLICKED, NULL);
+        lv_obj_t * lbl_close = lv_label_create(btn_ota_close);
+        lv_label_set_text(lbl_close, "Close");
+        lv_obj_center(lbl_close);
+        lv_obj_add_flag(btn_ota_close, LV_OBJ_FLAG_HIDDEN);
     }
     
     lv_obj_remove_flag(ota_modal, LV_OBJ_FLAG_HIDDEN);
+    if(btn_ota_close) lv_obj_add_flag(btn_ota_close, LV_OBJ_FLAG_HIDDEN); // Ensure hidden
     lv_bar_set_value(bar_ota_progress, 0, LV_ANIM_OFF);
     lv_label_set_text(lbl_ota_status, "Connecting...");
     
