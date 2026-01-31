@@ -87,6 +87,8 @@ static void ota_task(void *pvParameter) {
         .crt_bundle_attach = esp_crt_bundle_attach,
         .keep_alive_enable = true,
         .timeout_ms = 10000,
+        .buffer_size = 4096, // Increase buffer for GitHub headers/redirects
+        .buffer_size_tx = 1024,
     };
 
 // Note: If you want to support HTTP (insecure), you need to enable CONFIG_ESP_HTTPS_OTA_ALLOW_HTTP in menuconfig
