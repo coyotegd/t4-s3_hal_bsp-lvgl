@@ -26,7 +26,7 @@ static void status_bar_timer_cb(lv_timer_t * t) {
             timeinfo.tm_mon + 1, timeinfo.tm_mday, timeinfo.tm_year + 1900,
             timeinfo.tm_hour, timeinfo.tm_min);
     } else {
-        lv_label_set_text(lbl_header_time, "http requested . . .");
+        lv_label_set_text(lbl_header_time, "http d/t requested . . .");
     }
     
     // Update WiFi Icon
@@ -239,7 +239,7 @@ void ui_home_create(lv_obj_t * parent) {
     // Time Label (Top Left)
     lbl_header_time = lv_label_create(header_row);
     lv_obj_set_align(lbl_header_time, LV_ALIGN_LEFT_MID);
-    lv_label_set_text(lbl_header_time, "http requested . . .");
+    lv_label_set_text(lbl_header_time, "http d/t requested . . .");
     lv_obj_set_style_text_font(lbl_header_time, &lv_font_montserrat_22, 0);
     lv_obj_set_style_text_color(lbl_header_time, lv_color_white(), 0);
 
@@ -397,8 +397,8 @@ void ui_home_create(lv_obj_t * parent) {
     create_neon_btn(btn_row2, LV_SYMBOL_EYE_OPEN, "Display", lv_color_hex(0x39FF14), btn_display_cb);
 
     // Button 5: System (Neon Purple)
-    create_neon_btn(btn_row2, LV_SYMBOL_FILE, "System", lv_color_hex(0x9D00FF), btn_sysinfo_cb);
+    create_neon_btn(btn_row2, LV_SYMBOL_FILE, "System OTA", lv_color_hex(0x9D00FF), btn_sysinfo_cb);
 
-    // Button 6: OTA (Neon Magenta) - WiFi & BLE symbols
-    create_neon_btn(btn_row2, LV_SYMBOL_WIFI " " LV_SYMBOL_BLUETOOTH, "OTA", lv_color_hex(0xFF00FF), btn_ota_cb);
+    // Button 6: WiFi (Neon Magenta)
+    create_neon_btn(btn_row2, LV_SYMBOL_WIFI, "Wi-Fi", lv_color_hex(0xFF00FF), btn_ota_cb);
 }

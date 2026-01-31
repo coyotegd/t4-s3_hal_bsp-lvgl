@@ -58,9 +58,26 @@ The project includes a robust WiFi Manager (`wifi_mgr`) that handles:
     *   After obtaining an IP, the device queries `http://ip-api.com` to determine your location.
     *   It parses the specific time zone offset from the JSON response.
     *   System `TZ` environment variable is automatically updated to match your local time (e.g., PST/PDT).
-    *   The UI displays "http requested . . ." until the valid local time is resolved.
+    *   The UI displays "http d/t requested . . ." until the valid local time is resolved.
 
-## 📂 Project Structure
+### 🕒 Timekeeping Summary
+*   **Second-by-second:** Handled by the ESP32's internal software counter (System Time).
+*   **Accuracy check:** Updated from the internet via SNTP every **60 minutes**.
+*   **Power Loss:** Since there is no dedicated coin-cell RTC, if power is lost completely, time resets until WiFi reconnects.
+
+## � Over-The-Air (OTA) Updates
+
+The system supports wireless firmware updates via the **System OTA** menu.
+
+*   **Logic:**
+    *   Checks a remote GitHub Release URL for the latest `firmware.bin`.
+    *   Parses the **Version** string (e.g., `v1.2.0`) from the new binary header.
+    *   **Anti-Downgrade:** Only updates if the remote version is strictly *higher* than the current running version.
+    *   **Up-To-Date:** If version is same or older, displays "System is Up To Date".
+*   **Partitioning:** Uses an A/B partition scheme (`ota_0`, `ota_1`) with an `otadata` manager to switch safe slots automatically.
+*   **Safety:** Automatically verifies image header before writing and reboots upon success.
+
+## �📂 Project Structure
 
 ## 🧩 Hardware Details & Pin Map
 

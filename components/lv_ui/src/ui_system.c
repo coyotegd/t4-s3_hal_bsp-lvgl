@@ -4,12 +4,86 @@
 #include <stdio.h> // for snprintf
 #include "nvs_flash.h"
 #include "nvs.h"
+#include "ota_mgr.h" // Include OTA manager
+#include "lvgl_mgr.h" // For lvgl_mgr_lock/unlock
 
 LV_IMG_DECLARE(swipeL34);
 LV_IMG_DECLARE(swipeR34);
 
 static lv_obj_t * cont_chg_settings = NULL; // Container for charging parameters
 static lv_obj_t * roller_boost_volt = NULL; // Global handle for boost voltage roller
+static lv_obj_t * lbl_ota_status = NULL;
+static lv_obj_t * bar_ota_progress = NULL;
+static lv_obj_t * ota_modal = NULL;
+
+// --- OTA Callbacks ---
+static void ota_progress_cb(int percent, void *user_ctx) {
+    if (bar_ota_progress) {
+        // Need to run LVGL update on GUI thread?
+        // Luckily we are mostly in GUI thread context or can use lock if needed
+        // but FreeRTOS task usually runs separate.
+        // We should protect this.
+        lvgl_mgr_lock();
+        lv_bar_set_value(bar_ota_progress, percent, LV_ANIM_ON);
+        char buf[32];
+        snprintf(buf, sizeof(buf), "Downloading... %d%%", percent);
+        if (lbl_ota_status) lv_label_set_text(lbl_ota_status, buf);
+        lvgl_mgr_unlock();
+    }
+}
+
+static void ota_complete_cb(esp_err_t err, void *user_ctx) {
+    lvgl_mgr_lock();
+    if (err == ESP_OK) {
+        if (lbl_ota_status) lv_label_set_text(lbl_ota_status, "Success! Rebooting...");
+    } else if (err == ESP_ERR_OTA_UP_TO_DATE) {
+        if (lbl_ota_status) lv_label_set_text(lbl_ota_status, "System is Up To Date");
+        if (ota_modal) {
+            lv_obj_add_flag(ota_modal, LV_OBJ_FLAG_CLICKABLE); // Allow click to close
+        }
+    } else {
+        if (lbl_ota_status) lv_label_set_text_fmt(lbl_ota_status, "Failed: %s", esp_err_to_name(err));
+        
+        // Hide modal after delay? or let user close
+        // For now, let user see error
+        if (ota_modal) {
+            lv_obj_add_flag(ota_modal, LV_OBJ_FLAG_CLICKABLE); // Allow click to close
+        }
+    }
+    lvgl_mgr_unlock();
+}
+
+static void btn_start_update_cb(lv_event_t * e) {
+    const char * url = "https://github.com/coyotegd/t4-s3_hal_bsp-lvgl/releases/latest/download/t4-s3_hal_bsp-lvgl.bin"; // GitHub Release URL
+    
+    if (ota_mgr_is_busy()) return;
+    
+    // Show Modal
+    if (!ota_modal) {
+        ota_modal = lv_obj_create(lv_layer_top());
+        lv_obj_set_size(ota_modal, LV_PCT(80), LV_PCT(50));
+        lv_obj_center(ota_modal);
+        lv_obj_set_flex_flow(ota_modal, LV_FLEX_FLOW_COLUMN);
+        lv_obj_set_flex_align(ota_modal, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+        
+        lbl_ota_status = lv_label_create(ota_modal);
+        lv_label_set_text(lbl_ota_status, "Starting Update...");
+        
+        bar_ota_progress = lv_bar_create(ota_modal);
+        lv_obj_set_width(bar_ota_progress, LV_PCT(90));
+        lv_obj_set_height(bar_ota_progress, 20);
+        lv_bar_set_range(bar_ota_progress, 0, 100);
+    }
+    
+    lv_obj_remove_flag(ota_modal, LV_OBJ_FLAG_HIDDEN);
+    lv_bar_set_value(bar_ota_progress, 0, LV_ANIM_OFF);
+    lv_label_set_text(lbl_ota_status, "Connecting...");
+    
+    esp_err_t ret = ota_mgr_start_update(url, ota_progress_cb, ota_complete_cb, NULL);
+    if (ret != ESP_OK) {
+        lv_label_set_text(lbl_ota_status, "Failed to start task");
+    }
+}
 
 // --- NVS Helpers ---
 static void save_nvs_value(const char* key, uint16_t val) {
@@ -795,18 +869,19 @@ void ui_settings_create(lv_obj_t * parent) {
 
     lv_obj_t * btn_defaults = lv_button_create(row_defaults);
     lv_obj_set_width(btn_defaults, LV_SIZE_CONTENT);
-    lv_obj_set_height(btn_defaults, 50);
+    lv_obj_set_height(btn_defaults, LV_SIZE_CONTENT); // Auto height for multiline
     lv_obj_set_style_bg_color(btn_defaults, lv_color_black(), 0); // Black Background
     lv_obj_set_style_border_color(btn_defaults, lv_color_hex(0xFF4500), 0); // Orange Border
     lv_obj_set_style_bg_color(btn_defaults, lv_color_hex(0xFF4500), LV_STATE_PRESSED); // Pressed: Orange Background
     lv_obj_set_style_border_width(btn_defaults, 2, 0);
-    lv_obj_set_style_pad_hor(btn_defaults, 20, 0); // Padding for content width
+    lv_obj_set_style_pad_all(btn_defaults, 10, 0); // Padding for content
     lv_obj_set_style_radius(btn_defaults, 10, 0);
     lv_obj_set_style_margin_top(btn_defaults, 10, 0);
     lv_obj_set_style_margin_bottom(btn_defaults, 10, 0);
     
     lv_obj_t * lbl_defaults = lv_label_create(btn_defaults);
-    lv_label_set_text(lbl_defaults, "PMIC Defaults (Best Practices)");
+    lv_label_set_text(lbl_defaults, "PMIC Defaults\n(Best Practices)");
+    lv_obj_set_style_text_align(lbl_defaults, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_set_style_text_color(lbl_defaults, lv_color_white(), 0);
     lv_obj_set_style_text_font(lbl_defaults, &lv_font_montserrat_20, 0);
     lv_obj_center(lbl_defaults);
@@ -862,4 +937,40 @@ void ui_sys_info_create(lv_obj_t * parent) {
     lv_label_set_text(lbl_sys_info, "System Info:\nLoading...");
     lv_obj_set_style_text_color(lbl_sys_info, lv_color_white(), 0);
     lv_obj_set_style_text_font(lbl_sys_info, &lv_font_montserrat_22, 0);
+
+    // OTA Update Button Container
+    lv_obj_t * row_ota = lv_obj_create(cont_sys_details);
+    lv_obj_set_width(row_ota, LV_PCT(100));
+    lv_obj_set_height(row_ota, LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(row_ota, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(row_ota, 0, 0);
+    lv_obj_set_style_margin_top(row_ota, 20, 0);
+    lv_obj_set_flex_flow(row_ota, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(row_ota, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+
+    lv_obj_t * btn_ota = lv_button_create(row_ota);
+    lv_obj_set_width(btn_ota, LV_SIZE_CONTENT);
+    lv_obj_set_height(btn_ota, 50);
+    
+    // Consistent Neon Style
+    lv_color_t color = lv_color_hex(0x800080); // Purple
+    lv_obj_set_style_bg_opa(btn_ota, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(btn_ota, color, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(btn_ota, 3, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(btn_ota, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(btn_ota, 15, LV_PART_MAIN | LV_STATE_DEFAULT);
+    // Pressed
+    lv_obj_set_style_bg_opa(btn_ota, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(btn_ota, color, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_shadow_width(btn_ota, 30, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_shadow_color(btn_ota, color, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_pad_hor(btn_ota, 20, 0); // Padding for text
+
+    lv_obj_add_event_cb(btn_ota, btn_start_update_cb, LV_EVENT_CLICKED, NULL);
+    
+    lv_obj_t * lbl_ota = lv_label_create(btn_ota);
+    lv_label_set_text(lbl_ota, "Update Firmware");
+    lv_obj_set_style_text_font(lbl_ota, &lv_font_montserrat_22, 0);
+    lv_obj_set_style_text_color(lbl_ota, lv_color_white(), 0);
+    lv_obj_center(lbl_ota);
 }
