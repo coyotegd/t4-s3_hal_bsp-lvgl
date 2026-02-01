@@ -80,16 +80,19 @@ static void btn_start_update_cb(lv_event_t * e) {
         lv_label_set_text(lbl_ota_status, "Starting Update...");
         lv_obj_set_style_text_color(lbl_ota_status, lv_color_white(), 0);
         lv_obj_set_style_text_align(lbl_ota_status, LV_TEXT_ALIGN_CENTER, 0);
+        lv_obj_set_style_text_font(lbl_ota_status, &lv_font_montserrat_24, 0);
         
         bar_ota_progress = lv_bar_create(ota_modal);
         lv_obj_set_width(bar_ota_progress, LV_PCT(90));
         lv_obj_set_height(bar_ota_progress, 20);
         lv_bar_set_range(bar_ota_progress, 0, 100);
-        lv_obj_set_style_bg_color(bar_ota_progress, lv_color_hex(0x303030), LV_PART_MAIN);
+        lv_obj_set_style_bg_color(bar_ota_progress, lv_color_hex(0x202020), LV_PART_MAIN);
+        lv_obj_set_style_border_color(bar_ota_progress, lv_color_hex(0x606060), LV_PART_MAIN);
+        lv_obj_set_style_border_width(bar_ota_progress, 2, LV_PART_MAIN);
         lv_obj_set_style_bg_color(bar_ota_progress, lv_color_hex(0xCD00CD), LV_PART_INDICATOR);
 
         btn_ota_close = lv_btn_create(ota_modal);
-        lv_obj_set_width(btn_ota_close, 120);
+        lv_obj_set_width(btn_ota_close, 140);
         lv_obj_set_height(btn_ota_close, 50);
         lv_obj_add_event_cb(btn_ota_close, ota_close_event_cb, LV_EVENT_CLICKED, NULL);
         lv_obj_set_style_bg_color(btn_ota_close, lv_color_hex(0x000000), 0);
@@ -102,6 +105,7 @@ static void btn_start_update_cb(lv_event_t * e) {
         lv_label_set_text(lbl_close, "Close");
         lv_obj_center(lbl_close);
         lv_obj_set_style_text_color(lbl_close, lv_color_white(), 0);
+        lv_obj_set_style_text_font(lbl_close, &lv_font_montserrat_22, 0);
         
         lv_obj_add_flag(btn_ota_close, LV_OBJ_FLAG_HIDDEN);
     }
