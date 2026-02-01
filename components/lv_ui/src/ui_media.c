@@ -31,6 +31,12 @@ typedef struct {
     bool valid;
 } jpg_metadata_t;
 
+typedef struct {
+    uint32_t width;
+    uint32_t height;
+    bool valid;
+} png_metadata_t;
+
 /**
  * Extract frame rate from AVI file header
  */
@@ -48,6 +54,38 @@ static avi_metadata_t extract_avi_metadata(const char *file_path) {
         meta.valid = true;
     }
     fclose(f);
+    
+    return meta;
+}
+
+/**
+ * Extract dimensions from PNG file header
+ */
+static png_metadata_t extract_png_metadata(const char *file_path) {
+    png_metadata_t meta = {0};
+    
+    FILE* f = fopen(file_path, "rb");
+    if (!f) return meta;
+    
+    uint8_t buf[24];
+    if (fread(buf, 1, 24, f) != 24) {
+        fclose(f);
+        return meta;
+    }
+    fclose(f);
+    
+    // Check PNG signature: 89 50 4E 47 0D 0A 1A 0A
+    const uint8_t png_sig[] = {0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
+    if (memcmp(buf, png_sig, 8) != 0) return meta;
+    
+    // Check for IHDR (starts at offset 8 check: Length(4), Type(4), Data...)
+    // Length at 8, Type at 12 "IHDR"
+    if (buf[12] != 'I' || buf[13] != 'H' || buf[14] != 'D' || buf[15] != 'R') return meta;
+    
+    // Width at 16 (4 bytes big endian), Height at 20 (4 bytes big endian)
+    meta.width = (buf[16] << 24) | (buf[17] << 16) | (buf[18] << 8) | buf[19];
+    meta.height = (buf[20] << 24) | (buf[21] << 16) | (buf[22] << 8) | buf[23];
+    meta.valid = true;
     
     return meta;
 }
@@ -95,6 +133,21 @@ static void media_swipe_event_cb(lv_event_t * e) {
     }
 }
 
+static void back_timer_cb(lv_timer_t * t) {
+    show_media_view(NULL);
+    // Timer is one-shot, but lv_timer_del is usually manual unless auto-delete logic is used.
+    // Actually, show_media_view cleans up the current screen? 
+    // If show_media_view calls clear_current_view, the button and everything is destroyed.
+    // The timer itself needs to be deleted if not managed. 
+    // Or we can just let it run once and 'delete' itself.
+}
+
+static void back_btn_event_handler(lv_event_t * e) {
+    // Use a timer to allow the visual press state to be seen
+    lv_timer_t * t = lv_timer_create(back_timer_cb, 200, NULL);
+    lv_timer_set_repeat_count(t, 1);
+}
+
 static void play_event_cb(lv_event_t * e) {
     lv_event_code_t code = lv_event_get_code(e);
     lv_obj_t * avi_obj = (lv_obj_t *)lv_event_get_user_data(e);
@@ -107,19 +160,10 @@ static void play_event_cb(lv_event_t * e) {
     }
     else if (code == LV_EVENT_RELEASED || code == LV_EVENT_PRESS_LOST) {
         // Only resume if we are still on the playback screen (simple check: if obj is valid)
-        // Note: If gesture triggered, screen might change. 
-        // But typically Release happens before deletion if we handle gesture carefully.
-        // Actually, if gesture triggers show_media_view, the cleanup happens.
-        // So we might be calling play on a dying object.
-        // However, ui_avi_pause/play checks if avi struct is valid.
+        // Since we removed gesture support, this is simpler now.
         if (avi_obj && lv_obj_is_valid(avi_obj)) {
              ui_avi_play(avi_obj);
              ESP_LOGI("ui_media", "Playback resumed");
-        }
-    }
-    else if (code == LV_EVENT_GESTURE) {
-        if(lv_indev_get_gesture_dir(lv_indev_get_act()) == LV_DIR_RIGHT) {
-            show_media_view(e); 
         }
     }
 }
@@ -497,12 +541,6 @@ void ui_play_create(lv_obj_t * parent, const char * file_path) {
     lv_obj_clear_flag(play_cont, LV_OBJ_FLAG_GESTURE_BUBBLE);
     lv_obj_add_flag(play_cont, LV_OBJ_FLAG_CLICKABLE);
 
-    // Swipe Right Icon to indicate return
-    lv_obj_t * img_swipe = lv_image_create(play_cont);
-    lv_image_set_src(img_swipe, &swipeR34);
-    lv_obj_add_flag(img_swipe, LV_OBJ_FLAG_FLOATING);
-    lv_obj_align(img_swipe, LV_ALIGN_TOP_LEFT, 0, 15);
-
     // Title (Filename)
     lv_obj_t * title = lv_label_create(play_cont);
     // Extract filename from path
@@ -577,9 +615,11 @@ void ui_play_create(lv_obj_t * parent, const char * file_path) {
         // Simple extension check
         const char * ext = strrchr(file_path, '.');
         int is_avi = 0;
+        int is_png = 0;
         
         if(ext) {
             if(strcasecmp(ext, ".avi") == 0) is_avi = 1;
+            else if(strcasecmp(ext, ".png") == 0) is_png = 1;
         }
 
         if(is_avi) {
@@ -628,6 +668,57 @@ void ui_play_create(lv_obj_t * parent, const char * file_path) {
                 lv_obj_set_size(lbl_codec, LV_PCT(100), LV_SIZE_CONTENT);
             } else {
                 ESP_LOGE("ui_media", "Failed to create AVI object");
+            }
+        } else if (is_png) {
+            // PNG handling
+            ESP_LOGI("ui_media", "Creating PNG viewer for %s", file_path);
+            
+            img = lv_image_create(media_cont);
+            if (img) {
+                // Ensure image object is large enough and centered
+                lv_obj_set_size(img, LV_PCT(100), LV_PCT(100));
+                
+                // Add a checkerboard/grey background to visualize transparency if present
+                lv_obj_set_style_bg_opa(img, LV_OPA_COVER, 0);
+                lv_obj_set_style_bg_color(img, lv_color_hex(0x202020), 0); // Dark Grey background
+                
+                lv_image_set_src(img, file_path);
+                
+                // Extract PNG metadata (use fs_path without "S:" prefix)
+                png_metadata_t png_meta = extract_png_metadata(fs_path);
+                
+                ESP_LOGI("ui_media", "PNG metadata: valid=%d, %lux%lu", png_meta.valid, 
+                    (unsigned long)png_meta.width, (unsigned long)png_meta.height);
+                
+                // Display PNG info
+                lv_obj_t * lbl_type = lv_label_create(info_cont);
+                lv_label_set_text(lbl_type, "Type: PNG Image");
+                lv_obj_set_style_text_font(lbl_type, &lv_font_montserrat_14, 0);
+                lv_obj_set_style_text_color(lbl_type, lv_color_white(), 0);
+                lv_obj_set_size(lbl_type, LV_PCT(100), LV_SIZE_CONTENT);
+                
+                lv_obj_t * lbl_size = lv_label_create(info_cont);
+                lv_obj_set_size(lbl_size, LV_PCT(100), LV_SIZE_CONTENT);
+                if (file_size < 1024) {
+                    lv_label_set_text_fmt(lbl_size, "Size: %ld B", file_size);
+                } else if (file_size < 1024 * 1024) {
+                     lv_label_set_text_fmt(lbl_size, "Size: %ld.%ld KB", file_size / 1024, ((file_size % 1024) * 10) / 1024);
+                } else {
+                    lv_label_set_text_fmt(lbl_size, "Size: %ld.%ld MB", file_size / (1024 * 1024), ((file_size % (1024 * 1024)) * 10) / (1024 * 1024));
+                }
+                lv_obj_set_style_text_font(lbl_size, &lv_font_montserrat_14, 0);
+                lv_obj_set_style_text_color(lbl_size, lv_color_white(), 0);
+                
+                if (png_meta.valid && png_meta.width > 0 && png_meta.height > 0) {
+                    lv_obj_t * lbl_dim = lv_label_create(info_cont);
+                    lv_label_set_text_fmt(lbl_dim, "Dimensions: %lux%lu", 
+                        (unsigned long)png_meta.width, (unsigned long)png_meta.height);
+                    lv_obj_set_style_text_font(lbl_dim, &lv_font_montserrat_14, 0);
+                    lv_obj_set_style_text_color(lbl_dim, lv_color_white(), 0);
+                    lv_obj_set_size(lbl_dim, LV_PCT(100), LV_SIZE_CONTENT);
+                }
+            } else {
+                ESP_LOGE("ui_media", "Failed to create PNG object");
             }
         } else {
             // JPG files handled by LVGL's libjpeg-turbo decoder
@@ -697,4 +788,36 @@ void ui_play_create(lv_obj_t * parent, const char * file_path) {
         // This ensures touching the background also pauses playback
         lv_obj_add_event_cb(play_cont, play_event_cb, LV_EVENT_ALL, img);
     }
+    
+    // Create a spacer to push the button to the bottom if there isn't much info
+    lv_obj_t * spacer = lv_obj_create(info_cont);
+    lv_obj_set_width(spacer, 0);
+    lv_obj_set_flex_grow(spacer, 1);
+    lv_obj_set_style_bg_opa(spacer, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(spacer, 0, 0);
+    
+    // Back Button at the bottom of info panel
+    lv_obj_t * btn_back = lv_button_create(info_cont);
+    lv_obj_set_width(btn_back, LV_PCT(100));
+    lv_obj_set_height(btn_back, 50);
+    lv_obj_add_event_cb(btn_back, back_btn_event_handler, LV_EVENT_CLICKED, NULL);
+
+    // Consistent Neon Style (Matching System Info Page)
+    lv_color_t color = lv_color_hex(0x800080); // Purple
+    lv_obj_set_style_bg_opa(btn_back, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(btn_back, color, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(btn_back, 3, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(btn_back, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(btn_back, 15, LV_PART_MAIN | LV_STATE_DEFAULT);
+    // Pressed
+    lv_obj_set_style_bg_opa(btn_back, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(btn_back, color, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_shadow_width(btn_back, 30, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_shadow_color(btn_back, color, LV_PART_MAIN | LV_STATE_PRESSED);
+    
+    lv_obj_t * lbl_back = lv_label_create(btn_back);
+    lv_label_set_text(lbl_back, "Back");
+    lv_obj_center(lbl_back);
+    lv_obj_set_style_text_font(lbl_back, &lv_font_montserrat_22, 0);
+    lv_obj_set_style_text_color(lbl_back, lv_color_white(), 0);
 }

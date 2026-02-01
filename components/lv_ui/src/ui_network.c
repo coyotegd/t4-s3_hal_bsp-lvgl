@@ -167,16 +167,28 @@ static void wifi_timer_cb(lv_timer_t * t) {
              lv_label_set_text_fmt(lbl_ssid, "%s  %s", LV_SYMBOL_WIFI, s_scan_results[i].ssid);
              lv_obj_set_style_text_font(lbl_ssid, &lv_font_montserrat_24, 0);
              lv_obj_set_style_text_color(lbl_ssid, lv_color_white(), 0);
+             lv_obj_set_width(lbl_ssid, LV_PCT(60));
+             lv_label_set_long_mode(lbl_ssid, LV_LABEL_LONG_DOT);
              lv_obj_align(lbl_ssid, LV_ALIGN_LEFT_MID, 0, 0);
 
-             // RSSI/Security Label (Right)
-             lv_obj_t * lbl_info = lv_label_create(btn);
-             // Show Lock icon if protected (auth_mode != 0 is WIFI_AUTH_OPEN) + Signal strength
-             const char * lock = (s_scan_results[i].auth_mode != 0) ? LV_SYMBOL_WARNING : ""; 
-             lv_label_set_text_fmt(lbl_info, "%s %d dBm", lock, s_scan_results[i].rssi);
-             lv_obj_set_style_text_font(lbl_info, &lv_font_montserrat_24, 0);
-             lv_obj_set_style_text_color(lbl_info, lv_color_make(200, 200, 200), 0);
-             lv_obj_align(lbl_info, LV_ALIGN_RIGHT_MID, 0, 0);
+             // Lock/Unlock Symbol (Center-Right)
+             lv_obj_t * lbl_lock = lv_label_create(btn);
+             lv_obj_set_style_text_font(lbl_lock, &lv_font_montserrat_24, 0);
+             
+             if (s_scan_results[i].auth_mode != 0) {
+                 lv_label_set_text(lbl_lock, LV_SYMBOL_WARNING); // Locked
+                 lv_obj_set_style_text_color(lbl_lock, lv_color_hex(0xFFD700), 0); // Gold
+             } else {
+                 lv_label_set_text(lbl_lock, ""); // Unlocked
+             }
+             lv_obj_align(lbl_lock, LV_ALIGN_RIGHT_MID, -120, 0);
+
+             // RSSI Label (Right)
+             lv_obj_t * lbl_rssi = lv_label_create(btn);
+             lv_label_set_text_fmt(lbl_rssi, "%d dBm", s_scan_results[i].rssi);
+             lv_obj_set_style_text_font(lbl_rssi, &lv_font_montserrat_24, 0);
+             lv_obj_set_style_text_color(lbl_rssi, lv_color_white(), 0);
+             lv_obj_align(lbl_rssi, LV_ALIGN_RIGHT_MID, 0, 0);
         }
     }
     
@@ -316,12 +328,26 @@ void ui_network_create(lv_obj_t * parent) {
     lv_obj_set_style_text_color(lbl_modal_title, lv_color_white(), 0);
 
     lv_obj_t * btn_cancel = lv_btn_create(modal_header);
-    lv_obj_set_size(btn_cancel, 100, 50); // Slightly larger button
-    lv_obj_set_style_bg_color(btn_cancel, lv_color_hex(0x505050), 0);
+    lv_obj_set_size(btn_cancel, 120, 50);
+    
+    // Neon Style for Cancel (Purple accent)
+    lv_color_t cancel_color = lv_color_hex(0x800080); // Purple
+    lv_obj_set_style_bg_opa(btn_cancel, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(btn_cancel, cancel_color, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(btn_cancel, 3, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(btn_cancel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(btn_cancel, 15, LV_PART_MAIN | LV_STATE_DEFAULT);
+    // Pressed Style
+    lv_obj_set_style_bg_opa(btn_cancel, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(btn_cancel, cancel_color, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_shadow_width(btn_cancel, 30, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_shadow_color(btn_cancel, cancel_color, LV_PART_MAIN | LV_STATE_PRESSED);
+
     lv_obj_add_event_cb(btn_cancel, btn_cancel_click_cb, LV_EVENT_CLICKED, NULL);
     lv_obj_t * lbl_cancel = lv_label_create(btn_cancel);
     lv_label_set_text(lbl_cancel, "Cancel");
     lv_obj_set_style_text_font(lbl_cancel, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(lbl_cancel, lv_color_white(), 0);
     lv_obj_center(lbl_cancel);
     
     ta_pass = lv_textarea_create(modal_cont);
@@ -331,10 +357,32 @@ void ui_network_create(lv_obj_t * parent) {
     lv_obj_set_style_text_font(ta_pass, &lv_font_montserrat_24, 0);
     lv_obj_set_width(ta_pass, LV_PCT(90));
     lv_obj_set_style_margin_bottom(ta_pass, 10, 0);
+
+    // Dark style for Text Area (Dim brightness)
+    lv_obj_set_style_bg_color(ta_pass, lv_color_make(30, 30, 30), 0);
+    lv_obj_set_style_text_color(ta_pass, lv_color_white(), 0);
+    lv_obj_set_style_border_color(ta_pass, lv_color_make(80, 80, 80), 0);
+    
+    // Set cursor color (part cursor)
+    lv_obj_set_style_bg_color(ta_pass, lv_color_white(), LV_PART_CURSOR);
+    lv_obj_set_style_border_color(ta_pass, lv_color_white(), LV_PART_CURSOR);
+    
+    // Set placeholder color
+    lv_obj_set_style_text_color(ta_pass, lv_color_make(120, 120, 120), LV_PART_TEXTAREA_PLACEHOLDER);
     
     kb = lv_keyboard_create(modal_cont);
     lv_obj_set_width(kb, LV_PCT(100));
     lv_obj_set_flex_grow(kb, 1); // Make keyboard convert remaining space
+    
+    // Dim the keyboard (Dark mode) - Background
+    lv_obj_set_style_bg_color(kb, lv_color_make(20, 20, 20), LV_PART_MAIN);
+    
+    // Keys style (Dark keys, white text)
+    lv_obj_set_style_bg_color(kb, lv_color_make(40, 40, 40), LV_PART_ITEMS);
+    lv_obj_set_style_text_color(kb, lv_color_white(), LV_PART_ITEMS);
+    lv_obj_set_style_border_color(kb, lv_color_make(20, 20, 20), LV_PART_ITEMS);
+    lv_obj_set_style_shadow_width(kb, 0, LV_PART_ITEMS); // Remove shadow for flatter look
+    
     // Keyboard buttons font size
     lv_obj_set_style_text_font(kb, &lv_font_montserrat_20, LV_PART_ITEMS);
     lv_keyboard_set_textarea(kb, ta_pass);

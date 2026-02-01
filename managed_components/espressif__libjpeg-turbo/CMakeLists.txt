@@ -3,16 +3,12 @@ idf_component_register(
                        # library is not an interface library. This allows to
                        # get the list of include directories from other components
                        # via INCLUDE_DIRECTORIES property later on.
-                       SRCS dummy.c
-                       INCLUDE_DIRS libjpeg-turbo/src)
+                       SRCS dummy.c)
 
 # Determine compilation flags used for building Jpeg-turbo
 # Flags inherited from IDF build system and other IDF components:
-# set(idf_include_directories $<TARGET_PROPERTY:idf::libjpeg-turbo,INCLUDE_DIRECTORIES>)
-# set(includes "-I$<JOIN:${idf_include_directories}, -I>")
-
-# Workaround for circular dependency / target discovery in IDF 5.x
-set(includes "")
+set(idf_include_directories $<TARGET_PROPERTY:idf::espressif__libjpeg-turbo,INCLUDE_DIRECTORIES>)
+set(includes "-I$<JOIN:${idf_include_directories}, -I>")
 
 set(c_flags "${includes} ${extra_defines} ")
 set(cxx_flags "${includes} ${extra_defines} ")
@@ -84,7 +80,7 @@ ExternalProject_Add(jpegturbo_proj
 )
 
 # Attach header files to the component library:
-target_include_directories(${COMPONENT_LIB} INTERFACE "${BINARY_DIR}/install/include" "${BINARY_DIR}")
+set_target_properties(${COMPONENT_LIB} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${BINARY_DIR}/install/include;${COMPONENT_DIR}/libjpeg-turbo;${COMPONENT_DIR}/libjpeg-turbo/src")
 
 # Make sure the subproject is built before the component library:
 add_dependencies(${COMPONENT_LIB} jpegturbo_proj)

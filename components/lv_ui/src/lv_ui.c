@@ -1,6 +1,7 @@
 #include "lv_ui.h"
 #include "ui_private.h"
 #include "esp_log.h"
+#include "src/libs/lodepng/lv_lodepng.h"
 
 static const char *TAG = "lv_ui";
 
@@ -76,6 +77,9 @@ void clear_current_view(void) {
 
 void lv_ui_init(void) {
     ESP_LOGI(TAG, "Initializing UI...");
+
+    // Initialize PNG decoder
+    lv_lodepng_init();
 
     // Restore PMIC settings from NVS at startup
     ui_pmic_restore_settings();
