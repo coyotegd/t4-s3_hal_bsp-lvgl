@@ -1,6 +1,6 @@
 # LilyGo T4-S3 ESP-IDF Starter with BSP-LVGL & HAL
 
-This project is a complete (except for OTA and Bluetooth implementation), working starter template for the **LilyGo T4-S3** (2.41" AMOLED) development board using **ESP-IDF** and **LVGL**.
+This project is a complete (except Bluetooth implementation), working starter template for the **LilyGo T4-S3** (2.41" AMOLED) development board using **ESP-IDF** and **LVGL**.
 
 It features a robust **Hardware Abstraction Layer (HAL)** that handles the complex low-level drivers for the display, touch screen, and power management IC (PMIC), allowing you to focus on building your application.
 
@@ -64,6 +64,13 @@ The project includes a robust WiFi Manager (`wifi_mgr`) that handles:
 *   **Second-by-second:** Handled by the ESP32's internal software counter (System Time).
 *   **Accuracy check:** Updated from the internet via SNTP every **60 minutes**.
 *   **Power Loss:** Since there is no dedicated coin-cell RTC, if power is lost completely, time resets until WiFi reconnects.
+
+## 🎥 AVI Video Playback
+
+The system includes a video player for `.avi` files stored on the SD card.
+
+*   **Frame Rate:** Video playback is optimized for **~15 FPS**. Increasing the frame rate beyond this provides no visual benefit on this screen/interface and only consumes extra resources.
+*   **Codec:** The player uses an **older MPEG codec**, not the latest standards (like H.264). Please ensure video files are encoded using compatible legacy MPEG formats.
 
 ## � Over-The-Air (OTA) Updates
 
