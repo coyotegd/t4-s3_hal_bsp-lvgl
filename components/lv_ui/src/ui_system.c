@@ -6,6 +6,7 @@
 #include "nvs.h"
 #include "ota_mgr.h" // Include OTA manager
 #include "lvgl_mgr.h" // For lvgl_mgr_lock/unlock
+#include "wifi_mgr.h" // For wifi_mgr_is_connected
 
 LV_IMG_DECLARE(swipeL34);
 LV_IMG_DECLARE(swipeR34);
@@ -112,6 +113,14 @@ static void btn_start_update_cb(lv_event_t * e) {
     
     lv_obj_remove_flag(ota_modal, LV_OBJ_FLAG_HIDDEN);
     if(btn_ota_close) lv_obj_add_flag(btn_ota_close, LV_OBJ_FLAG_HIDDEN); // Ensure hidden
+
+    if (!wifi_mgr_is_connected()) {
+        lv_label_set_text(lbl_ota_status, "No Wi-Fi Connection");
+        // Allow user to close
+        if(btn_ota_close) lv_obj_remove_flag(btn_ota_close, LV_OBJ_FLAG_HIDDEN);
+        return;
+    }
+
     lv_bar_set_value(bar_ota_progress, 0, LV_ANIM_OFF);
     lv_label_set_text(lbl_ota_status, "Connecting...");
     

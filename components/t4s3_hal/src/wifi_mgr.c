@@ -23,6 +23,7 @@ static wifi_scan_cb_t s_scan_cb = NULL;
 static wifi_connect_cb_t s_connect_cb = NULL;
 
 static bool s_is_connected = false;
+static bool s_wifi_enabled = true; // Default to enabled
 static char s_ip_addr[16] = "0.0.0.0";
 static char s_ssid[33] = "";
 static int s_retry_num = 0;
@@ -334,4 +335,35 @@ const char* wifi_mgr_get_ssid(void) {
         s_ssid[32] = '\0';
     }
     return s_ssid;
+}
+
+esp_err_t wifi_mgr_disable(void) {
+    ESP_LOGI(TAG, "Disabling WiFi...");
+    // Stop WiFi
+    esp_err_t err = esp_wifi_stop();
+    if (err == ESP_OK) {
+        s_is_connected = false;
+        s_wifi_enabled = false;
+    } else if (err == ESP_ERR_WIFI_NOT_INIT) {
+        s_wifi_enabled = false;
+        return ESP_OK; // Not inited, so effectively disabled
+    }
+    return err;
+}
+
+esp_err_t wifi_mgr_enable(void) {
+    ESP_LOGI(TAG, "Enabling WiFi...");
+    // Start WiFi (triggers WIFI_EVENT_STA_START -> auto connect checking NVS)
+    esp_err_t err = esp_wifi_start();
+    if (err == ESP_OK) {
+        s_wifi_enabled = true;
+    } else if (err == ESP_ERR_WIFI_STATE) {
+        s_wifi_enabled = true;
+        return ESP_OK; // Already started
+    }
+    return err;
+}
+
+bool wifi_mgr_is_enabled(void) {
+    return s_wifi_enabled;
 }

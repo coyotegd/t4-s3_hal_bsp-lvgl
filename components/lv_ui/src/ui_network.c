@@ -16,6 +16,7 @@ static lv_obj_t * ta_pass;
 static lv_obj_t * kb;
 static lv_obj_t * lbl_status;
 static lv_obj_t * lbl_modal_title;
+static lv_obj_t * btn_scan;
 
 // -- State --
 static wifi_scan_item_t *s_scan_results = NULL;
@@ -88,6 +89,22 @@ static void connect_result_cb(bool connected) {
 static void network_swipe_event_cb(lv_event_t * e) {
     if(lv_indev_get_gesture_dir(lv_indev_get_act()) == LV_DIR_RIGHT) {
         show_home_view(NULL);
+    }
+}
+
+static void switch_wifi_cb(lv_event_t * e) {
+    lv_obj_t * obj = lv_event_get_target(e);
+    if(lv_obj_has_state(obj, LV_STATE_CHECKED)) {
+        ui_log("Enabling Wi-Fi...");
+        wifi_mgr_enable();
+        if(btn_scan) lv_obj_remove_state(btn_scan, LV_STATE_DISABLED);
+        lv_label_set_text(lbl_status, "Ready to Scan");
+    } else {
+        ui_log("Disabling Wi-Fi...");
+        wifi_mgr_disable();
+        if (wifi_list) lv_obj_clean(wifi_list);
+        lv_label_set_text(lbl_status, "Wi-Fi Disabled");
+        if(btn_scan) lv_obj_add_state(btn_scan, LV_STATE_DISABLED);
     }
 }
 
@@ -192,15 +209,17 @@ static void wifi_timer_cb(lv_timer_t * t) {
         }
     }
     
-    // Check connection status poll?
+    // Check connection status poll
+    static bool was_connected = false;
     if (wifi_mgr_is_connected()) {
-        static bool was_connected = false;
         if (!was_connected) {
             const char* ip = wifi_mgr_get_ip();
             lv_label_set_text_fmt(lbl_status, "Connected: %s", ip);
             ui_log("Obtained IP: %s", ip);
             was_connected = true;
         }
+    } else {
+        was_connected = false; // Reset if disconnected
     }
 }
 
@@ -242,6 +261,29 @@ void ui_network_create(lv_obj_t * parent) {
     lv_obj_add_event_cb(panel, network_swipe_event_cb, LV_EVENT_GESTURE, NULL);
     lv_obj_clear_flag(panel, LV_OBJ_FLAG_GESTURE_BUBBLE);
 
+    // Wi-Fi Enable Switch
+    lv_obj_t * row_sw = lv_obj_create(panel);
+    lv_obj_set_width(row_sw, LV_PCT(100));
+    lv_obj_set_height(row_sw, LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(row_sw, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(row_sw, 0, 0);
+    lv_obj_set_style_pad_all(row_sw, 0, 0);
+    lv_obj_set_flex_flow(row_sw, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(row_sw, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+
+    lv_obj_t * lbl_sw = lv_label_create(row_sw);
+    lv_label_set_text(lbl_sw, "Enable Wi-Fi");
+    lv_obj_set_style_text_color(lbl_sw, lv_color_white(), 0);
+    lv_obj_set_style_text_font(lbl_sw, &lv_font_montserrat_22, 0);
+
+    lv_obj_t * sw_wifi = lv_switch_create(row_sw);
+    lv_obj_set_size(sw_wifi, 80, 40);
+    if(wifi_mgr_is_enabled()) lv_obj_add_state(sw_wifi, LV_STATE_CHECKED);
+    else lv_obj_remove_state(sw_wifi, LV_STATE_CHECKED);
+
+    lv_obj_add_event_cb(sw_wifi, switch_wifi_cb, LV_EVENT_VALUE_CHANGED, NULL);
+    // Removed custom color to match ADC switch style
+
     // WiFi Scan Header (Row)
     lv_obj_t * row_scan = lv_obj_create(panel);
     lv_obj_set_width(row_scan, LV_PCT(100));
@@ -257,7 +299,7 @@ void ui_network_create(lv_obj_t * parent) {
     lv_obj_set_style_text_color(lbl_status, lv_color_white(), 0);
     lv_obj_set_style_text_font(lbl_status, &lv_font_montserrat_22, 0);
 
-    lv_obj_t * btn_scan = lv_btn_create(row_scan);
+    btn_scan = lv_btn_create(row_scan);
     lv_obj_set_size(btn_scan, 120, 50);
     // Neon Style (based on ui_home)
     lv_color_t neon_color = lv_palette_main(LV_PALETTE_CYAN); // Using Cyan for Scan
@@ -274,6 +316,17 @@ void ui_network_create(lv_obj_t * parent) {
     lv_obj_set_style_bg_color(btn_scan, neon_color, LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_shadow_width(btn_scan, 30, LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_shadow_color(btn_scan, neon_color, LV_PART_MAIN | LV_STATE_PRESSED);
+
+    // Disabled Style
+    lv_obj_set_style_bg_opa(btn_scan, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DISABLED);
+    lv_obj_set_style_border_color(btn_scan, lv_palette_main(LV_PALETTE_GREY), LV_PART_MAIN | LV_STATE_DISABLED);
+    lv_obj_set_style_text_color(btn_scan, lv_palette_main(LV_PALETTE_GREY), LV_PART_MAIN | LV_STATE_DISABLED);
+
+    // Set initial state
+    if (!wifi_mgr_is_enabled()) {
+        lv_obj_add_state(btn_scan, LV_STATE_DISABLED);
+        lv_label_set_text(lbl_status, "Wi-Fi Disabled");
+    }
 
     lv_obj_t * lbl_btn_scan = lv_label_create(btn_scan);
     lv_label_set_text(lbl_btn_scan, "SCAN");

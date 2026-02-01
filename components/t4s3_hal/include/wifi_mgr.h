@@ -19,7 +19,10 @@ typedef void (*wifi_connect_cb_t)(bool connected);
 esp_err_t wifi_mgr_init(void);
 esp_err_t wifi_mgr_start_scan(wifi_scan_cb_t cb);
 esp_err_t wifi_mgr_connect(const char *ssid, const char *password, wifi_connect_cb_t cb);
+esp_err_t wifi_mgr_disable(void);
+esp_err_t wifi_mgr_enable(void);
 bool wifi_mgr_is_connected(void);
+bool wifi_mgr_is_enabled(void);
 const char* wifi_mgr_get_ip(void);
 const char* wifi_mgr_get_ssid(void);
 
