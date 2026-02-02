@@ -431,7 +431,11 @@ void ui_network_create(lv_obj_t * parent) {
     lv_obj_set_style_bg_color(kb, lv_color_make(20, 20, 20), LV_PART_MAIN);
     
     // Keys style (Dark keys, white text)
-    lv_obj_set_style_bg_color(kb, lv_color_make(40, 40, 40), LV_PART_ITEMS);
+    // Force dark color on all states to cover control keys (Shift, Backspace, etc)
+    lv_obj_set_style_bg_color(kb, lv_color_make(40, 40, 40), LV_PART_ITEMS | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(kb, lv_color_make(40, 40, 40), LV_PART_ITEMS | LV_STATE_CHECKED);
+    lv_obj_set_style_bg_color(kb, lv_color_make(20, 20, 20), LV_PART_ITEMS | LV_STATE_PRESSED);
+
     lv_obj_set_style_text_color(kb, lv_color_white(), LV_PART_ITEMS);
     lv_obj_set_style_border_color(kb, lv_color_make(20, 20, 20), LV_PART_ITEMS);
     lv_obj_set_style_shadow_width(kb, 0, LV_PART_ITEMS); // Remove shadow for flatter look

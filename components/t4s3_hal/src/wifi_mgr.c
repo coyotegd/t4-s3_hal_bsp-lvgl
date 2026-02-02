@@ -24,6 +24,7 @@ static wifi_connect_cb_t s_connect_cb = NULL;
 
 static bool s_is_connected = false;
 static bool s_wifi_enabled = true; // Default to enabled
+static bool s_is_scanning = false;
 static char s_ip_addr[16] = "0.0.0.0";
 static char s_ssid[33] = "";
 static int s_retry_num = 0;
@@ -138,6 +139,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
 {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_SCAN_DONE) {
         ESP_LOGI(TAG, "Scan done");
+        s_is_scanning = false; // Reset scanning state
         uint16_t number = 0;
         esp_wifi_scan_get_ap_num(&number);
         
@@ -184,17 +186,21 @@ static void event_handler(void* arg, esp_event_base_t event_base,
         strcpy(s_ip_addr, "0.0.0.0");
         ESP_LOGI(TAG, "Disconnected from AP");
         
-        if (s_retry_num < MAX_RETRY) {
-            esp_wifi_connect();
-            s_retry_num++;
-            ESP_LOGI(TAG, "Retrying connection... %d", s_retry_num);
-        } else {
-            if (s_connect_cb) {
-                s_connect_cb(false);
-                // Clear callback so we don't call it again on future random disconnects
-                s_connect_cb = NULL; 
+        if (!s_is_scanning) {
+            if (s_retry_num < MAX_RETRY) {
+                esp_wifi_connect();
+                s_retry_num++;
+                ESP_LOGI(TAG, "Retrying connection... %d", s_retry_num);
+            } else {
+                if (s_connect_cb) {
+                    s_connect_cb(false);
+                    // Clear callback so we don't call it again on future random disconnects
+                    s_connect_cb = NULL; 
+                }
+                s_retry_num = 0;
             }
-            s_retry_num = 0;
+        } else {
+             ESP_LOGI(TAG, "Disconnected for scanning, skipping reconnect");
         }
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
@@ -284,9 +290,12 @@ esp_err_t wifi_mgr_init(void) {
 
 esp_err_t wifi_mgr_start_scan(wifi_scan_cb_t cb) {
     s_scan_cb = cb;
+    s_is_scanning = true;
     
     // Disconnect if needed to scan? Not strictly necessary in STA mode but helps reliability
-    // esp_wifi_disconnect(); 
+    if (s_is_connected) {
+        esp_wifi_disconnect(); 
+    }
     
     wifi_scan_config_t scan_config = {
         .ssid = NULL,

@@ -81,6 +81,9 @@ static void view_switch_timer_cb(lv_timer_t * timer) {
     ESP_LOGI(TAG, "clear_current_view done");
     
     lv_obj_t * scr = lv_screen_active();
+    // Ensure dark background for HAL BSP views
+    lv_obj_set_style_bg_color(scr, lv_color_hex(0x101010), 0);
+    
     switch (view) {
         case VIEW_HOME:
             ui_home_create(scr);

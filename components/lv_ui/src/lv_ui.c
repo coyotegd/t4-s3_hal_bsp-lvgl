@@ -78,8 +78,7 @@ void clear_current_view(void) {
 void lv_ui_init(void) {
     ESP_LOGI(TAG, "Initializing UI...");
 
-    // Initialize PNG decoder
-    lv_lodepng_init();
+    // PNG decoder is automatically initialized by LVGL's lv_init()
 
     // Restore PMIC settings from NVS at startup
     ui_pmic_restore_settings();
