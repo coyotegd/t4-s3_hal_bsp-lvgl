@@ -13,10 +13,25 @@ LV_IMG_DECLARE(swipeR34);
 
 static lv_obj_t * cont_chg_settings = NULL; // Container for charging parameters
 static lv_obj_t * roller_boost_volt = NULL; // Global handle for boost voltage roller
+static lv_obj_t * roller_batt_mah = NULL; // Battery capacity selector
+static uint16_t current_batt_mah = 2000; // Default capacity used for defaults (mAh)
+static lv_obj_t * roller_usb_source = NULL; // USB source selector
+static uint16_t current_usb_src_index = 0; // 0=Unknown, see mapping
 static lv_obj_t * lbl_ota_status = NULL;
 static lv_obj_t * bar_ota_progress = NULL;
 static lv_obj_t * ota_modal = NULL;
 static lv_obj_t * btn_ota_close = NULL;
+static lv_obj_t * roller_in_curr = NULL; // Handle for Input Current Limit roller
+static lv_obj_t * roller_chg_curr = NULL; // Handle for Fast Charge Current roller
+static lv_obj_t * roller_pre_curr = NULL; // Handle for Pre-Charge Current roller
+static lv_obj_t * roller_term_curr = NULL; // Handle for Termination Current roller
+static lv_obj_t * roller_sys_load = NULL; // Handle for System Load roller
+static uint16_t current_sys_load = 0;     // Estimated system draw from USB (mA)
+static uint16_t current_margin_ma = 150;  // Safety margin (mA) to avoid input collapse
+static lv_obj_t * roller_margin = NULL;   // Handle for Safety Margin roller
+
+// Forward declarations for policy helpers used by callbacks
+static void apply_currents_from_policy(void);
 
 static void ota_close_event_cb(lv_event_t * e) {
     if (ota_modal) {
@@ -173,6 +188,11 @@ void ui_pmic_restore_settings(void) {
         if(nvs_get_u16(my_handle, "otg_en", &val) == ESP_OK) sy6970_enable_otg(val);
         if(nvs_get_u16(my_handle, "boost_volt", &val) == ESP_OK) sy6970_set_boost_voltage(val);
         if(nvs_get_u16(my_handle, "hiz_en", &val) == ESP_OK) sy6970_enable_hiz_mode(val);
+        // Battery capacity is UI-only; load for later defaults computation
+        if(nvs_get_u16(my_handle, "batt_mah", &val) == ESP_OK) current_batt_mah = val;
+        if(nvs_get_u16(my_handle, "usb_src_idx", &val) == ESP_OK) current_usb_src_index = val;
+        if(nvs_get_u16(my_handle, "sys_load", &val) == ESP_OK) current_sys_load = val;
+        if(nvs_get_u16(my_handle, "margin_ma", &val) == ESP_OK) current_margin_ma = val;
         
         nvs_close(my_handle);
         ESP_LOGI("ui_system", "Restored PMIC settings from NVS");
@@ -296,6 +316,12 @@ static void input_curr_cb(lv_event_t * e) {
     sy6970_set_input_current_limit(val);
     save_nvs_value("in_curr", val);
     ESP_LOGI("ui_system", "Input Curr Limit set: %d mA", val);
+    // Update PM Status and recompute currents under new ILIM
+    uint16_t vindpm_now = sy6970_get_input_voltage_limit();
+    if (lbl_usb_pg) {
+        lv_label_set_text_fmt(lbl_usb_pg, "USB Power:\nILIM %d mA, VINDPM %d mV\nLoad %d mA, Margin %d mA", val, vindpm_now, current_sys_load, current_margin_ma);
+    }
+    apply_currents_from_policy();
 }
 
 static void input_volt_cb(lv_event_t * e) {
@@ -306,6 +332,131 @@ static void input_volt_cb(lv_event_t * e) {
     sy6970_set_input_voltage_limit(val);
     save_nvs_value("in_volt", val);
     ESP_LOGI("ui_system", "Input Volt Limit set: %d mV", val);
+    // Update PM Status to reflect new VINDPM
+    uint16_t ilim_now = sy6970_get_input_current_limit();
+    if (lbl_usb_pg) {
+        lv_label_set_text_fmt(lbl_usb_pg, "USB Power:\nILIM %d mA, VINDPM %d mV\nLoad %d mA, Margin %d mA", ilim_now, val, current_sys_load, current_margin_ma);
+    }
+}
+
+// Map USB Source to an adaptive VINDPM target (mV)
+static uint16_t usb_source_index_to_vindpm(uint16_t idx) {
+    switch(idx) {
+        case 0: /* Unknown */ return 4600;
+        case 1: /* USB 2.0 */ return 4600;
+        case 2: /* USB 3.0 */ return 4500;
+        case 3: /* BC 1.2 */   return 4400;
+        case 4: /* 5V Adapter */ return 4400;
+        case 5: /* High-Power */ return 4400;
+        default: return 4600;
+    }
+}
+
+// Forward decl for ILIM mapping used by policy
+static uint16_t usb_source_index_to_ilim(uint16_t idx);
+
+// Compute and apply currents (ICHG/IPRE/ITERM) from capacity with source clamping
+static void apply_currents_from_policy(void) {
+    // Baseline rule of thumb
+    uint16_t cap = current_batt_mah ? current_batt_mah : 2000;
+    uint16_t ichg = cap / 2;           // 0.5C
+    uint16_t ipre = (cap + 9) / 10;    // 0.1C
+    uint16_t iterm = (cap + 19) / 20;  // 0.05C
+
+    // Round to SY6970 steps and clamp
+    if (ichg > 5056) ichg = 5056;
+    ichg = ((ichg + 32) / 64) * 64; // 0..5056, step 64
+
+    if (ipre < 64) ipre = 64;
+    if (ipre > 1024) ipre = 1024;
+    ipre = ((ipre + 32) / 64) * 64; // 64..1024, step 64
+
+    if (iterm < 64) iterm = 64;
+    if (iterm > 1024) iterm = 1024;
+    iterm = ((iterm + 32) / 64) * 64; // 64..1024, step 64
+
+    // Clamp ICHG against source: ILIM - system_load - margin
+    uint16_t ilim = sy6970_get_input_current_limit();
+    int32_t headroom = (int32_t)ilim - (int32_t)current_sys_load - (int32_t)current_margin_ma;
+    bool limited = false;
+    if (headroom < 0) headroom = 0;
+    uint16_t allowed_ichg = ichg;
+    if (allowed_ichg > (uint16_t)headroom) {
+        limited = true;
+        allowed_ichg = (uint16_t)headroom;
+        // Round to step 64 safely
+        allowed_ichg = ((allowed_ichg + 32) / 64) * 64;
+        if (allowed_ichg > 5056) allowed_ichg = 5056;
+    }
+
+    // Apply to PMIC and persist
+    sy6970_set_charge_current(allowed_ichg);
+    save_nvs_value("chg_curr", allowed_ichg);
+    sy6970_set_precharge_current(ipre);
+    save_nvs_value("pre_curr", ipre);
+    sy6970_set_termination_current(iterm);
+    save_nvs_value("term_curr", iterm);
+
+    // Sync rollers
+    if (roller_chg_curr) {
+        uint16_t idx = allowed_ichg / 64; // options: 0..5056 step 64
+        lv_roller_set_selected(roller_chg_curr, idx, LV_ANIM_OFF);
+    }
+    if (roller_pre_curr) {
+        uint16_t idx = (ipre - 64) / 64; // 64..1024 step 64
+        lv_roller_set_selected(roller_pre_curr, idx, LV_ANIM_OFF);
+    }
+    if (roller_term_curr) {
+        uint16_t idx = (iterm - 64) / 64; // 64..1024 step 64
+        lv_roller_set_selected(roller_term_curr, idx, LV_ANIM_OFF);
+    }
+
+    // Update PM Status: show mA and C-rate, annotate limitation
+    if (lbl_chg_curr) {
+        float c_rate = cap ? ((float)allowed_ichg / (float)cap) : 0.0f;
+        if (limited) {
+            lv_label_set_text_fmt(lbl_chg_curr, "Charging Current:\n%d mA (%.2f C)\nLimited by source", allowed_ichg, c_rate);
+        } else {
+            lv_label_set_text_fmt(lbl_chg_curr, "Charging Current:\n%d mA (%.2f C)", allowed_ichg, c_rate);
+        }
+    }
+    if (lbl_pre_curr) {
+        lv_label_set_text_fmt(lbl_pre_curr, "Pre-Charge:\n%d mA", ipre);
+    }
+    if (lbl_term_curr) {
+        lv_label_set_text_fmt(lbl_term_curr, "Termination:\n%d mA", iterm);
+    }
+    // Also reflect Load and Margin on USB Power label
+    if (lbl_usb_pg) {
+        uint16_t vindpm_now = sy6970_get_input_voltage_limit();
+        lv_label_set_text_fmt(lbl_usb_pg, "USB Power:\nILIM %d mA, VINDPM %d mV\nLoad %d mA, Margin %d mA", ilim, vindpm_now, current_sys_load, current_margin_ma);
+    }
+}
+
+// System Load callback
+static void sys_load_cb(lv_event_t * e) {
+    lv_obj_t * roller = lv_event_get_target(e);
+    char buf[16];
+    lv_roller_get_selected_str(roller, buf, sizeof(buf));
+    uint16_t val = (uint16_t)atoi(buf);
+    current_sys_load = val;
+    save_nvs_value("sys_load", val);
+    ESP_LOGI("ui_system", "System Load set: %d mA", val);
+    // Recompute currents with new load
+    apply_currents_from_policy();
+}
+
+// Safety Margin callback
+static void margin_cb(lv_event_t * e) {
+    lv_obj_t * roller = lv_event_get_target(e);
+    char buf[16];
+    lv_roller_get_selected_str(roller, buf, sizeof(buf));
+    uint16_t val = (uint16_t)atoi(buf);
+    current_margin_ma = val;
+    save_nvs_value("margin_ma", val);
+    ESP_LOGI("ui_system", "Safety Margin set: %d mA", val);
+    // Recompute currents with new margin
+    apply_currents_from_policy();
 }
 
 static void chg_curr_cb(lv_event_t * e) {
@@ -316,6 +467,12 @@ static void chg_curr_cb(lv_event_t * e) {
     sy6970_set_charge_current(val);
     save_nvs_value("chg_curr", val);
     ESP_LOGI("ui_system", "Charge Curr set: %d mA", val);
+    // Update PM Status: show mA and C-rate
+    if (lbl_chg_curr) {
+        uint16_t cap = current_batt_mah ? current_batt_mah : 2000;
+        float c_rate = cap ? ((float)val / (float)cap) : 0.0f;
+        lv_label_set_text_fmt(lbl_chg_curr, "Charging Current:\n%d mA (%.2f C)", val, c_rate);
+    }
 }
 
 static void pre_curr_cb(lv_event_t * e) {
@@ -326,6 +483,9 @@ static void pre_curr_cb(lv_event_t * e) {
     sy6970_set_precharge_current(val);
     save_nvs_value("pre_curr", val);
     ESP_LOGI("ui_system", "Pre-Charge Curr set: %d mA", val);
+    if (lbl_pre_curr) {
+        lv_label_set_text_fmt(lbl_pre_curr, "Pre-Charge:\n%d mA", val);
+    }
 }
 
 static void term_curr_cb(lv_event_t * e) {
@@ -336,6 +496,9 @@ static void term_curr_cb(lv_event_t * e) {
     sy6970_set_termination_current(val);
     save_nvs_value("term_curr", val);
     ESP_LOGI("ui_system", "Term Curr set: %d mA", val);
+    if (lbl_term_curr) {
+        lv_label_set_text_fmt(lbl_term_curr, "Termination:\n%d mA", val);
+    }
 }
 
 static void chg_volt_cb(lv_event_t * e) {
@@ -402,6 +565,80 @@ static void shutdown_switch_cb(lv_event_t * e) {
     }
 }
 
+// Battery capacity selector callback
+static void batt_mah_cb(lv_event_t * e) {
+    lv_obj_t * roller = lv_event_get_target(e);
+    char buf[16];
+    lv_roller_get_selected_str(roller, buf, sizeof(buf));
+    uint16_t val = (uint16_t)atoi(buf);
+    current_batt_mah = val;
+    save_nvs_value("batt_mah", val);
+    ESP_LOGI("ui_system", "Battery Capacity selected: %d mAh", val);
+
+    // Recompute currents with new capacity and apply policy
+    apply_currents_from_policy();
+}
+
+static const char* usb_source_label(uint16_t idx) {
+    switch(idx) {
+        case 0: return "Unknown";
+        case 1: return "USB 2.0 (500mA)";
+        case 2: return "USB 3.0 (900mA)";
+        case 3: return "BC1.2 Charge Port (1500mA)";
+        case 4: return "Dedicated 5V Adapter (2000mA)";
+        case 5: return "High-Power Adapter (3000mA)";
+        default: return "Unknown";
+    }
+}
+
+// USB source selector mapping
+static uint16_t usb_source_index_to_ilim(uint16_t idx) {
+    switch(idx) {
+        case 0: return 500;   // Unknown
+        case 1: return 500;   // USB 2.0 (SDP)
+        case 2: return 900;   // USB 3.0 (SDP)
+        case 3: return 1500;  // BC1.2 Charge Port (CDP/DCP)
+        case 4: return 2000;  // Dedicated 5V Adapter
+        case 5: return 3000;  // High-Power Adapter
+        default: return 500;
+    }
+}
+
+// USB source selector callback
+static void usb_source_cb(lv_event_t * e) {
+    lv_obj_t * roller = lv_event_get_target(e);
+    int idx = lv_roller_get_selected(roller);
+    if (idx < 0) idx = 0;
+    current_usb_src_index = (uint16_t)idx;
+    save_nvs_value("usb_src_idx", current_usb_src_index);
+    // Apply ILIM immediately
+    uint16_t ilim = usb_source_index_to_ilim(current_usb_src_index);
+    sy6970_set_input_current_limit(ilim);
+    save_nvs_value("in_curr", ilim);
+    ESP_LOGI("ui_system", "USB Source selected idx: %d -> ILIM %d mA", current_usb_src_index, ilim);
+    // Adaptive VINDPM
+    uint16_t vindpm = usb_source_index_to_vindpm(current_usb_src_index);
+    sy6970_set_input_voltage_limit(vindpm);
+    save_nvs_value("in_volt", vindpm);
+    // Sync Input Current Limit roller selection
+    if (roller_in_curr) {
+        int idx_ilim = (int)((ilim - 100) / 50);
+        if (idx_ilim < 0) idx_ilim = 0;
+        int max_idx = (int)((3250 - 100) / 50);
+        if (idx_ilim > max_idx) idx_ilim = max_idx;
+        lv_roller_set_selected(roller_in_curr, idx_ilim, LV_ANIM_OFF);
+    }
+    // Update PM Status labels if present
+    if (lbl_usb) {
+        lv_label_set_text_fmt(lbl_usb, "USB:\n%s", usb_source_label(current_usb_src_index));
+    }
+    if (lbl_usb_pg) {
+        lv_label_set_text_fmt(lbl_usb_pg, "USB Power:\nILIM %d mA, VINDPM %d mV", ilim, vindpm);
+    }
+    // Recompute currents under new source and apply policy
+    apply_currents_from_policy();
+}
+
 // Forward declaration
 void ui_pmic_create(lv_obj_t * parent);
 void ui_settings_create(lv_obj_t * parent); // Forward declaration
@@ -429,27 +666,22 @@ static void scroll_timer_cb(lv_timer_t * t) {
 }
 
 static void defaults_btn_cb(lv_event_t * e) {
-    // 1. Input Current Limit: 3000mA (Max available from weak sources via VINDPM throttling)
-    sy6970_set_input_current_limit(3000);
-    save_nvs_value("in_curr", 3000);
+    // 1. Input Current Limit: set based on selected USB source
+    uint16_t ilim = usb_source_index_to_ilim(current_usb_src_index);
+    sy6970_set_input_current_limit(ilim);
+    save_nvs_value("in_curr", ilim);
 
-    // 2. Input Voltage Limit: 4400mV (Safer for bad cables than 4.5V)
+    // 2. Input Voltage Limit: 4400mV (safer than 4.5V for weak/long cables)
     sy6970_set_input_voltage_limit(4400);
-    save_nvs_value("in_volt", 4400);
+    // Adaptive VINDPM by source
+    uint16_t vindpm = usb_source_index_to_vindpm(current_usb_src_index);
+    sy6970_set_input_voltage_limit(vindpm);
+    save_nvs_value("in_volt", vindpm);
 
-    // 3. Fast Charge Current: 1024mA (1A - Safer default for smaller batteries)
-    sy6970_set_charge_current(1024);
-    save_nvs_value("chg_curr", 1024);
+    // 3-5. Currents by policy (includes source clamp)
+    apply_currents_from_policy();
 
-    // 4. Pre-Charge Current: 128mA (Balanced default for deep discharge)
-    sy6970_set_precharge_current(128);
-    save_nvs_value("pre_curr", 128);
-
-    // 5. Termination Current: 128mA (10-15% of Fast Charge)
-    sy6970_set_termination_current(128);
-    save_nvs_value("term_curr", 128);
-
-    // 6. Max Charge Voltage: 4208mV (4.2V)
+    // 6. Max Charge Voltage: 4.208V (4.2V target, 16mV step)
     sy6970_set_charge_voltage(4208);
     save_nvs_value("chg_volt", 4208);
 
@@ -461,7 +693,7 @@ static void defaults_btn_cb(lv_event_t * e) {
     sy6970_enable_otg(false);
     save_nvs_value("otg_en", 0);
 
-    // 9. Boost Voltage: 5126mV (~5.1V)
+    // 9. Boost Voltage: ~5.126V
     sy6970_set_boost_voltage(5126);
     save_nvs_value("boost_volt", 5126);
 
@@ -479,6 +711,8 @@ static void defaults_btn_cb(lv_event_t * e) {
         settings_cont = NULL;
         cont_chg_settings = NULL; 
         roller_boost_volt = NULL;
+        roller_batt_mah = NULL;
+        roller_usb_source = NULL;
         
         ui_settings_create(settings_parent_obj);
     
@@ -559,6 +793,17 @@ void ui_pmic_create(lv_obj_t * parent) {
     lv_label_set_text(lbl_chg_curr, "Charging Current:\n-- mA");
     lv_obj_set_style_text_color(lbl_chg_curr, lv_color_white(), 0);
     lv_obj_set_style_text_font(lbl_chg_curr, &lv_font_montserrat_22, 0);
+
+    // Show Pre-Charge and Termination currents
+    lbl_pre_curr = lv_label_create(cont_pmic_details);
+    lv_label_set_text(lbl_pre_curr, "Pre-Charge:\n-- mA");
+    lv_obj_set_style_text_color(lbl_pre_curr, lv_color_white(), 0);
+    lv_obj_set_style_text_font(lbl_pre_curr, &lv_font_montserrat_22, 0);
+
+    lbl_term_curr = lv_label_create(cont_pmic_details);
+    lv_label_set_text(lbl_term_curr, "Termination:\n-- mA");
+    lv_obj_set_style_text_color(lbl_term_curr, lv_color_white(), 0);
+    lv_obj_set_style_text_font(lbl_term_curr, &lv_font_montserrat_22, 0);
 
     lbl_usb = lv_label_create(cont_pmic_details);
     lv_label_set_text(lbl_usb, "USB:\n--");
@@ -718,6 +963,39 @@ void ui_settings_create(lv_obj_t * parent) {
     // Note: In a real constrained environment we might avoid large stack buffers, 
     // but here we allocate them temporarily to build the options.
 
+    // 0. USB Source Type selector
+    char * opt_usb_src = (char*)malloc(256);
+    if(opt_usb_src) {
+        strcpy(opt_usb_src,
+               "Unknown\nUSB 2.0 (500mA)\nUSB 3.0 (900mA)\nBC1.2 Charge Port (1500mA)\nDedicated 5V Adapter (2000mA)\nHigh-Power Adapter (3000mA)");
+        // Create row manually to select by index
+        lv_obj_t * row_src = lv_obj_create(cont_chg_settings);
+        lv_obj_set_width(row_src, LV_PCT(100));
+        lv_obj_set_height(row_src, LV_SIZE_CONTENT);
+        lv_obj_set_style_bg_opa(row_src, LV_OPA_TRANSP, 0);
+        lv_obj_set_style_border_width(row_src, 0, 0);
+        lv_obj_set_style_pad_all(row_src, 5, 0);
+        lv_obj_set_flex_flow(row_src, LV_FLEX_FLOW_ROW);
+        lv_obj_set_flex_align(row_src, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+
+        lv_obj_t * lbl_src = lv_label_create(row_src);
+        lv_label_set_text(lbl_src, "USB Source Type\n(sets Input Current Limit)");
+        lv_obj_set_style_text_color(lbl_src, lv_color_white(), 0);
+        lv_obj_set_style_text_font(lbl_src, &lv_font_montserrat_18, 0);
+
+        roller_usb_source = lv_roller_create(row_src);
+        lv_roller_set_options(roller_usb_source, opt_usb_src, LV_ROLLER_MODE_NORMAL);
+        lv_roller_set_visible_row_count(roller_usb_source, 3);
+        lv_obj_set_width(roller_usb_source, 220);
+        lv_obj_set_style_text_font(roller_usb_source, &lv_font_montserrat_20, 0);
+        lv_obj_set_style_bg_color(roller_usb_source, lv_color_black(), 0);
+        lv_obj_set_style_text_color(roller_usb_source, lv_color_white(), 0);
+        // Select current index
+        lv_roller_set_selected(roller_usb_source, current_usb_src_index, LV_ANIM_OFF);
+        lv_obj_add_event_cb(roller_usb_source, usb_source_cb, LV_EVENT_VALUE_CHANGED, NULL);
+        free(opt_usb_src);
+    }
+
     // 1. Input Current Limit: 100-3250 step 50
     char * opt_in_curr = (char*)malloc(1024);
     if(opt_in_curr) {
@@ -729,7 +1007,7 @@ void ui_settings_create(lv_obj_t * parent) {
         }
         // Remove last newline
         if(strlen(opt_in_curr) > 0) opt_in_curr[strlen(opt_in_curr)-1] = '\0';
-        create_roller_row(cont_chg_settings, "Input Current Limit (mA)\n(maximum current drawn from USB)", opt_in_curr, input_curr_cb, sy6970_get_input_current_limit());
+        roller_in_curr = create_roller_row(cont_chg_settings, "Input Current Limit (mA)\n(maximum current drawn from USB)", opt_in_curr, input_curr_cb, sy6970_get_input_current_limit());
         free(opt_in_curr);
     }
 
@@ -749,6 +1027,34 @@ void ui_settings_create(lv_obj_t * parent) {
         free(opt_in_volt);
     }
 
+    // 2.5 System Load: 0-1000 step 50
+    char * opt_sys_load = (char*)malloc(256);
+    if(opt_sys_load) {
+        opt_sys_load[0] = '\0';
+        for(int i=0; i<=1000; i+=50) {
+             char tmp[8];
+             snprintf(tmp, sizeof(tmp), "%d\n", i);
+             strcat(opt_sys_load, tmp);
+        }
+        if(strlen(opt_sys_load) > 0) opt_sys_load[strlen(opt_sys_load)-1] = '\0';
+        roller_sys_load = create_roller_row(cont_chg_settings, "Estimated System Load (mA)\n(non-battery draw; not applied)", opt_sys_load, sys_load_cb, current_sys_load);
+        free(opt_sys_load);
+    }
+
+    // 2.6 Safety Margin: 0-300 step 25
+    char * opt_margin = (char*)malloc(256);
+    if(opt_margin) {
+        opt_margin[0] = '\0';
+        for(int i=0; i<=300; i+=25) {
+             char tmp[8];
+             snprintf(tmp, sizeof(tmp), "%d\n", i);
+             strcat(opt_margin, tmp);
+        }
+        if(strlen(opt_margin) > 0) opt_margin[strlen(opt_margin)-1] = '\0';
+        roller_margin = create_roller_row(cont_chg_settings, "Safety Margin (mA)\n(reserved headroom to keep USB stable)", opt_margin, margin_cb, current_margin_ma);
+        free(opt_margin);
+    }
+
     // 3. Fast Charge Current: 0-5056 step 64
     char * opt_chg_curr = (char*)malloc(1024);
     if(opt_chg_curr) {
@@ -759,7 +1065,7 @@ void ui_settings_create(lv_obj_t * parent) {
              strcat(opt_chg_curr, tmp);
         }
         if(strlen(opt_chg_curr) > 0) opt_chg_curr[strlen(opt_chg_curr)-1] = '\0';
-        create_roller_row(cont_chg_settings, "Fast Charge Current (mA)\n(Battery Volts > 3.0V)", opt_chg_curr, chg_curr_cb, sy6970_get_charge_current_limit());
+        roller_chg_curr = create_roller_row(cont_chg_settings, "Fast Charge Current (mA)\n(Battery Volts > 3.0V)", opt_chg_curr, chg_curr_cb, sy6970_get_charge_current_limit());
         free(opt_chg_curr);
     }
 
@@ -775,8 +1081,8 @@ void ui_settings_create(lv_obj_t * parent) {
         }
         if(strlen(opt_small_curr) > 0) opt_small_curr[strlen(opt_small_curr)-1] = '\0';
         
-        create_roller_row(cont_chg_settings, "Pre-Charge Current (mA)\n(Battery Volts < 3.0V)", opt_small_curr, pre_curr_cb, sy6970_get_precharge_current_limit());
-        create_roller_row(cont_chg_settings, "Termination Current (mA)\n(as Max Battery Voltage Reached)", opt_small_curr, term_curr_cb, sy6970_get_termination_current_limit());
+        roller_pre_curr = create_roller_row(cont_chg_settings, "Pre-Charge Current (mA)\n(Battery Volts < 3.0V)", opt_small_curr, pre_curr_cb, sy6970_get_precharge_current_limit());
+        roller_term_curr = create_roller_row(cont_chg_settings, "Termination Current (mA)\n(as Max Battery Voltage Reached)", opt_small_curr, term_curr_cb, sy6970_get_termination_current_limit());
         
         free(opt_small_curr);
     }
@@ -900,6 +1206,19 @@ void ui_settings_create(lv_obj_t * parent) {
     // Default off
     lv_obj_remove_state(sw_off, LV_STATE_CHECKED);
     lv_obj_add_event_cb(sw_off, shutdown_switch_cb, LV_EVENT_VALUE_CHANGED, NULL);
+
+    // 11.5 Battery Capacity Selector (appears above Defaults button)
+    char * opt_batt_mah = (char*)malloc(128);
+    if(opt_batt_mah) {
+        // Six common capacities
+        strcpy(opt_batt_mah, "500\n1000\n1500\n2000\n3000\n5000");
+        roller_batt_mah = create_roller_row(cont_chg_settings,
+                                            "Battery Capacity (mAh)\n(affects default currents)",
+                                            opt_batt_mah,
+                                            batt_mah_cb,
+                                            current_batt_mah);
+        free(opt_batt_mah);
+    }
 
     // 12. Defaults Button
     // We wrap it in a container to center it properly in the flex list

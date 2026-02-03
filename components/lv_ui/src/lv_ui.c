@@ -18,6 +18,8 @@ lv_obj_t * network_cont = NULL;
 lv_obj_t * lbl_batt = NULL;
 lv_obj_t * lbl_chg_stat = NULL;
 lv_obj_t * lbl_chg_curr = NULL;
+lv_obj_t * lbl_pre_curr = NULL;
+lv_obj_t * lbl_term_curr = NULL;
 lv_obj_t * lbl_usb = NULL;
 lv_obj_t * lbl_usb_volts = NULL;
 lv_obj_t * lbl_usb_pg = NULL;
@@ -54,6 +56,8 @@ void clear_current_view(void) {
     lbl_batt = NULL;
     lbl_chg_stat = NULL;
     lbl_chg_curr = NULL;
+    lbl_pre_curr = NULL;
+    lbl_term_curr = NULL;
     lbl_usb = NULL;
     lbl_usb_volts = NULL;
     lbl_usb_pg = NULL;

@@ -15,6 +15,8 @@ extern lv_obj_t * network_cont;
 extern lv_obj_t * lbl_batt;
 extern lv_obj_t * lbl_chg_stat;
 extern lv_obj_t * lbl_chg_curr;
+extern lv_obj_t * lbl_pre_curr;
+extern lv_obj_t * lbl_term_curr;
 extern lv_obj_t * lbl_usb;
 extern lv_obj_t * lbl_usb_volts;
 extern lv_obj_t * lbl_usb_pg;
