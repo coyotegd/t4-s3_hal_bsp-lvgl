@@ -114,3 +114,44 @@ This project solves several tricky hardware behaviors of the T4-S3:
 ## 📚 Documentation
 *   [LVGL Integration Journey](docs/LVGL_JOURNEY.md)
 *   [RM690B0 Rotation Guide](docs/rm690b0_rotation_guide.md)
+
+## 🔧 Troubleshooting: Hardcoded Paths in Cloned Repos
+
+If cloning this or similar ESP‑IDF projects fails to build or flash due to paths/ports, it’s usually because workspace settings include user‑specific absolute paths.
+
+**Symptoms**
+- Build refers to another user’s `esp-idf` install.
+- Flash/monitor tries a non‑existent serial port (e.g., `/dev/ttyACM0`).
+- Language server (`clangd`) errors about missing toolchain binaries.
+
+**Quick Fix**
+- Move aside their workspace settings: `mv .vscode .vscode.bak`
+- Reconfigure the project:
+
+```bash
+idf.py fullclean
+idf.py set-target esp32s3
+idf.py reconfigure
+idf.py build
+```
+
+- Select a valid port when flashing:
+
+```bash
+idf.py -p /dev/ttyUSB0 flash monitor
+```
+
+**Recommended Repo Practices**
+- Avoid committing user‑specific `.vscode/settings.json` entries:
+    - `idf.espIdfPath`, `idf.toolsPath`, `idf.port`, `clangd.path`
+- Prefer workspace‑relative paths:
+    - `clangd.arguments: --compile-commands-dir=${workspaceFolder}/build`
+- Track `sdkconfig.defaults`, ignore `sdkconfig` to let each machine generate its own.
+
+**First‑Time Setup**
+- Ensure ESP‑IDF tools are installed via the VS Code extension or by sourcing your local IDF (`. $IDF_PATH/export.sh`).
+- Initialize submodules:
+
+```bash
+git submodule update --init --recursive
+```
