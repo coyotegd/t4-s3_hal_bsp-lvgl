@@ -1,24 +1,22 @@
 {
-  // Portable VS Code settings: avoid user-specific absolute paths
   "C_Cpp.intelliSenseEngine": "default",
   "idf.pythonInstallPath": "/usr/bin/python3",
   "idf.openOcdConfigs": [
     "board/esp32s3-builtin.cfg"
   ],
-  // Serial port should be selected per-user (or via -p on CLI)
-  // "idf.port": "",
-  // Do not hardcode local IDF install locations; extension/env will provide these
-  // "idf.espIdfPath": "",
-  // "idf.toolsPath": "",
   "idf.customExtraVars": {
-    "IDF_TARGET": "esp32s3"
+    "IDF_TARGET": "esp32s3",
+    "OPENOCD_USB_ADAPTER_LOCATION": "5-1"
   },
-  // Use generic query-driver and workspace-relative compile commands dir
   "clangd.arguments": [
     "--background-index",
     "--query-driver=**",
-    "--compile-commands-dir=${workspaceFolder}/build"
+    "--compile-commands-dir=/home/kenneth/test_repos/t4-s3_hal_bsp-lvgl/build"
   ],
   "idf.flashType": "UART",
-  "idf.buildPath": "${workspaceFolder}/build"
+  "idf.buildPath": "${workspaceFolder}/build",
+  "idf.espIdfPath": "/home/kenneth/esp/v5.5/esp-idf",
+  "idf.toolsPath": "/home/kenneth/.espressif/tools",
+  "idf.port": "/dev/ttyACM0",
+  "clangd.path": "/home/kenneth/.espressif/tools/tools/esp-clang/esp-19.1.2_20250312/esp-clang/bin/clangd"
 }
