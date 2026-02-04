@@ -1,22 +1,22 @@
 {
   "C_Cpp.intelliSenseEngine": "default",
-  "idf.pythonInstallPath": "/usr/bin/python3",
   "idf.openOcdConfigs": [
     "board/esp32s3-builtin.cfg"
   ],
   "idf.customExtraVars": {
-    "IDF_TARGET": "esp32s3",
-    "OPENOCD_USB_ADAPTER_LOCATION": "5-1"
+    "IDF_TARGET": "esp32s3"
   },
   "clangd.arguments": [
     "--background-index",
     "--query-driver=**",
-    "--compile-commands-dir=/home/kenneth/test_repos/t4-s3_hal_bsp-lvgl/build"
+    "--compile-commands-dir=${workspaceFolder}/build"
   ],
   "idf.flashType": "UART",
-  "idf.buildPath": "${workspaceFolder}/build",
-  "idf.espIdfPath": "/home/kenneth/esp/v5.5/esp-idf",
-  "idf.toolsPath": "/home/kenneth/.espressif/tools",
-  "idf.port": "/dev/ttyACM0",
-  "clangd.path": "/home/kenneth/.espressif/tools/tools/esp-clang/esp-19.1.2_20250312/esp-clang/bin/clangd"
+  "idf.buildPath": "${workspaceFolder}/build"
+  // User-specific paths (auto-configured by ESP-IDF extension):
+  // "idf.espIdfPath": "auto-detected or set via extension"
+  // "idf.toolsPath": "auto-detected or set via extension"
+  // "idf.pythonInstallPath": "auto-detected or set via extension"
+  // "idf.port": "select your port when flashing"
+  // "clangd.path": "auto-detected from toolsPath"
 }

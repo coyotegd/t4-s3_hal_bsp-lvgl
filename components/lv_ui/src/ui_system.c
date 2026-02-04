@@ -30,6 +30,12 @@ static uint16_t current_sys_load = 0;     // Estimated system draw from USB (mA)
 static uint16_t current_margin_ma = 150;  // Safety margin (mA) to avoid input collapse
 static lv_obj_t * roller_margin = NULL;   // Handle for Safety Margin roller
 
+// New: USB Type-C voltage and USB version selectors
+static lv_obj_t * roller_usb_c_voltage = NULL;  // USB Type-C voltage selector
+static uint16_t current_usb_c_voltage_idx = 0;  // 0=Auto-PD, 1=5V Override, 2=9V Override
+static lv_obj_t * roller_usb_version = NULL;    // USB version selector
+static uint16_t current_usb_version_idx = 0;    // 0=USB 2.0, 1=USB 3.0, 2=USB 4
+
 // Forward declarations for policy helpers used by callbacks
 static void apply_currents_from_policy(void);
 
@@ -193,6 +199,9 @@ void ui_pmic_restore_settings(void) {
         if(nvs_get_u16(my_handle, "usb_src_idx", &val) == ESP_OK) current_usb_src_index = val;
         if(nvs_get_u16(my_handle, "sys_load", &val) == ESP_OK) current_sys_load = val;
         if(nvs_get_u16(my_handle, "margin_ma", &val) == ESP_OK) current_margin_ma = val;
+        // New: USB Type-C voltage and USB version
+        if(nvs_get_u16(my_handle, "usb_c_v_idx", &val) == ESP_OK) current_usb_c_voltage_idx = val;
+        if(nvs_get_u16(my_handle, "usb_ver_idx", &val) == ESP_OK) current_usb_version_idx = val;
         
         nvs_close(my_handle);
         ESP_LOGI("ui_system", "Restored PMIC settings from NVS");
@@ -604,6 +613,44 @@ static uint16_t usb_source_index_to_ilim(uint16_t idx) {
     }
 }
 
+// USB Type-C voltage selector callback
+static void usb_c_voltage_cb(lv_event_t * e) {
+    lv_obj_t * roller = lv_event_get_target(e);
+    int idx = lv_roller_get_selected(roller);
+    if (idx < 0) idx = 0;
+    current_usb_c_voltage_idx = (uint16_t)idx;
+    save_nvs_value("usb_c_v_idx", current_usb_c_voltage_idx);
+    
+    const char *mode_str = "";
+    switch(current_usb_c_voltage_idx) {
+        case 0: mode_str = "Auto-PD (Negotiated)"; break;
+        case 1: mode_str = "5V Override"; break;
+        case 2: mode_str = "9V Override"; break;
+    }
+    ESP_LOGI("ui_system", "USB Type-C Voltage: %s", mode_str);
+    // Note: Actual voltage negotiation would require USB-PD implementation
+    // This is currently a UI setting for reference/future implementation
+}
+
+// USB version selector callback
+static void usb_version_cb(lv_event_t * e) {
+    lv_obj_t * roller = lv_event_get_target(e);
+    int idx = lv_roller_get_selected(roller);
+    if (idx < 0) idx = 0;
+    current_usb_version_idx = (uint16_t)idx;
+    save_nvs_value("usb_ver_idx", current_usb_version_idx);
+    
+    const char *ver_str = "";
+    switch(current_usb_version_idx) {
+        case 0: ver_str = "USB 2.0"; break;
+        case 1: ver_str = "USB 3.0"; break;
+        case 2: ver_str = "USB 4"; break;
+    }
+    ESP_LOGI("ui_system", "USB Version: %s", ver_str);
+    // Note: This is informational - USB data standard is independent of charging
+    // USB 4 works with any USB-PD voltage on the same Type-C connector
+}
+
 // USB source selector callback
 static void usb_source_cb(lv_event_t * e) {
     lv_obj_t * roller = lv_event_get_target(e);
@@ -994,6 +1041,68 @@ void ui_settings_create(lv_obj_t * parent) {
         lv_roller_set_selected(roller_usb_source, current_usb_src_index, LV_ANIM_OFF);
         lv_obj_add_event_cb(roller_usb_source, usb_source_cb, LV_EVENT_VALUE_CHANGED, NULL);
         free(opt_usb_src);
+    }
+
+    // 0.5 USB Type-C Voltage Selector (Auto-PD / 5V Override / 9V Override)
+    char * opt_usb_c_volt = (char*)malloc(256);
+    if(opt_usb_c_volt) {
+        strcpy(opt_usb_c_volt, "Auto-PD (Negotiated)\n5V Override\n9V Override");
+        
+        lv_obj_t * row_usb_c = lv_obj_create(cont_chg_settings);
+        lv_obj_set_width(row_usb_c, LV_PCT(100));
+        lv_obj_set_height(row_usb_c, LV_SIZE_CONTENT);
+        lv_obj_set_style_bg_opa(row_usb_c, LV_OPA_TRANSP, 0);
+        lv_obj_set_style_border_width(row_usb_c, 0, 0);
+        lv_obj_set_style_pad_all(row_usb_c, 5, 0);
+        lv_obj_set_flex_flow(row_usb_c, LV_FLEX_FLOW_ROW);
+        lv_obj_set_flex_align(row_usb_c, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+
+        lv_obj_t * lbl_usb_c = lv_label_create(row_usb_c);
+        lv_label_set_text(lbl_usb_c, "USB Type-C Voltage\n(PD is auto, override if needed)");
+        lv_obj_set_style_text_color(lbl_usb_c, lv_color_white(), 0);
+        lv_obj_set_style_text_font(lbl_usb_c, &lv_font_montserrat_18, 0);
+
+        roller_usb_c_voltage = lv_roller_create(row_usb_c);
+        lv_roller_set_options(roller_usb_c_voltage, opt_usb_c_volt, LV_ROLLER_MODE_NORMAL);
+        lv_roller_set_visible_row_count(roller_usb_c_voltage, 3);
+        lv_obj_set_width(roller_usb_c_voltage, 220);
+        lv_obj_set_style_text_font(roller_usb_c_voltage, &lv_font_montserrat_20, 0);
+        lv_obj_set_style_bg_color(roller_usb_c_voltage, lv_color_black(), 0);
+        lv_obj_set_style_text_color(roller_usb_c_voltage, lv_color_white(), 0);
+        lv_roller_set_selected(roller_usb_c_voltage, current_usb_c_voltage_idx, LV_ANIM_OFF);
+        lv_obj_add_event_cb(roller_usb_c_voltage, usb_c_voltage_cb, LV_EVENT_VALUE_CHANGED, NULL);
+        free(opt_usb_c_volt);
+    }
+
+    // 0.6 USB Version Selector (USB 2.0 / USB 3.0 / USB 4)
+    char * opt_usb_ver = (char*)malloc(128);
+    if(opt_usb_ver) {
+        strcpy(opt_usb_ver, "USB 2.0\nUSB 3.0\nUSB 4");
+        
+        lv_obj_t * row_usb_ver = lv_obj_create(cont_chg_settings);
+        lv_obj_set_width(row_usb_ver, LV_PCT(100));
+        lv_obj_set_height(row_usb_ver, LV_SIZE_CONTENT);
+        lv_obj_set_style_bg_opa(row_usb_ver, LV_OPA_TRANSP, 0);
+        lv_obj_set_style_border_width(row_usb_ver, 0, 0);
+        lv_obj_set_style_pad_all(row_usb_ver, 5, 0);
+        lv_obj_set_flex_flow(row_usb_ver, LV_FLEX_FLOW_ROW);
+        lv_obj_set_flex_align(row_usb_ver, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+
+        lv_obj_t * lbl_usb_ver = lv_label_create(row_usb_ver);
+        lv_label_set_text(lbl_usb_ver, "USB Version\n(data transfer standard)");
+        lv_obj_set_style_text_color(lbl_usb_ver, lv_color_white(), 0);
+        lv_obj_set_style_text_font(lbl_usb_ver, &lv_font_montserrat_18, 0);
+
+        roller_usb_version = lv_roller_create(row_usb_ver);
+        lv_roller_set_options(roller_usb_version, opt_usb_ver, LV_ROLLER_MODE_NORMAL);
+        lv_roller_set_visible_row_count(roller_usb_version, 3);
+        lv_obj_set_width(roller_usb_version, 150);
+        lv_obj_set_style_text_font(roller_usb_version, &lv_font_montserrat_20, 0);
+        lv_obj_set_style_bg_color(roller_usb_version, lv_color_black(), 0);
+        lv_obj_set_style_text_color(roller_usb_version, lv_color_white(), 0);
+        lv_roller_set_selected(roller_usb_version, current_usb_version_idx, LV_ANIM_OFF);
+        lv_obj_add_event_cb(roller_usb_version, usb_version_cb, LV_EVENT_VALUE_CHANGED, NULL);
+        free(opt_usb_ver);
     }
 
     // 1. Input Current Limit: 100-3250 step 50

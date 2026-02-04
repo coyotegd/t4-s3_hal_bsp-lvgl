@@ -17,6 +17,7 @@ It features a robust **Hardware Abstraction Layer (HAL)** that handles the compl
 *   **HAL Manager:** A unified facade (`hal_mgr`) that simplifies hardware usage.
 *   **LVGL Integration:** Pre-configured LVGL 9 display and touch drivers.
 *   **Battery Logic:** Smart detection for "No Battery" vs "Charging" states.
+*   **Development Tools:** ESP-IDF helper script (`tools/idfsh.sh`) for interactive build/flash/monitor workflows.
 
 ## 🚀 Getting Started
 
@@ -64,6 +65,70 @@ The project includes a robust WiFi Manager (`wifi_mgr`) that handles:
 *   **Second-by-second:** Handled by the ESP32's internal software counter (System Time).
 *   **Accuracy check:** Updated from the internet via SNTP every **60 minutes**.
 *   **Power Loss:** Since there is no dedicated coin-cell RTC, if power is lost completely, time resets until WiFi reconnects.
+
+## 🔌 USB Type-C & Power Delivery Configuration
+
+The PM Settings page includes advanced USB Type-C configuration options for managing power delivery and USB protocol versions.
+
+### USB Type-C Voltage Selector
+
+Three voltage modes are available for Type-C power delivery:
+
+*   **Auto-PD (Negotiated)** - *Default and Recommended*
+    *   Allows the device to automatically negotiate the optimal voltage with the connected USB-C power adapter
+    *   USB Power Delivery (USB-PD) protocol handles this transparently
+    *   The charger and device communicate to select the best voltage/current combination
+    *   Most compatible with modern USB-C adapters
+    
+*   **5V Override**
+    *   Forces operation at standard USB 5V (USB 2.0/3.0 default)
+    *   Use when connected to older USB ports or basic adapters
+    *   Safest option for unknown power sources
+    
+*   **9V Override**
+    *   Requests 9V operation from the power adapter via USB-PD
+    *   Enables faster charging if the adapter supports 9V output
+    *   Only effective with USB-PD compatible adapters (most modern USB-C chargers)
+
+**Note:** USB Power Delivery is automatic by default. The override options are provided for specific use cases or troubleshooting. Setting an override tells the system your preference, but the actual voltage delivered depends on what the power adapter can provide.
+
+### USB Version Selector
+
+Selects the USB data transfer protocol standard:
+
+*   **USB 2.0** - Up to 480 Mbps (backward compatible, lower power)
+*   **USB 3.0** - Up to 5 Gbps (faster data transfer)
+*   **USB 4** - Up to 40 Gbps (latest standard, maximum performance)
+
+**Important:** USB version and USB-PD voltage are independent:
+*   USB 4 can work with any voltage (5V, 9V, 12V, 15V, or 20V)
+*   They operate over the same USB Type-C connector
+*   USB version controls **data speed**, USB-PD controls **charging voltage/current**
+*   You can select "USB 4 + PD 9V" for maximum data and charging performance
+
+### Current Implementation Status
+
+**🔴 Hardware Implementation Required:**
+
+The USB Type-C voltage and version selectors are currently **UI-only settings**. They:
+*   Display in the PM Settings interface
+*   Save your preferences to non-volatile storage (NVS)
+*   Log your selections to the ESP console
+
+**However, actual voltage negotiation requires:**
+1.  **Hardware Support:** A USB-PD controller chip (many modern Type-C adapters have this, but the ESP32-S3 doesn't natively control it)
+2.  **Driver Implementation:** Code in the `sy6970` driver to communicate with USB-PD negotiation hardware
+3.  **Protocol Logic:** Implementation of the USB-PD protocol state machine
+
+**Current Behavior:**
+*   The SY6970 PMIC accepts whatever voltage the power adapter provides (5V-20V)
+*   It will charge the battery safely regardless of input voltage
+*   The UI settings prepare the framework for future USB-PD control implementation
+
+These settings are included now so you can:
+*   Document your power adapter capabilities
+*   Prepare for future hardware integration
+*   Understand the relationship between USB-PD and USB data standards
 
 ## 🎥 AVI Video Playback
 
@@ -155,3 +220,31 @@ idf.py -p /dev/ttyUSB0 flash monitor
 ```bash
 git submodule update --init --recursive
 ```
+
+---
+
+### 🎯 Updated Portable Settings (February 2026)
+
+**This repository now uses fully portable workspace settings!** All user-specific paths have been removed from `.vscode/settings.json`.
+
+**What's included (workspace-portable):**
+```json
+{
+  "idf.buildPath": "${workspaceFolder}/build",
+  "clangd.arguments": ["--compile-commands-dir=${workspaceFolder}/build"],
+  "idf.customExtraVars": { "IDF_TARGET": "esp32s3" }
+}
+```
+
+**What's auto-configured by ESP-IDF extension:**
+- ESP-IDF installation path
+- Toolchain paths  
+- Python environment
+- Serial port (select when flashing)
+- Clangd path
+
+**After cloning:**
+1. Open in VS Code
+2. Reload window (`Ctrl+Shift+P` → "Reload Window")
+3. Extension auto-configures for your system
+4. Build and flash!
