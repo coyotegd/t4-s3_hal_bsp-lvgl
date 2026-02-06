@@ -820,7 +820,7 @@ void ui_pmic_create(lv_obj_t * parent) {
     CREATE_TABLE_ROW(cont_pmic_details, "Termination:", "-- mA", lbl_term_curr);
     CREATE_TABLE_ROW(cont_pmic_details, "USB:", "--", lbl_usb);
     CREATE_TABLE_ROW(cont_pmic_details, "USB Volts:", "-- mV", lbl_usb_volts);
-    CREATE_TABLE_ROW(cont_pmic_details, "USB Power:", "--", lbl_usb_pg);
+    CREATE_TABLE_ROW(cont_pmic_details, "USB Power Adequate:", "--", lbl_usb_pg);
     CREATE_TABLE_ROW(cont_pmic_details, "Temperature:", "-- %", lbl_ntc);
     
     #undef CREATE_TABLE_ROW
