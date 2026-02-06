@@ -23,7 +23,7 @@ The interactive menu provides the following streamlined workflow:
 
 1. **Set Port** - Choose or auto-detect serial port.
 2. **Set Baud** - Change baud rate (default 460800).
-3. **Reconfigure** - **Deep Clean**: Deletes `build/` AND `managed_components`, then runs `idf.py reconfigure`. Use this to fix dependency issues.
+3. **Reconfigure** - **Deep Clean**: Deletes `build/` AND `managed_components/`, then runs `idf.py reconfigure` which recreates both. Use this to fix dependency issues.
 4. **Delete Build** - Deletes only the `build/` directory.
 5. **Build** - Compiles the project.
 6. **Flash** - Flashes firmware to the device.
@@ -51,13 +51,36 @@ idfsh
 When not set, `idfsh` will attempt to auto‑detect under `/dev/ttyACM*` and `/dev/ttyUSB*` and otherwise prompt you to choose.
 Default port: `/dev/ttyACM0`. Default baud: `460800`.
 
-## Persist Across Sessions
+## Installation
 
-Add `idfsh` to your shell startup so it’s always available:
+### Recommended: Install to ~/.local/bin/
+
+For a clean, project-independent installation that's available in all bash shells:
 
 ```bash
-# Adjust path to your repo location
-echo "source $PWD/tools/idfsh.sh" >> ~/.bashrc
-# then reload
+# Create the directory if it doesn't exist
+mkdir -p ~/.local/bin
+
+# Copy the script
+cp tools/idfsh.sh ~/.local/bin/
+
+# Add to your .bashrc (one-time setup)
+echo 'source ~/.local/bin/idfsh.sh' >> ~/.bashrc
+
+# Reload your shell configuration
 source ~/.bashrc
 ```
+
+Now `idfsh` is available from any directory in any terminal.
+
+### Alternative: Source from Project
+
+If you prefer to source it directly from the project directory:
+
+```bash
+# From this project's root
+echo "source $PWD/tools/idfsh.sh" >> ~/.bashrc
+source ~/.bashrc
+```
+
+**Note:** This ties the function to this specific project path. If you move or delete the project, you'll need to update your `.bashrc`.

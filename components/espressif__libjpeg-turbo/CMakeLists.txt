@@ -83,6 +83,7 @@ ExternalProject_Add(jpegturbo_proj
             COMMAND ${CMAKE_COMMAND} -E copy ${SOURCE_DIR}/jpeglib.h ${BINARY_DIR}/install/include/
             COMMAND ${CMAKE_COMMAND} -E copy ${SOURCE_DIR}/jmorecfg.h ${BINARY_DIR}/install/include/
             COMMAND ${CMAKE_COMMAND} -E copy ${SOURCE_DIR}/jerror.h ${BINARY_DIR}/install/include/
+            COMMAND ${CMAKE_COMMAND} -E copy ${SOURCE_DIR}/jpegint.h ${BINARY_DIR}/install/include/
             COMMAND ${CMAKE_COMMAND} -E copy ${BINARY_DIR}/jconfig.h ${BINARY_DIR}/install/include/
 )
 

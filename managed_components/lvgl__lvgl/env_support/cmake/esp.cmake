@@ -64,13 +64,29 @@ else()
     set(IDF_COMPONENTS esp_timer log)
   endif()
 
+  # Add libjpeg-turbo component as public requirement if enabled
+  set(PUBLIC_REQUIRES "")
+  if(CONFIG_LV_USE_LIBJPEG_TURBO)
+    list(APPEND PUBLIC_REQUIRES espressif__libjpeg-turbo)
+  endif()
+
   idf_component_register(SRCS ${SOURCES} ${EXAMPLE_SOURCES} ${DEMO_SOURCES}
       INCLUDE_DIRS ${LVGL_ROOT_DIR} ${LVGL_ROOT_DIR}/src ${LVGL_ROOT_DIR}/../
                    ${LVGL_ROOT_DIR}/examples ${LVGL_ROOT_DIR}/demos
+      REQUIRES ${PUBLIC_REQUIRES}
       PRIV_REQUIRES ${IDF_COMPONENTS})
 endif()
 
 target_compile_definitions(${COMPONENT_LIB} PUBLIC "-DLV_CONF_INCLUDE_SIMPLE")
+
+# Add libjpeg-turbo include directories if enabled (ExternalProject workaround)
+if(CONFIG_LV_USE_LIBJPEG_TURBO)
+  idf_build_get_property(build_dir BUILD_DIR)
+  target_include_directories(${COMPONENT_LIB} PRIVATE 
+    "${build_dir}/esp-idf/espressif__libjpeg-turbo/libjpeg-build/install/include")
+  # Ensure LVGL waits for jpegturbo ExternalProject to complete installation
+  add_dependencies(${COMPONENT_LIB} jpegturbo_proj)
+endif()
 
 if(CONFIG_LV_ATTRIBUTE_FAST_MEM_USE_IRAM)
   target_compile_definitions(${COMPONENT_LIB}

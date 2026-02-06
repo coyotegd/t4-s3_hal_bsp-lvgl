@@ -383,7 +383,22 @@ git submodule update --init --recursive
 3. Extension auto-configures for your system
 4. Build and flash!
 
-## 📚 Additional Documentation
+## � Technical Notes
+
+### LVGL JPEG Support Configuration
+
+This project includes custom build configuration for LVGL's libjpeg support (`CONFIG_LV_USE_LIBJPEG_TURBO=y`):
+
+**Modified Files:**
+- `managed_components/lvgl__lvgl/env_support/cmake/esp.cmake` - Adds libjpeg dependency and include paths to LVGL
+- `components/espressif__libjpeg-turbo/CMakeLists.txt` - Installs `jpegint.h` header (required by LVGL but not included in standard install)
+
+**Why these changes?**
+The `espressif__libjpeg-turbo` component uses CMake ExternalProject, which doesn't automatically propagate include directories through normal ESP-IDF dependency mechanisms. These modifications ensure LVGL can find the libjpeg headers at compile time.
+
+**Note:** This uses standard libjpeg API (not TurboJPEG), as the TurboJPEG API is not ESP32-S3 compatible.
+
+## �📚 Additional Documentation
 
 - [LVGL Integration Journey](docs/LVGL_JOURNEY.md)
 - [RM690B0 Rotation Guide](docs/rm690b0_rotation_guide.md)

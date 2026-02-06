@@ -390,7 +390,7 @@ PY
     cat <<'MENU'
   1) Set Port
   2) Set Baud
-  3) Reconfigure (del build/, replace managed_components/)
+  3) Reconfigure (replace build/ & managed_components/)
   4) Erase Build Only
   5) Build
   6) Flash
