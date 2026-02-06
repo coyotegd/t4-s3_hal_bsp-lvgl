@@ -260,7 +260,7 @@ Fault:                 None (LED off) no USB
 The system includes a video player for `.avi` files stored on the SD card.
 
 - **Frame Rate:** Video playback is optimized for **~15 FPS**. Increasing the frame rate beyond this provides no visual benefit on this screen/interface and only consumes extra resources.
-- **Codec:** The player uses an **older MPEG codec**, not the latest standards (like H.264). Please ensure video files are encoded using compatible legacy MPEG formats.
+- **Codec:** The player uses **MJPEG (Motion JPEG)**, where each frame is a complete JPEG image in an AVI container. See `docs/avi_mjpg_lvgl.md` for conversion instructions using FFmpeg.
 
 ## � Over-The-Air (OTA) Updates
 
@@ -305,7 +305,8 @@ This project solves several tricky hardware behaviors of the T4-S3:
 
 - [LVGL Integration Journey](docs/LVGL_JOURNEY.md)
 - [RM690B0 Rotation Guide](docs/rm690b0_rotation_guide.md)
-- [AVI MJPEG Playback Implementation](components/lv_ui/src/README.md) - Journey from managed components to local build solution
+- [AVI MJPEG Playback Guide](docs/avi_mjpg_lvgl.md) - Complete guide to video playback on ESP32
+- [AVI MJPEG Implementation Journey](components/lv_ui/src/README.md) - Technical details of decoder evolution
 
 ## 🔧 Troubleshooting: Hardcoded Paths in Cloned Repos
 
