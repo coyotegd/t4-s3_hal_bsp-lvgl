@@ -63,7 +63,6 @@ else()
   else()
     set(IDF_COMPONENTS esp_timer log)
   endif()
-  list(APPEND IDF_COMPONENTS espressif__libjpeg-turbo)
 
   idf_component_register(SRCS ${SOURCES} ${EXAMPLE_SOURCES} ${DEMO_SOURCES}
       INCLUDE_DIRS ${LVGL_ROOT_DIR} ${LVGL_ROOT_DIR}/src ${LVGL_ROOT_DIR}/../

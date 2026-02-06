@@ -16,7 +16,7 @@ static lv_obj_t * roller_boost_volt = NULL; // Global handle for boost voltage r
 static lv_obj_t * roller_batt_mah = NULL; // Battery capacity selector
 static uint16_t current_batt_mah = 2000; // Default capacity used for defaults (mAh)
 static lv_obj_t * roller_usb_source = NULL; // USB source selector
-static uint16_t current_usb_src_index = 0; // 0=Unknown, see mapping
+static uint16_t current_usb_src_index = 3; // 3=BC1.2 PA 1.5A (realistic default for modern USB)
 static lv_obj_t * lbl_ota_status = NULL;
 static lv_obj_t * bar_ota_progress = NULL;
 static lv_obj_t * ota_modal = NULL;
@@ -26,15 +26,9 @@ static lv_obj_t * roller_chg_curr = NULL; // Handle for Fast Charge Current roll
 static lv_obj_t * roller_pre_curr = NULL; // Handle for Pre-Charge Current roller
 static lv_obj_t * roller_term_curr = NULL; // Handle for Termination Current roller
 static lv_obj_t * roller_sys_load = NULL; // Handle for System Load roller
-static uint16_t current_sys_load = 0;     // Estimated system draw from USB (mA)
-static uint16_t current_margin_ma = 150;  // Safety margin (mA) to avoid input collapse
+static uint16_t current_sys_load = 350;     // Estimated system draw from USB (mA)
+static uint16_t current_margin_ma = 100;  // Safety margin (mA) to avoid input collapse
 static lv_obj_t * roller_margin = NULL;   // Handle for Safety Margin roller
-
-// New: USB Type-C voltage and USB version selectors
-static lv_obj_t * roller_usb_c_voltage = NULL;  // USB Type-C voltage selector
-static uint16_t current_usb_c_voltage_idx = 0;  // 0=Auto-PD, 1=5V Override, 2=9V Override
-static lv_obj_t * roller_usb_version = NULL;    // USB version selector
-static uint16_t current_usb_version_idx = 0;    // 0=USB 2.0, 1=USB 3.0, 2=USB 4
 
 // Forward declarations for policy helpers used by callbacks
 static void apply_currents_from_policy(void);
@@ -199,9 +193,6 @@ void ui_pmic_restore_settings(void) {
         if(nvs_get_u16(my_handle, "usb_src_idx", &val) == ESP_OK) current_usb_src_index = val;
         if(nvs_get_u16(my_handle, "sys_load", &val) == ESP_OK) current_sys_load = val;
         if(nvs_get_u16(my_handle, "margin_ma", &val) == ESP_OK) current_margin_ma = val;
-        // New: USB Type-C voltage and USB version
-        if(nvs_get_u16(my_handle, "usb_c_v_idx", &val) == ESP_OK) current_usb_c_voltage_idx = val;
-        if(nvs_get_u16(my_handle, "usb_ver_idx", &val) == ESP_OK) current_usb_version_idx = val;
         
         nvs_close(my_handle);
         ESP_LOGI("ui_system", "Restored PMIC settings from NVS");
@@ -424,21 +415,21 @@ static void apply_currents_from_policy(void) {
     if (lbl_chg_curr) {
         float c_rate = cap ? ((float)allowed_ichg / (float)cap) : 0.0f;
         if (limited) {
-            lv_label_set_text_fmt(lbl_chg_curr, "Charging Current:\n%d mA (%.2f C)\nLimited by source", allowed_ichg, c_rate);
+            lv_label_set_text_fmt(lbl_chg_curr, "%d mA (%.2f C)\nLimited by source", allowed_ichg, c_rate);
         } else {
-            lv_label_set_text_fmt(lbl_chg_curr, "Charging Current:\n%d mA (%.2f C)", allowed_ichg, c_rate);
+            lv_label_set_text_fmt(lbl_chg_curr, "%d mA (%.2f C)", allowed_ichg, c_rate);
         }
     }
     if (lbl_pre_curr) {
-        lv_label_set_text_fmt(lbl_pre_curr, "Pre-Charge:\n%d mA", ipre);
+        lv_label_set_text_fmt(lbl_pre_curr, "%d mA", ipre);
     }
     if (lbl_term_curr) {
-        lv_label_set_text_fmt(lbl_term_curr, "Termination:\n%d mA", iterm);
+        lv_label_set_text_fmt(lbl_term_curr, "%d mA", iterm);
     }
     // Also reflect Load and Margin on USB Power label
     if (lbl_usb_pg) {
         uint16_t vindpm_now = sy6970_get_input_voltage_limit();
-        lv_label_set_text_fmt(lbl_usb_pg, "USB Power:\nILIM %d mA, VINDPM %d mV\nLoad %d mA, Margin %d mA", ilim, vindpm_now, current_sys_load, current_margin_ma);
+        lv_label_set_text_fmt(lbl_usb_pg, "ILIM %d mA\nVINDPM %d mV\nLoad %d mA\nMargin %d mA", ilim, vindpm_now, current_sys_load, current_margin_ma);
     }
 }
 
@@ -453,6 +444,12 @@ static void sys_load_cb(lv_event_t * e) {
     ESP_LOGI("ui_system", "System Load set: %d mA", val);
     // Recompute currents with new load
     apply_currents_from_policy();
+}
+
+// Power Log button callback (stub for future implementation)
+static void power_log_btn_cb(lv_event_t * e) {
+    ESP_LOGI("ui_system", "Power Log button clicked (stub - future feature)");
+    // Future: Open power logging interface with voltage/current/charge charts
 }
 
 // Safety Margin callback
@@ -480,7 +477,7 @@ static void chg_curr_cb(lv_event_t * e) {
     if (lbl_chg_curr) {
         uint16_t cap = current_batt_mah ? current_batt_mah : 2000;
         float c_rate = cap ? ((float)val / (float)cap) : 0.0f;
-        lv_label_set_text_fmt(lbl_chg_curr, "Charging Current:\n%d mA (%.2f C)", val, c_rate);
+        lv_label_set_text_fmt(lbl_chg_curr, "%d mA (%.2f C)", val, c_rate);
     }
 }
 
@@ -493,7 +490,7 @@ static void pre_curr_cb(lv_event_t * e) {
     save_nvs_value("pre_curr", val);
     ESP_LOGI("ui_system", "Pre-Charge Curr set: %d mA", val);
     if (lbl_pre_curr) {
-        lv_label_set_text_fmt(lbl_pre_curr, "Pre-Charge:\n%d mA", val);
+        lv_label_set_text_fmt(lbl_pre_curr, "%d mA", val);
     }
 }
 
@@ -506,7 +503,7 @@ static void term_curr_cb(lv_event_t * e) {
     save_nvs_value("term_curr", val);
     ESP_LOGI("ui_system", "Term Curr set: %d mA", val);
     if (lbl_term_curr) {
-        lv_label_set_text_fmt(lbl_term_curr, "Termination:\n%d mA", val);
+        lv_label_set_text_fmt(lbl_term_curr, "%d mA", val);
     }
 }
 
@@ -591,11 +588,11 @@ static void batt_mah_cb(lv_event_t * e) {
 static const char* usb_source_label(uint16_t idx) {
     switch(idx) {
         case 0: return "Unknown";
-        case 1: return "USB 2.0 (500mA)";
-        case 2: return "USB 3.0 (900mA)";
-        case 3: return "BC1.2 Charge Port (1500mA)";
-        case 4: return "Dedicated 5V Adapter (2000mA)";
-        case 5: return "High-Power Adapter (3000mA)";
+        case 1: return "USB 2.0 0.5A";
+        case 2: return "USB 3.0 0.9A";
+        case 3: return "BC1.2 PA 1.5A";
+        case 4: return "5V PA 2.0A";
+        case 5: return "High-Power PA 3.0A";
         default: return "Unknown";
     }
 }
@@ -611,44 +608,6 @@ static uint16_t usb_source_index_to_ilim(uint16_t idx) {
         case 5: return 3000;  // High-Power Adapter
         default: return 500;
     }
-}
-
-// USB Type-C voltage selector callback
-static void usb_c_voltage_cb(lv_event_t * e) {
-    lv_obj_t * roller = lv_event_get_target(e);
-    int idx = lv_roller_get_selected(roller);
-    if (idx < 0) idx = 0;
-    current_usb_c_voltage_idx = (uint16_t)idx;
-    save_nvs_value("usb_c_v_idx", current_usb_c_voltage_idx);
-    
-    const char *mode_str = "";
-    switch(current_usb_c_voltage_idx) {
-        case 0: mode_str = "Auto-PD (Negotiated)"; break;
-        case 1: mode_str = "5V Override"; break;
-        case 2: mode_str = "9V Override"; break;
-    }
-    ESP_LOGI("ui_system", "USB Type-C Voltage: %s", mode_str);
-    // Note: Actual voltage negotiation would require USB-PD implementation
-    // This is currently a UI setting for reference/future implementation
-}
-
-// USB version selector callback
-static void usb_version_cb(lv_event_t * e) {
-    lv_obj_t * roller = lv_event_get_target(e);
-    int idx = lv_roller_get_selected(roller);
-    if (idx < 0) idx = 0;
-    current_usb_version_idx = (uint16_t)idx;
-    save_nvs_value("usb_ver_idx", current_usb_version_idx);
-    
-    const char *ver_str = "";
-    switch(current_usb_version_idx) {
-        case 0: ver_str = "USB 2.0"; break;
-        case 1: ver_str = "USB 3.0"; break;
-        case 2: ver_str = "USB 4"; break;
-    }
-    ESP_LOGI("ui_system", "USB Version: %s", ver_str);
-    // Note: This is informational - USB data standard is independent of charging
-    // USB 4 works with any USB-PD voltage on the same Type-C connector
 }
 
 // USB source selector callback
@@ -677,10 +636,10 @@ static void usb_source_cb(lv_event_t * e) {
     }
     // Update PM Status labels if present
     if (lbl_usb) {
-        lv_label_set_text_fmt(lbl_usb, "USB:\n%s", usb_source_label(current_usb_src_index));
+        lv_label_set_text_fmt(lbl_usb, "%s", usb_source_label(current_usb_src_index));
     }
     if (lbl_usb_pg) {
-        lv_label_set_text_fmt(lbl_usb_pg, "USB Power:\nILIM %d mA, VINDPM %d mV", ilim, vindpm);
+        lv_label_set_text_fmt(lbl_usb_pg, "ILIM %d mA\nVINDPM %d mV", ilim, vindpm);
     }
     // Recompute currents under new source and apply policy
     apply_currents_from_policy();
@@ -735,6 +694,14 @@ static void defaults_btn_cb(lv_event_t * e) {
     // 7. Min System Voltage: 3500mV
     sy6970_set_min_system_voltage(3500);
     save_nvs_value("sys_min", 3500);
+
+    // 7.5. Estimated SoC mA sink: 350mA (ESP32 + display + WiFi)
+    current_sys_load = 350;
+    save_nvs_value("sys_load", 350);
+
+    // 7.6. USB Voltage Stability Margin: 100mA (practical for modern USB sources)
+    current_margin_ma = 100;
+    save_nvs_value("margin_ma", 100);
 
     // 8. OTG: Disabled
     sy6970_enable_otg(false);
@@ -819,58 +786,44 @@ void ui_pmic_create(lv_obj_t * parent) {
     lv_obj_set_style_bg_opa(cont_pmic_details, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(cont_pmic_details, 0, 0);
     lv_obj_set_flex_flow(cont_pmic_details, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_style_pad_row(cont_pmic_details, 8, 0);
 
-    // PMIC Labels
-    lbl_sys_volts = lv_label_create(cont_pmic_details);
-    lv_label_set_text(lbl_sys_volts, "System Volts:\n-- V");
-    lv_obj_set_style_text_color(lbl_sys_volts, lv_color_white(), 0);
-    lv_obj_set_style_text_font(lbl_sys_volts, &lv_font_montserrat_22, 0);
+    // Helper function to create table row with left description and right value
+    #define CREATE_TABLE_ROW(parent, desc_text, value_text, value_ptr) \
+    { \
+        lv_obj_t * row = lv_obj_create(parent); \
+        lv_obj_set_width(row, LV_PCT(100)); \
+        lv_obj_set_height(row, LV_SIZE_CONTENT); \
+        lv_obj_set_style_bg_opa(row, LV_OPA_TRANSP, 0); \
+        lv_obj_set_style_border_width(row, 0, 0); \
+        lv_obj_set_style_pad_all(row, 0, 0); \
+        lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW); \
+        lv_obj_set_flex_align(row, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER); \
+        \
+        lv_obj_t * lbl_desc = lv_label_create(row); \
+        lv_label_set_text(lbl_desc, desc_text); \
+        lv_obj_set_style_text_color(lbl_desc, lv_color_white(), 0); \
+        lv_obj_set_style_text_font(lbl_desc, &lv_font_montserrat_22, 0); \
+        \
+        value_ptr = lv_label_create(row); \
+        lv_label_set_text(value_ptr, value_text); \
+        lv_obj_set_style_text_color(value_ptr, lv_color_white(), 0); \
+        lv_obj_set_style_text_font(value_ptr, &lv_font_montserrat_22, 0); \
+    }
 
-    lbl_batt = lv_label_create(cont_pmic_details);
-    lv_label_set_text(lbl_batt, "Battery Volts:\n-- V");
-    lv_obj_set_style_text_color(lbl_batt, lv_color_white(), 0);
-    lv_obj_set_style_text_font(lbl_batt, &lv_font_montserrat_22, 0);
-
-    lbl_chg_stat = lv_label_create(cont_pmic_details);
-    lv_label_set_text(lbl_chg_stat, "Charge Status:\n--");
-    lv_obj_set_style_text_color(lbl_chg_stat, lv_color_white(), 0);
-    lv_obj_set_style_text_font(lbl_chg_stat, &lv_font_montserrat_22, 0);
-
-    lbl_chg_curr = lv_label_create(cont_pmic_details);
-    lv_label_set_text(lbl_chg_curr, "Charging Current:\n-- mA");
-    lv_obj_set_style_text_color(lbl_chg_curr, lv_color_white(), 0);
-    lv_obj_set_style_text_font(lbl_chg_curr, &lv_font_montserrat_22, 0);
-
-    // Show Pre-Charge and Termination currents
-    lbl_pre_curr = lv_label_create(cont_pmic_details);
-    lv_label_set_text(lbl_pre_curr, "Pre-Charge:\n-- mA");
-    lv_obj_set_style_text_color(lbl_pre_curr, lv_color_white(), 0);
-    lv_obj_set_style_text_font(lbl_pre_curr, &lv_font_montserrat_22, 0);
-
-    lbl_term_curr = lv_label_create(cont_pmic_details);
-    lv_label_set_text(lbl_term_curr, "Termination:\n-- mA");
-    lv_obj_set_style_text_color(lbl_term_curr, lv_color_white(), 0);
-    lv_obj_set_style_text_font(lbl_term_curr, &lv_font_montserrat_22, 0);
-
-    lbl_usb = lv_label_create(cont_pmic_details);
-    lv_label_set_text(lbl_usb, "USB:\n--");
-    lv_obj_set_style_text_color(lbl_usb, lv_color_white(), 0);
-    lv_obj_set_style_text_font(lbl_usb, &lv_font_montserrat_22, 0);
-
-    lbl_usb_volts = lv_label_create(cont_pmic_details);
-    lv_label_set_text(lbl_usb_volts, "USB Volts:\n-- V");
-    lv_obj_set_style_text_color(lbl_usb_volts, lv_color_white(), 0);
-    lv_obj_set_style_text_font(lbl_usb_volts, &lv_font_montserrat_22, 0);
-
-    lbl_usb_pg = lv_label_create(cont_pmic_details);
-    lv_label_set_text(lbl_usb_pg, "USB Power:\n--");
-    lv_obj_set_style_text_color(lbl_usb_pg, lv_color_white(), 0);
-    lv_obj_set_style_text_font(lbl_usb_pg, &lv_font_montserrat_22, 0);
-
-    lbl_ntc = lv_label_create(cont_pmic_details);
-    lv_label_set_text(lbl_ntc, "Temperature:\n-- %");
-    lv_obj_set_style_text_color(lbl_ntc, lv_color_white(), 0);
-    lv_obj_set_style_text_font(lbl_ntc, &lv_font_montserrat_22, 0);
+    // PMIC Labels - Table Layout
+    CREATE_TABLE_ROW(cont_pmic_details, "System Volts:", "-- mV", lbl_sys_volts);
+    CREATE_TABLE_ROW(cont_pmic_details, "Battery Volts:", "-- mV", lbl_batt);
+    CREATE_TABLE_ROW(cont_pmic_details, "Charge Status:", "--", lbl_chg_stat);
+    CREATE_TABLE_ROW(cont_pmic_details, "Charging Current:", "-- mA", lbl_chg_curr);
+    CREATE_TABLE_ROW(cont_pmic_details, "Pre-Charge:", "-- mA", lbl_pre_curr);
+    CREATE_TABLE_ROW(cont_pmic_details, "Termination:", "-- mA", lbl_term_curr);
+    CREATE_TABLE_ROW(cont_pmic_details, "USB:", "--", lbl_usb);
+    CREATE_TABLE_ROW(cont_pmic_details, "USB Volts:", "-- mV", lbl_usb_volts);
+    CREATE_TABLE_ROW(cont_pmic_details, "USB Power:", "--", lbl_usb_pg);
+    CREATE_TABLE_ROW(cont_pmic_details, "Temperature:", "-- %", lbl_ntc);
+    
+    #undef CREATE_TABLE_ROW
 
     // Fault Row (Label + Switch)
     lv_obj_t * fault_row = lv_obj_create(cont_pmic_details);
@@ -1014,7 +967,7 @@ void ui_settings_create(lv_obj_t * parent) {
     char * opt_usb_src = (char*)malloc(256);
     if(opt_usb_src) {
         strcpy(opt_usb_src,
-               "Unknown\nUSB 2.0 (500mA)\nUSB 3.0 (900mA)\nBC1.2 Charge Port (1500mA)\nDedicated 5V Adapter (2000mA)\nHigh-Power Adapter (3000mA)");
+               "Unknown\nUSB 2.0 0.5A\nUSB 3.0 0.9A\nBC1.2 PA 1.5A\n5V PA 2.0A\nHigh-Power PA 3.0A");
         // Create row manually to select by index
         lv_obj_t * row_src = lv_obj_create(cont_chg_settings);
         lv_obj_set_width(row_src, LV_PCT(100));
@@ -1026,7 +979,7 @@ void ui_settings_create(lv_obj_t * parent) {
         lv_obj_set_flex_align(row_src, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
         lv_obj_t * lbl_src = lv_label_create(row_src);
-        lv_label_set_text(lbl_src, "USB Source Type\n(sets Input Current Limit)");
+        lv_label_set_text(lbl_src, "USB Power Adaptor (PA)\n(sets Input Current Limit)");
         lv_obj_set_style_text_color(lbl_src, lv_color_white(), 0);
         lv_obj_set_style_text_font(lbl_src, &lv_font_montserrat_18, 0);
 
@@ -1041,68 +994,6 @@ void ui_settings_create(lv_obj_t * parent) {
         lv_roller_set_selected(roller_usb_source, current_usb_src_index, LV_ANIM_OFF);
         lv_obj_add_event_cb(roller_usb_source, usb_source_cb, LV_EVENT_VALUE_CHANGED, NULL);
         free(opt_usb_src);
-    }
-
-    // 0.5 USB Type-C Voltage Selector (Auto-PD / 5V Override / 9V Override)
-    char * opt_usb_c_volt = (char*)malloc(256);
-    if(opt_usb_c_volt) {
-        strcpy(opt_usb_c_volt, "Auto-PD (Negotiated)\n5V Override\n9V Override");
-        
-        lv_obj_t * row_usb_c = lv_obj_create(cont_chg_settings);
-        lv_obj_set_width(row_usb_c, LV_PCT(100));
-        lv_obj_set_height(row_usb_c, LV_SIZE_CONTENT);
-        lv_obj_set_style_bg_opa(row_usb_c, LV_OPA_TRANSP, 0);
-        lv_obj_set_style_border_width(row_usb_c, 0, 0);
-        lv_obj_set_style_pad_all(row_usb_c, 5, 0);
-        lv_obj_set_flex_flow(row_usb_c, LV_FLEX_FLOW_ROW);
-        lv_obj_set_flex_align(row_usb_c, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-
-        lv_obj_t * lbl_usb_c = lv_label_create(row_usb_c);
-        lv_label_set_text(lbl_usb_c, "USB Type-C Voltage\n(PD is auto, override if needed)");
-        lv_obj_set_style_text_color(lbl_usb_c, lv_color_white(), 0);
-        lv_obj_set_style_text_font(lbl_usb_c, &lv_font_montserrat_18, 0);
-
-        roller_usb_c_voltage = lv_roller_create(row_usb_c);
-        lv_roller_set_options(roller_usb_c_voltage, opt_usb_c_volt, LV_ROLLER_MODE_NORMAL);
-        lv_roller_set_visible_row_count(roller_usb_c_voltage, 3);
-        lv_obj_set_width(roller_usb_c_voltage, 220);
-        lv_obj_set_style_text_font(roller_usb_c_voltage, &lv_font_montserrat_20, 0);
-        lv_obj_set_style_bg_color(roller_usb_c_voltage, lv_color_black(), 0);
-        lv_obj_set_style_text_color(roller_usb_c_voltage, lv_color_white(), 0);
-        lv_roller_set_selected(roller_usb_c_voltage, current_usb_c_voltage_idx, LV_ANIM_OFF);
-        lv_obj_add_event_cb(roller_usb_c_voltage, usb_c_voltage_cb, LV_EVENT_VALUE_CHANGED, NULL);
-        free(opt_usb_c_volt);
-    }
-
-    // 0.6 USB Version Selector (USB 2.0 / USB 3.0 / USB 4)
-    char * opt_usb_ver = (char*)malloc(128);
-    if(opt_usb_ver) {
-        strcpy(opt_usb_ver, "USB 2.0\nUSB 3.0\nUSB 4");
-        
-        lv_obj_t * row_usb_ver = lv_obj_create(cont_chg_settings);
-        lv_obj_set_width(row_usb_ver, LV_PCT(100));
-        lv_obj_set_height(row_usb_ver, LV_SIZE_CONTENT);
-        lv_obj_set_style_bg_opa(row_usb_ver, LV_OPA_TRANSP, 0);
-        lv_obj_set_style_border_width(row_usb_ver, 0, 0);
-        lv_obj_set_style_pad_all(row_usb_ver, 5, 0);
-        lv_obj_set_flex_flow(row_usb_ver, LV_FLEX_FLOW_ROW);
-        lv_obj_set_flex_align(row_usb_ver, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-
-        lv_obj_t * lbl_usb_ver = lv_label_create(row_usb_ver);
-        lv_label_set_text(lbl_usb_ver, "USB Version\n(data transfer standard)");
-        lv_obj_set_style_text_color(lbl_usb_ver, lv_color_white(), 0);
-        lv_obj_set_style_text_font(lbl_usb_ver, &lv_font_montserrat_18, 0);
-
-        roller_usb_version = lv_roller_create(row_usb_ver);
-        lv_roller_set_options(roller_usb_version, opt_usb_ver, LV_ROLLER_MODE_NORMAL);
-        lv_roller_set_visible_row_count(roller_usb_version, 3);
-        lv_obj_set_width(roller_usb_version, 150);
-        lv_obj_set_style_text_font(roller_usb_version, &lv_font_montserrat_20, 0);
-        lv_obj_set_style_bg_color(roller_usb_version, lv_color_black(), 0);
-        lv_obj_set_style_text_color(roller_usb_version, lv_color_white(), 0);
-        lv_roller_set_selected(roller_usb_version, current_usb_version_idx, LV_ANIM_OFF);
-        lv_obj_add_event_cb(roller_usb_version, usb_version_cb, LV_EVENT_VALUE_CHANGED, NULL);
-        free(opt_usb_ver);
     }
 
     // 1. Input Current Limit: 100-3250 step 50
@@ -1132,7 +1023,7 @@ void ui_settings_create(lv_obj_t * parent) {
              strcat(opt_in_volt, tmp);
         }
         if(strlen(opt_in_volt) > 0) opt_in_volt[strlen(opt_in_volt)-1] = '\0';
-        create_roller_row(cont_chg_settings, "Min USB Charger Voltage (mV)\n(Throttles current on voltage drop)", opt_in_volt, input_volt_cb, sy6970_get_input_voltage_limit());
+        create_roller_row(cont_chg_settings, "Minimum USB Voltage Drop (mV)\n(Throttles current on voltage drop)", opt_in_volt, input_volt_cb, sy6970_get_input_voltage_limit());
         free(opt_in_volt);
     }
 
@@ -1146,11 +1037,11 @@ void ui_settings_create(lv_obj_t * parent) {
              strcat(opt_sys_load, tmp);
         }
         if(strlen(opt_sys_load) > 0) opt_sys_load[strlen(opt_sys_load)-1] = '\0';
-        roller_sys_load = create_roller_row(cont_chg_settings, "Estimated System Load (mA)\n(non-battery draw; not applied)", opt_sys_load, sys_load_cb, current_sys_load);
+        roller_sys_load = create_roller_row(cont_chg_settings, "Estimated SoC mA sink\n(USB mA limit - SoC mA sink\n- BSM = mA for charging)", opt_sys_load, sys_load_cb, current_sys_load);
         free(opt_sys_load);
     }
 
-    // 2.6 Safety Margin: 0-300 step 25
+    // 2.6 USB Voltage Stability Margin: 0-300 step 25
     char * opt_margin = (char*)malloc(256);
     if(opt_margin) {
         opt_margin[0] = '\0';
@@ -1160,9 +1051,40 @@ void ui_settings_create(lv_obj_t * parent) {
              strcat(opt_margin, tmp);
         }
         if(strlen(opt_margin) > 0) opt_margin[strlen(opt_margin)-1] = '\0';
-        roller_margin = create_roller_row(cont_chg_settings, "Safety Margin (mA)\n(reserved headroom to keep USB stable)", opt_margin, margin_cb, current_margin_ma);
+        roller_margin = create_roller_row(cont_chg_settings, "Brownout Safety Margin BSM (mA)\n(mA headroom prevents SoC brownouts)", opt_margin, margin_cb, current_margin_ma);
         free(opt_margin);
     }
+
+    // 2.7 Power Log Button (stub for future logging feature)
+    lv_obj_t * row_power_log = lv_obj_create(cont_chg_settings);
+    lv_obj_set_width(row_power_log, LV_PCT(100));
+    lv_obj_set_height(row_power_log, LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(row_power_log, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(row_power_log, 0, 0);
+    lv_obj_set_style_pad_all(row_power_log, 5, 0);
+    lv_obj_set_flex_flow(row_power_log, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(row_power_log, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+
+    lv_obj_t * btn_power_log = lv_button_create(row_power_log);
+    lv_obj_set_width(btn_power_log, LV_SIZE_CONTENT);
+    lv_obj_set_height(btn_power_log, 45);
+    lv_obj_set_style_bg_opa(btn_power_log, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(btn_power_log, lv_color_hex(0x00CED1), 0); // Cyan/Teal
+    lv_obj_set_style_border_width(btn_power_log, 2, 0);
+    lv_obj_set_style_radius(btn_power_log, 10, 0);
+    lv_obj_set_style_bg_opa(btn_power_log, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(btn_power_log, lv_color_hex(0x00CED1), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_shadow_width(btn_power_log, 15, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_shadow_color(btn_power_log, lv_color_hex(0x00CED1), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_pad_hor(btn_power_log, 15, 0);
+
+    lv_obj_t * lbl_power_log = lv_label_create(btn_power_log);
+    lv_label_set_text(lbl_power_log, "Power Log");
+    lv_obj_set_style_text_color(lbl_power_log, lv_color_white(), 0);
+    lv_obj_set_style_text_font(lbl_power_log, &lv_font_montserrat_20, 0);
+    lv_obj_center(lbl_power_log);
+
+    lv_obj_add_event_cb(btn_power_log, power_log_btn_cb, LV_EVENT_CLICKED, NULL);
 
     // 3. Fast Charge Current: 0-5056 step 64
     char * opt_chg_curr = (char*)malloc(1024);
@@ -1220,7 +1142,7 @@ void ui_settings_create(lv_obj_t * parent) {
              strcat(opt_sys_min, tmp);
         }
         if(strlen(opt_sys_min) > 0) opt_sys_min[strlen(opt_sys_min)-1] = '\0';
-        create_roller_row(cont_chg_settings, "Min System Voltage (mV)\n(When Charging)", opt_sys_min, sys_min_cb, sy6970_get_min_system_voltage_limit());
+        create_roller_row(cont_chg_settings, "Low Batt Min Bus Voltage (mV)\n(when USB charging)", opt_sys_min, sys_min_cb, sy6970_get_min_system_voltage_limit());
         free(opt_sys_min);
     }
 

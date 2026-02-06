@@ -4,32 +4,77 @@ This project is a complete (except Bluetooth implementation), working starter te
 
 It features a robust **Hardware Abstraction Layer (HAL)** that handles the complex low-level drivers for the display, touch screen, and power management IC (PMIC), allowing you to focus on building your application.
 
+## � Repository Structure
+
+**This is the parent HAL/BSP repository.** It contains the core hardware abstraction layer and board support package.
+
+**Related Repository:**
+
+- **[t4-s3_base-apps](https://github.com/coyotegd/t4-s3_base-apps)** - Application examples using this HAL/BSP
+  - Contains `external/hal_bsp/` - a synchronized copy of this repository
+  - Demonstrates UI applications (launcher, maze game, sports tracker) built on top of the HAL
+  - Changes to this parent repository are propagated to the child
+
+**Maintenance:** Both repositories are kept in sync - updates to the HAL, PM Settings, and core functionality are applied to both.
+
+## 🎨 UI Architecture
+
+**Default Home Screen (ui_home):**
+
+This repository provides `ui_home.c` as the default home screen, which displays:
+
+- Time/date display in upper left (shows "http d/t syncing . . ." while synchronizing)
+- WiFi status indicator in upper right
+- Media player, System Info, PM Settings, PM Status, Display Settings, and System OTA buttons
+- Navigation between system screens
+
+**UI Override Pattern:**
+
+Child repositories (like [t4-s3_base-apps](https://github.com/coyotegd/t4-s3_base-apps)) can override the default `ui_home` screen using linker wrapping (`--wrap`):
+
+- Uses `"-Wl,--wrap=ui_home_create"` and `"-Wl,--wrap=show_home_view"` linker flags
+- Implements `__wrap_ui_home_create()` to replace the default home screen creation
+- Implements `__wrap_show_home_view()` to redirect "home" navigation to custom screens
+- Example: `ui_launcher` in t4-s3_base-apps replaces ui_home with a custom launcher screen
+- Both screens display "http d/t syncing . . ." during time synchronization
+- This allows child projects to customize the main interface while keeping HAL/BSP unmodified
+
+**Benefits:**
+
+- Child repositories can create custom home screens without modifying this HAL/BSP
+- Updates to this parent repository don't overwrite custom UIs
+- Submodule stays clean and mergeable
+- Access to all HAL BSP system screens (PM Settings, Display, OTA, etc.) remains available
+
 ## 📸 Gallery
 
 ![UI Home Screen](docs/images/ui_home.png)
 ![UI Home Screen](docs/images/ui_media.png)
 ![UI Home Screen](docs/images/ui_pm_set.png)
+
 ## ✨ Features
 
-*   **Display:** RM690B0 Driver (AMOLED 450x600 via QSPI/SPI-like protocol).
-*   **Touch:** CST226SE Driver (Capacitive Touch).
-*   **Power:** SY6970 PMIC Driver (Battery charging, voltage monitoring, power path).
-*   **HAL Manager:** A unified facade (`hal_mgr`) that simplifies hardware usage.
-*   **LVGL Integration:** Pre-configured LVGL 9 display and touch drivers.
-*   **Battery Logic:** Smart detection for "No Battery" vs "Charging" states.
-*   **Development Tools:** ESP-IDF helper script (`tools/idfsh.sh`) for interactive build/flash/monitor workflows.
+- **Display:** RM690B0 Driver (AMOLED 450x600 via QSPI/SPI-like protocol).
+- **Touch:** CST226SE Driver (Capacitive Touch).
+- **Power:** SY6970 PMIC Driver (Battery charging, voltage monitoring, power path).
+- **HAL Manager:** A unified facade (`hal_mgr`) that simplifies hardware usage.
+- **LVGL Integration:** Pre-configured LVGL 9 display and touch drivers.
+- **Battery Logic:** Smart detection for "No Battery" vs "Charging" states.
+- **Development Tools:** ESP-IDF helper script (`tools/idfsh.sh`) for interactive build/flash/monitor workflows.
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-*   VS Code with Espressif IDF Extension.
-*   ESP-IDF v5.x.
+
+- VS Code with Espressif IDF Extension.
+- ESP-IDF v5.x.
 
 ### Build & Run
-1.  **Open** this folder in VS Code.
-2.  **Build** the project: Click the `Build` button in the status bar or run `idf.py build`.
-3.  **Flash** to device: Click `Flash` or run `idf.py -p /dev/ttyACM0 flash` (check your port name).
-4.  **Monitor** output: Click `Monitor` or run `idf.py monitor`.
+
+1. **Open** this folder in VS Code.
+2. **Build** the project: Click the `Build` button in the status bar or run `idf.py build`.
+3. **Flash** to device: Click `Flash` or run `idf.py -p /dev/ttyACM0 flash` (check your port name).
+4. **Monitor** output: Click `Monitor` or run `idf.py monitor`.
 
 ## 🛠 Hardware Abstraction Layer (HAL)
 
@@ -53,101 +98,181 @@ void app_main(void) {
 ## 🌐 WiFi & Auto-Timezone
 
 The project includes a robust WiFi Manager (`wifi_mgr`) that handles:
-*   **Scanning & Connection:** Scans for available networks and manages connection state.
-*   **SNTP Time Sync:** Automatically fetches UTC time from `pool.ntp.org` upon connection.
-*   **Auto-Timezone Detection:**
-    *   After obtaining an IP, the device queries `http://ip-api.com` to determine your location.
-    *   It parses the specific time zone offset from the JSON response.
-    *   System `TZ` environment variable is automatically updated to match your local time (e.g., PST/PDT).
-    *   The UI displays "http d/t requested . . ." until the valid local time is resolved.
+
+- **Scanning & Connection:** Scans for available networks and manages connection state.
+- **SNTP Time Sync:** Automatically fetches UTC time from `pool.ntp.org` upon connection.
+- **Auto-Timezone Detection:**
+  - After obtaining an IP, the device queries `http://ip-api.com` to determine your location.
+  - It parses the specific time zone offset from the JSON response.
+  - System `TZ` environment variable is automatically updated to match your local time (e.g., PST/PDT).
+  - The UI displays "http d/t syncing . . ." until the valid local time is resolved.
 
 ### 🕒 Timekeeping Summary
-*   **Second-by-second:** Handled by the ESP32's internal software counter (System Time).
-*   **Accuracy check:** Updated from the internet via SNTP every **60 minutes**.
-*   **Power Loss:** Since there is no dedicated coin-cell RTC, if power is lost completely, time resets until WiFi reconnects.
 
-## 🔌 USB Type-C & Power Delivery Configuration
+- **Second-by-second:** Handled by the ESP32's internal software counter (System Time).
+- **Accuracy check:** Updated from the internet via SNTP every **60 minutes**.
+- **Power Loss:** Since there is no dedicated coin-cell battery RTC, if power is lost completely, time resets until WiFi reconnects.
 
-The PM Settings page includes advanced USB Type-C configuration options for managing power delivery and USB protocol versions.
+## 🔌 Understanding USB Type-C on This Device
 
-### USB Type-C Voltage Selector
+The device uses a USB Type-C connector for both power delivery and data transfer. It's important to understand how these work:
 
-Three voltage modes are available for Type-C power delivery:
+### USB Power Delivery (USB-PD)
 
-*   **Auto-PD (Negotiated)** - *Default and Recommended*
-    *   Allows the device to automatically negotiate the optimal voltage with the connected USB-C power adapter
-    *   USB Power Delivery (USB-PD) protocol handles this transparently
-    *   The charger and device communicate to select the best voltage/current combination
-    *   Most compatible with modern USB-C adapters
-    
-*   **5V Override**
-    *   Forces operation at standard USB 5V (USB 2.0/3.0 default)
-    *   Use when connected to older USB ports or basic adapters
-    *   Safest option for unknown power sources
-    
-*   **9V Override**
-    *   Requests 9V operation from the power adapter via USB-PD
-    *   Enables faster charging if the adapter supports 9V output
-    *   Only effective with USB-PD compatible adapters (most modern USB-C chargers)
+- The SY6970 PMIC is fully capable of working with USB-PD and accepts any voltage the power adapter provides (5V-20V)
+- **Hardware Limitation:** The T4-S3 board lacks a dedicated USB-PD controller chip (e.g., FUSB302, CH224K)
+- Modern USB-C adapters negotiate voltage automatically through USB-PD protocol
+- Without a USB-PD controller, the ESP32-S3 cannot actively request specific voltages
+- The device will charge safely at whatever voltage the adapter provides (typically 5V by default)
+- **To implement USB-PD control:** Would require adding a USB-PD controller chip to communicate voltage requests
 
-**Note:** USB Power Delivery is automatic by default. The override options are provided for specific use cases or troubleshooting. Setting an override tells the system your preference, but the actual voltage delivered depends on what the power adapter can provide.
+**Current behavior:** Adapter provides voltage → USB-PD negotiation happens in adapter → SY6970 accepts it → Charges battery safely
 
-### USB Version Selector
+### USB Data Standards vs. USB Power Delivery
 
-Selects the USB data transfer protocol standard:
+These are **independent** protocols that operate over the same USB Type-C connector:
 
-*   **USB 2.0** - Up to 480 Mbps (backward compatible, lower power)
-*   **USB 3.0** - Up to 5 Gbps (faster data transfer)
-*   **USB 4** - Up to 40 Gbps (latest standard, maximum performance)
+**USB Data Speed (USB 2.0, 3.0, 4):**
 
-**Important:** USB version and USB-PD voltage are independent:
-*   USB 4 can work with any voltage (5V, 9V, 12V, 15V, or 20V)
-*   They operate over the same USB Type-C connector
-*   USB version controls **data speed**, USB-PD controls **charging voltage/current**
-*   You can select "USB 4 + PD 9V" for maximum data and charging performance
+- **USB 2.0** - Up to 480 Mbps (backward compatible, lower power)
+- **USB 3.0** - Up to 5 Gbps (faster data transfer)
+- **USB 4** - Up to 40 Gbps (latest standard, maximum performance)
+- Controls **data transfer speed** only
 
-### Current Implementation Status
+**USB Power Delivery (USB-PD):**
 
-**🔴 Hardware Implementation Required:**
+- Negotiates voltage (5V, 9V, 12V, 15V, 20V) and current
+- Controls **charging voltage/current** only
+- Independent of USB data version
 
-The USB Type-C voltage and version selectors are currently **UI-only settings**. They:
-*   Display in the PM Settings interface
-*   Save your preferences to non-volatile storage (NVS)
-*   Log your selections to the ESP console
+**Key Point:** A USB 4 connection can work with any USB-PD voltage. You could have "USB 4 data transfer at 40 Gbps" while charging at "5V USB-PD" or "20V USB-PD"—they're separate protocols sharing the same physical connector.
 
-**However, actual voltage negotiation requires:**
-1.  **Hardware Support:** A USB-PD controller chip (many modern Type-C adapters have this, but the ESP32-S3 doesn't natively control it)
-2.  **Driver Implementation:** Code in the `sy6970` driver to communicate with USB-PD negotiation hardware
-3.  **Protocol Logic:** Implementation of the USB-PD protocol state machine
+## ⚡ Power Management (PM) Settings & Intelligent Defaults
 
-**Current Behavior:**
-*   The SY6970 PMIC accepts whatever voltage the power adapter provides (5V-20V)
-*   It will charge the battery safely regardless of input voltage
-*   The UI settings prepare the framework for future USB-PD control implementation
+The system provides comprehensive power management through the **PM Settings** page with intelligent defaults that adapt to your hardware configuration.
 
-These settings are included now so you can:
-*   Document your power adapter capabilities
-*   Prepare for future hardware integration
-*   Understand the relationship between USB-PD and USB data standards
+### First Boot Behavior (No NVS Settings)
+
+When the device boots for the first time (or after NVS is erased), it uses these practical defaults:
+
+| Setting | Default Value | Rationale |
+|---------|---------------|-----------|
+| **Battery Capacity** | 2000 mAh | Common capacity for portable devices |
+| **USB Source Type** | BC1.2 PA 1.5A | Most modern USB ports/chargers support this |
+| **Input Current Limit** | 1500 mA | Based on BC1.2 standard |
+| **System Load** | 350 mA | ESP32-S3 + AMOLED display + WiFi |
+| **Safety Margin** | 100 mA | Prevents USB voltage collapse |
+| **Fast Charge Current** | 1000 mA | 0.5C for 2000 mAh battery |
+| **Pre-Charge Current** | 200 mA | 0.1C for 2000 mAh battery |
+| **Termination Current** | 100 mA | 0.05C for 2000 mAh battery |
+
+**Result:** On first boot, the device charges at **1000 mA** (practical and safe for most setups).
+
+### The "PM Defaults" Button: Context-Aware Reset
+
+The **PM Defaults** button in PM Settings applies intelligent defaults that **adapt to your current hardware selection**:
+
+**What it preserves:**
+- Your selected **Battery Capacity** (user-defined mAh)
+- Your selected **USB Source Type** (e.g., USB 3.0, BC1.2, High-Power PA)
+
+**What it resets:**
+- **System Load**: 350 mA
+- **Safety Margin**: 100 mA
+- **Charging Policy**: 0.5C fast charge, 0.1C pre-charge, 0.05C termination
+
+**Why this matters:**
+
+If you have a **1500 mAh battery** and click "PM Defaults":
+- Fast Charge → 750 mA (0.5C for 1500 mAh)
+- Pre-Charge → 150 mA (0.1C)
+- Termination → 75 mA (0.05C)
+
+If you have a **3000 mAh battery** and click "PM Defaults":
+- Fast Charge → 1500 mA (0.5C for 3000 mAh, clamped by USB source)
+- Pre-Charge → 300 mA (0.1C)
+- Termination → 150 mA (0.05C)
+
+### Adaptive Charging Policy
+
+The system automatically calculates safe charging currents using this formula:
+
+```
+Available Headroom = Input Current Limit - System Load - Safety Margin
+Fast Charge Current = min(0.5C × Battery Capacity, Available Headroom)
+```
+
+**Example scenarios:**
+
+| USB Source | ILIM | System Load | Margin | Available | Battery (2000 mAh) | Result |
+|------------|------|-------------|--------|-----------|-------------------|--------|
+| USB 2.0 (0.5A) | 500 mA | 350 mA | 100 mA | 50 mA | 0.5C = 1000 mA | **64 mA** (limited by source) |
+| USB 3.0 (0.9A) | 900 mA | 350 mA | 100 mA | 450 mA | 0.5C = 1000 mA | **448 mA** (limited by source) |
+| BC1.2 PA (1.5A) | 1500 mA | 350 mA | 100 mA | 1050 mA | 0.5C = 1000 mA | **1000 mA** ✓ (full 0.5C) |
+| High-Power PA (3A) | 3000 mA | 350 mA | 100 mA | 2550 mA | 0.5C = 1000 mA | **1000 mA** ✓ (full 0.5C) |
+
+**Key takeaway:** The system automatically limits charging current based on your USB source to prevent overloading it. If "Limited by source" appears on PM Status, select a more powerful USB source in PM Settings.
+
+### PM Status Page: Real-Time Monitoring
+
+The **PM Status** page displays actual values using a clean table layout:
+
+```
+System Volts:          4500 mV
+Battery Volts:         3850 mV
+Charge Status:         Fast Charge
+Charging Current:      1000 mA
+Pre-Charge:            200 mA     (settings value, not ADC)
+Termination:           100 mA     (settings value, not ADC)
+USB:                   Connected
+USB Volts:             5100 mV
+USB Power:             Yes
+Temperature:           45% - NORMAL
+Fault:                 None (LED off) no USB
+```
+
+**Label Layout:** Each field shows description (left-aligned) and value (right-aligned) on the same line for easy reading.
+
+**Note:** Pre-Charge and Termination display the configured settings values (read from the PMIC registers), not live ADC readings, since they only apply during those specific charging phases.
+
+### User Workflow
+
+**Initial Setup:**
+1. Boot device (uses BC1.2 1.5A defaults)
+2. Navigate to **PM Settings**
+3. Select your actual **Battery Capacity**
+4. Select your actual **USB Source Type**
+5. Click **PM Defaults** to calculate optimal charging currents
+6. Fine-tune if needed (advanced users)
+
+**Settings are persistent** - stored in NVS and restored on every boot.
+
+### Safety Features
+
+- **Source Protection:** Charging current automatically clamped to prevent USB voltage collapse
+- **Battery Protection:** Charge voltage defaults to 4.208V (safe for LiPo/Li-ion)
+- **No Battery Detection:** System detects battery disconnect and stops charging
+- **Temperature Monitoring:** NTC sensor provides real-time temperature status with color-coded warnings
+- **Fault LED:** Blinks at 1Hz when faults detected (can be disabled during fault conditions)
 
 ## 🎥 AVI Video Playback
 
 The system includes a video player for `.avi` files stored on the SD card.
 
-*   **Frame Rate:** Video playback is optimized for **~15 FPS**. Increasing the frame rate beyond this provides no visual benefit on this screen/interface and only consumes extra resources.
-*   **Codec:** The player uses an **older MPEG codec**, not the latest standards (like H.264). Please ensure video files are encoded using compatible legacy MPEG formats.
+- **Frame Rate:** Video playback is optimized for **~15 FPS**. Increasing the frame rate beyond this provides no visual benefit on this screen/interface and only consumes extra resources.
+- **Codec:** The player uses an **older MPEG codec**, not the latest standards (like H.264). Please ensure video files are encoded using compatible legacy MPEG formats.
 
 ## � Over-The-Air (OTA) Updates
 
 The system supports wireless firmware updates via the **System OTA** menu.
 
-*   **Logic:**
-    *   Checks a remote GitHub Release URL for the latest `firmware.bin`.
-    *   Parses the **Version** string (e.g., `v1.2.0`) from the new binary header.
-    *   **Anti-Downgrade:** Only updates if the remote version is strictly *higher* than the current running version.
-    *   **Up-To-Date:** If version is same or older, displays "System is Up To Date".
-*   **Partitioning:** Uses an A/B partition scheme (`ota_0`, `ota_1`) with an `otadata` manager to switch safe slots automatically.
-*   **Safety:** Automatically verifies image header before writing and reboots upon success.
+- **Logic:**
+  - Checks a remote GitHub Release URL for the latest `firmware.bin`.
+  - Parses the **Version** string (e.g., `v1.2.0`) from the new binary header.
+  - **Anti-Downgrade:** Only updates if the remote version is strictly *higher* than the current running version.
+  - **Up-To-Date:** If version is same or older, displays "System is Up To Date".
+- **Partitioning:** Uses an A/B partition scheme (`ota_0`, `ota_1`) with an `otadata` manager to switch safe slots automatically.
+- **Safety:** Automatically verifies image header before writing and reboots upon success.
 
 ## �📂 Project Structure
 
@@ -156,12 +281,12 @@ The system supports wireless firmware updates via the **System OTA** menu.
 | Signal | GPIO | Notes |
 | :--- | :--- | :--- |
 | **CS** | 11 | Chip Select |
-| **SCK**| 15 | Clock |
+| **SCK** | 15 | Clock |
 | **D0** | 14 | Data 0 |
 | **D1** | 10 | Data 1 |
 | **D2** | 16 | Data 2 |
 | **D3** | 12 | Data 3 |
-| **RST**| 13 | Reset |
+| **RST** | 13 | Reset |
 | **TE** | 18 | Tearing Effect |
 | **PMIC_EN** | 9 | **CRITICAL:** Power Enable (Must be HIGH) |
 | **I2C_SDA** | 6 | PMIC/Touch I2C |
@@ -171,25 +296,29 @@ The system supports wireless firmware updates via the **System OTA** menu.
 
 This project solves several tricky hardware behaviors of the T4-S3:
 
-1.  **Missing D/C Pin (RM690B0):** The display uses a custom QSPI wrapper protocol instead of standard SPI/8080.
-2.  **GPIO 9 Power Enable:** The display and PMIC power rail is controlled by GPIO 9. It must be pulled HIGH or the screen stays black.
-3.  **PMIC Watchdog:** The SY6970 watchdog is disabled on boot to prevent random resets.
-4.  **No Battery Detection:** Uses a voltage volatility algorithm to detect if the device is running solely on USB (voltage fluctuates) vs Battery (voltage stable).
+1. **Missing D/C Pin (RM690B0):** The display uses a custom QSPI wrapper protocol instead of standard SPI/8080.
+2. **GPIO 9 Power Enable:** The display and PMIC power rail is controlled by GPIO 9. It must be pulled HIGH or the screen stays black.
+3. **PMIC Watchdog:** The SY6970 watchdog is disabled on boot to prevent random resets.
+4. **No Battery Detection:** Uses a voltage volatility algorithm to detect if the device is running solely on USB (voltage fluctuates) vs Battery (voltage stable).
 
 ## 📚 Documentation
-*   [LVGL Integration Journey](docs/LVGL_JOURNEY.md)
-*   [RM690B0 Rotation Guide](docs/rm690b0_rotation_guide.md)
+
+- [LVGL Integration Journey](docs/LVGL_JOURNEY.md)
+- [RM690B0 Rotation Guide](docs/rm690b0_rotation_guide.md)
+- [AVI MJPEG Playback Implementation](components/lv_ui/src/README.md) - Journey from managed components to local build solution
 
 ## 🔧 Troubleshooting: Hardcoded Paths in Cloned Repos
 
 If cloning this or similar ESP‑IDF projects fails to build or flash due to paths/ports, it’s usually because workspace settings include user‑specific absolute paths.
 
-**Symptoms**
-- Build refers to another user’s `esp-idf` install.
+### Symptoms
+
+- Build refers to another user's `esp-idf` install.
 - Flash/monitor tries a non‑existent serial port (e.g., `/dev/ttyACM0`).
 - Language server (`clangd`) errors about missing toolchain binaries.
 
-**Quick Fix**
+### Quick Fix
+
 - Move aside their workspace settings: `mv .vscode .vscode.bak`
 - Reconfigure the project:
 
@@ -206,14 +335,16 @@ idf.py build
 idf.py -p /dev/ttyUSB0 flash monitor
 ```
 
-**Recommended Repo Practices**
+### Recommended Repo Practices
+
 - Avoid committing user‑specific `.vscode/settings.json` entries:
-    - `idf.espIdfPath`, `idf.toolsPath`, `idf.port`, `clangd.path`
+  - `idf.espIdfPath`, `idf.toolsPath`, `idf.port`, `clangd.path`
 - Prefer workspace‑relative paths:
-    - `clangd.arguments: --compile-commands-dir=${workspaceFolder}/build`
+  - `clangd.arguments: --compile-commands-dir=${workspaceFolder}/build`
 - Track `sdkconfig.defaults`, ignore `sdkconfig` to let each machine generate its own.
 
-**First‑Time Setup**
+### First‑Time Setup
+
 - Ensure ESP‑IDF tools are installed via the VS Code extension or by sourcing your local IDF (`. $IDF_PATH/export.sh`).
 - Initialize submodules:
 
@@ -228,6 +359,7 @@ git submodule update --init --recursive
 **This repository now uses fully portable workspace settings!** All user-specific paths have been removed from `.vscode/settings.json`.
 
 **What's included (workspace-portable):**
+
 ```json
 {
   "idf.buildPath": "${workspaceFolder}/build",
@@ -237,14 +369,22 @@ git submodule update --init --recursive
 ```
 
 **What's auto-configured by ESP-IDF extension:**
+
 - ESP-IDF installation path
-- Toolchain paths  
+- Toolchain paths
 - Python environment
 - Serial port (select when flashing)
 - Clangd path
 
 **After cloning:**
+
 1. Open in VS Code
 2. Reload window (`Ctrl+Shift+P` → "Reload Window")
 3. Extension auto-configures for your system
 4. Build and flash!
+
+## 📚 Additional Documentation
+
+- [LVGL Integration Journey](docs/LVGL_JOURNEY.md)
+- [RM690B0 Rotation Guide](docs/rm690b0_rotation_guide.md)
+- [AVI MJPEG Playback Implementation](components/lv_ui/src/README.md) - Journey from managed components to local build solution

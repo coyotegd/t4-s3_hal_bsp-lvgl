@@ -20,13 +20,15 @@ static void status_bar_timer_cb(lv_timer_t * t) {
     time(&now);
     localtime_r(&now, &timeinfo);
     
-    // Check if time is set (year > 2020) - otherwise show --:--
-    if (timeinfo.tm_year > (2020 - 1900)) {
+    // Check WiFi connection first, then time sync status
+    if (!wifi_mgr_is_connected()) {
+        lv_label_set_text(lbl_header_time, "waiting for Wi-Fi connection . . .");
+    } else if (timeinfo.tm_year > (2020 - 1900)) {
         lv_label_set_text_fmt(lbl_header_time, "%02d/%02d/%04d %02d:%02d", 
             timeinfo.tm_mon + 1, timeinfo.tm_mday, timeinfo.tm_year + 1900,
             timeinfo.tm_hour, timeinfo.tm_min);
     } else {
-        lv_label_set_text(lbl_header_time, "http d/t requested . . .");
+        lv_label_set_text(lbl_header_time, "http d/t syncing . . .");
     }
     
     // Update WiFi Icon
@@ -242,7 +244,7 @@ void ui_home_create(lv_obj_t * parent) {
     // Time Label (Top Left)
     lbl_header_time = lv_label_create(header_row);
     lv_obj_set_align(lbl_header_time, LV_ALIGN_LEFT_MID);
-    lv_label_set_text(lbl_header_time, "http d/t requested . . .");
+    lv_label_set_text(lbl_header_time, "waiting for Wi-Fi connection . . .");
     lv_obj_set_style_text_font(lbl_header_time, &lv_font_montserrat_22, 0);
     lv_obj_set_style_text_color(lbl_header_time, lv_color_white(), 0);
 

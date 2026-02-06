@@ -4,7 +4,8 @@
     "board/esp32s3-builtin.cfg"
   ],
   "idf.customExtraVars": {
-    "IDF_TARGET": "esp32s3"
+    "IDF_TARGET": "esp32s3",
+    "OPENOCD_USB_ADAPTER_LOCATION": "5-1"
   },
   "clangd.arguments": [
     "--background-index",
@@ -12,7 +13,9 @@
     "--compile-commands-dir=${workspaceFolder}/build"
   ],
   "idf.flashType": "UART",
-  "idf.buildPath": "${workspaceFolder}/build"
+  "idf.buildPath": "${workspaceFolder}/build",
+  "idf.currentSetup": "/home/kenneth/esp/v5.5/esp-idf",
+  "idf.port": "/dev/ttyACM0"
   // User-specific paths (auto-configured by ESP-IDF extension):
   // "idf.espIdfPath": "auto-detected or set via extension"
   // "idf.toolsPath": "auto-detected or set via extension"

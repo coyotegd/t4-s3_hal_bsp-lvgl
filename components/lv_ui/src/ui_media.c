@@ -43,7 +43,10 @@ typedef struct {
 static avi_metadata_t extract_avi_metadata(const char *file_path) {
     avi_metadata_t meta = {0};
     
-    FILE* f = fopen(file_path, "rb");
+    const char * path = file_path;
+    if (strncmp(path, "S:", 2) == 0) path += 2;
+
+    FILE* f = fopen(path, "rb");
     if (!f) return meta;
     
     // Read AVI header to get microseconds per frame
@@ -64,7 +67,10 @@ static avi_metadata_t extract_avi_metadata(const char *file_path) {
 static png_metadata_t extract_png_metadata(const char *file_path) {
     png_metadata_t meta = {0};
     
-    FILE* f = fopen(file_path, "rb");
+    const char * path = file_path;
+    if (strncmp(path, "S:", 2) == 0) path += 2;
+
+    FILE* f = fopen(path, "rb");
     if (!f) return meta;
     
     uint8_t buf[24];
@@ -96,7 +102,10 @@ static png_metadata_t extract_png_metadata(const char *file_path) {
 static jpg_metadata_t extract_jpg_metadata(const char *file_path) {
     jpg_metadata_t meta = {0};
     
-    FILE* f = fopen(file_path, "rb");
+    const char * path = file_path;
+    if (strncmp(path, "S:", 2) == 0) path += 2;
+
+    FILE* f = fopen(path, "rb");
     if (!f) return meta;
     
     // Read JPEG header to get dimensions
@@ -627,8 +636,16 @@ void ui_play_create(lv_obj_t * parent, const char * file_path) {
             ESP_LOGI("ui_media", "Creating AVI player for %s", file_path);
             img = ui_avi_create(media_cont);
             if (img) {
+                // Force size to fill container just in case (though AVI header should set content size)
+                lv_obj_set_size(img, LV_PCT(100), LV_PCT(100));
+                lv_obj_set_style_bg_color(img, lv_color_black(), 0);
+                lv_obj_set_style_bg_opa(img, LV_OPA_COVER, 0); // Black background while loading
+
                 ui_avi_set_src(img, file_path);
                 
+                // Start Playback
+                ui_avi_play(img);
+
                 // Extract AVI metadata (use fs_path without "S:" prefix)
                 avi_metadata_t avi_meta = extract_avi_metadata(fs_path);
                 

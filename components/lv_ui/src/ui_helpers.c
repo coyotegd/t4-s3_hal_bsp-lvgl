@@ -100,29 +100,37 @@ void update_stats_timer_cb(lv_timer_t * timer) {
         else if (chg_status == SY6970_CHG_FAST_CHARGE) chg_str = "Fast Charge";
         else if (chg_status == SY6970_CHG_TERM_DONE) chg_str = "Done";
 
-        if (lbl_sys_volts) lv_label_set_text_fmt(lbl_sys_volts, "System Volts:\n%d mV", sys_volts);
+        if (lbl_sys_volts) lv_label_set_text_fmt(lbl_sys_volts, "%d mV", sys_volts);
         if (lbl_batt) {
             if (battery_disconnected) {
-                lv_label_set_text(lbl_batt, "Battery Volts:\nNo Battery");
+                lv_label_set_text(lbl_batt, "No Battery");
             } else if (vbus_conn) {
-                lv_label_set_text(lbl_batt, "Battery Volts:\nUSB Powered");
+                lv_label_set_text(lbl_batt, "USB Powered");
             } else {
-                lv_label_set_text_fmt(lbl_batt, "Battery Volts:\n%d mV", batt_volts);
+                lv_label_set_text_fmt(lbl_batt, "%d mV", batt_volts);
             }
         }
         if (lbl_chg_stat) {
             if (battery_disconnected) {
-                lv_label_set_text(lbl_chg_stat, "Charge Status:\nN/A - No Battery");
+                lv_label_set_text(lbl_chg_stat, "N/A - No Battery");
             } else {
-                lv_label_set_text_fmt(lbl_chg_stat, "Charge Status:\n%s", chg_str);
+                lv_label_set_text_fmt(lbl_chg_stat, "%s", chg_str);
             }
         }
-        if (lbl_chg_curr) lv_label_set_text_fmt(lbl_chg_curr, "Charging Current:\n%d mA", chg_curr);
-        if (lbl_usb) lv_label_set_text_fmt(lbl_usb, "USB:\n%s", vbus_conn ? "Connected" : "Disconnected");
-        if (lbl_usb_volts) lv_label_set_text_fmt(lbl_usb_volts, "USB Volts:\n%d mV", usb_volts);
+        if (lbl_chg_curr) lv_label_set_text_fmt(lbl_chg_curr, "%d mA", chg_curr);
+        if (lbl_pre_curr) {
+            uint16_t pre_curr = sy6970_get_precharge_current_limit();
+            lv_label_set_text_fmt(lbl_pre_curr, "%d mA", pre_curr);
+        }
+        if (lbl_term_curr) {
+            uint16_t term_curr = sy6970_get_termination_current_limit();
+            lv_label_set_text_fmt(lbl_term_curr, "%d mA", term_curr);
+        }
+        if (lbl_usb) lv_label_set_text_fmt(lbl_usb, "%s", vbus_conn ? "Connected" : "Disconnected");
+        if (lbl_usb_volts) lv_label_set_text_fmt(lbl_usb_volts, "%d mV", usb_volts);
         if (lbl_ntc) {
             const char* temp_status = sy6970_get_ntc_temperature_status(ntc_pct);
-            lv_label_set_text_fmt(lbl_ntc, "Temperature: %d%%\n%s", ntc_pct, temp_status);
+            lv_label_set_text_fmt(lbl_ntc, "%d%% - %s", ntc_pct, temp_status);
             
             // Set color based on temperature status
             if (ntc_pct >= 73) {
@@ -150,7 +158,7 @@ void update_stats_timer_cb(lv_timer_t * timer) {
              // Let's just show VBUS status for now or remove it if not useful.
              // Or maybe "Power Good" status
              bool pg = sy6970_is_power_good();
-             lv_label_set_text_fmt(lbl_usb_pg, "USB Power:\n%s", pg ? "Yes" : "No");
+             lv_label_set_text_fmt(lbl_usb_pg, "%s", pg ? "Yes" : "No");
         }
         
         // Fault Status

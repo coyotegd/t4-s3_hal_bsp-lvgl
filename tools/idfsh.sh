@@ -32,6 +32,16 @@ idfsh() {
     if [[ -n "${IDF_PATH:-}" ]]; then
       candidates+=("$IDF_PATH/export.sh")
     fi
+    
+    # Add versioned directories in ~/esp (e.g., v5.3.1, v5.4, etc.)
+    # We use pushd/popd or explicit glob expansion, ensuring we sort to get latest first.
+    # Note: version sorting in bash is tricky, but lexical sort of v5.X usually works.
+    local versioned_paths=("$HOME"/esp/*/esp-idf/export.sh)
+    # Reverse the array to likely try newer versions first (lexical sort puts v5.5 after v5.4)
+    for (( i=${#versioned_paths[@]}-1; i>=0; i-- )); do
+        candidates+=("${versioned_paths[i]}")
+    done
+
     candidates+=(
       "$HOME/esp/esp-idf/export.sh"
       "/opt/esp/idf/export.sh"
@@ -260,10 +270,52 @@ idfsh() {
   do_size() {
     ensure_idf || return 1
     local build_dir="$PROJECT_DIR/build"
-    # Base size report
-    ( cd "$PROJECT_DIR" && idf.py size ) || true
+    
+    echo "--------------------------------------------------------"
+    echo "RAW SIZE OUTPUT:"
+    local size_out
+    size_out=$(( cd "$PROJECT_DIR" && idf.py size ) 2>&1 || true)
+    echo "$size_out"
+    echo "--------------------------------------------------------"
 
-    # Derive app binary path from project_description.json if available
+    # --- Helper: Draw Bar ---
+    draw_bar() {
+        local val=$1
+        local total=$2
+        local pct=$(( val * 100 / total ))
+        local len=40
+        local fill=$(( pct * len / 100 ))
+        
+        # Bash string manipulation for bar
+        local full_bar=""
+        for ((i=0; i<len; i++)); do full_bar+="#"; done
+        local empty_bar=""
+        for ((i=0; i<len; i++)); do empty_bar+="."; done
+        
+        local bar="[${full_bar:0:fill}${empty_bar:fill}]"
+        echo "$bar $pct%"
+    }
+
+    # --- Layman's Explanation of RAM ---
+    local dram_line
+    dram_line=$(echo "$size_out" | grep "Used static DRAM")
+    if [[ -n "$dram_line" ]]; then
+        local dram_used dram_avail dram_total
+        dram_used=$(echo "$dram_line" | awk '{print $4}')
+        dram_avail=$(echo "$dram_line" | awk -F'(' '{print $2}' | awk '{print $1}')
+        dram_total=$(( dram_used + dram_avail ))
+        
+        echo
+        echo "LAYMAN ANALYSIS:"
+        echo "[1] RAM (Temporary Memory)"
+        echo "    - Used for global variables."
+        echo "    - You are using $dram_used bytes out of $dram_total bytes."
+        echo "    - Remaining $dram_avail bytes available for Stack & Heap."
+        echo "    VISUAL: $(draw_bar $dram_used $dram_total)"
+        echo "    > Summary: Keep 'Free' high. If it hits 0, the app crashes."
+    fi
+
+    # --- Flash / Partition check ---
     local json="$build_dir/project_description.json"
     local app_bin=""
     if [[ -f "$json" ]]; then
@@ -287,7 +339,7 @@ PY
     if [[ -n "$app_bin" && -f "$part_bin" && -n "${IDF_PATH:-}" && -f "$IDF_PATH/components/partition_table/check_sizes.py" ]]; then
       local out
       out=$("$IDF_PATH/components/partition_table/check_sizes.py" --offset 0x8000 partition --type app "$part_bin" "$app_bin" 2>/dev/null || true)
-      echo "$out"
+      
       # Parse sizes from check_sizes.py output
       local used_hex part_hex used part pct status
       used_hex=$(echo "$out" | grep -oE 'binary size 0x[0-9a-fA-F]+' | sed 's/.*0x//' | head -n1)
@@ -298,15 +350,23 @@ PY
         pct=$(( used * 100 / part ))
         status="GREEN"
         if (( pct >= 90 )); then
-          status="RED"
+          status="RED (Dangerous!)"
         elif (( pct >= 75 )); then
-          status="YELLOW"
+          status="YELLOW (Getting full)"
         fi
-        echo "[idfsh] App size: ${used} / ${part} bytes (${pct}%). Status: ${status}"
+        
+        echo
+        echo "[2] Flash (Storage Space)"
+        echo "    - Your App size:  $used bytes"
+        echo "    - Partition limit: $part bytes"
+        echo "    VISUAL: $(draw_bar $used $part)"
+        echo "    > Status: ${status}"
       fi
     else
       echo "[idfsh] Size check: missing app bin or partition table; build the project first."
     fi
+
+    echo "--------------------------------------------------------"
 
     # Optional: chip info via esptool (if port available)
     if command -v esptool.py >/dev/null 2>&1 && [[ -n "$ESPPORT" ]]; then
@@ -328,31 +388,31 @@ PY
     echo "[idfsh] Baud:    $ESPBAUD"
     echo
     cat <<'MENU'
-  1) Full Clean (remove build/ & managed_components/)
-  2) Set Port
-  3) Set Baud
-  4) Build
-  5) Flash
-  6) Monitor
-  7) Build & Flash
-  8) Flash & Monitor
-  9) Build, Flash & Monitor
- 10) Set Target
- 11) Erase Flash
- 12) Size Report
- 13) Reconfigure (CMake regen)
+  1) Set Port
+  2) Set Baud
+  3) Reconfigure (del build/, replace managed_components/)
+  4) Erase Build Only
+  5) Build
+  6) Flash
+  7) Monitor
+  8) Build & Flash
+  9) Flash & Monitor
+ 10) Build, Flash & Monitor
+ 11) Set Target
+ 12) Erase All of Flash (even NVS)
+ 13) Size Report
   0) Quit
 MENU
     read -r -p "Select an option: " choice
     case "$choice" in
-      1) do_fullclean ;; 2) choose_port ;; 3) set_baud ;;
-      4) do_build ;; 5) do_flash ;; 6) do_monitor ;;
-      7) do_build && do_flash ;; 8) do_flash_monitor ;;
-      9) do_build_flash_monitor ;;
-     10) do_set_target ;;
-     11) do_erase_flash ;;
-     12) do_size ;;
-     13) do_reconfigure ;;
+      1) choose_port ;; 2) set_baud ;; 3) do_fullclean && do_reconfigure ;;
+      4) rm -rf "$PROJECT_DIR/build" && echo "[idfsh] Removed build/" ;;
+      5) do_build ;; 6) do_flash ;; 7) do_monitor ;;
+      8) do_build && do_flash ;; 9) do_flash_monitor ;;
+     10) do_build_flash_monitor ;;
+     11) do_set_target ;;
+     12) do_erase_flash ;;
+     13) do_size ;;
       0) echo "[idfsh] Bye."; break ;;
       *) echo "[idfsh] Invalid choice." ;;
     esac
