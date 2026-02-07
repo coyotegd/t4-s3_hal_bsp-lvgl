@@ -184,8 +184,11 @@ CMake Error: Dependency graph includes circular dependencies
 - ❌ Hours spent debugging color format mismatches
 - ❌ Required complete JPEG headers (DHT/DQT tables), necessitating header injection code
 
-**Attempted fixes that didn't work:**
+**Attempted fixes that didn't work (NanoJPEG color issues):**
 ```c
+// NOTE: These are incomplete code snippets showing historical failed attempts
+// with NanoJPEG. DO NOT use these - they did not work.
+
 // Try 1: Swap R and B channels
 rgb565 = ((b & 0xF8) << 8) | ((g & 0xFC) << 3) | (r >> 3);  // Still wrong
 
@@ -315,7 +318,7 @@ ff db         # DQT (Quantization tables)
 ff c4         # DHT (Huffman tables)
 ```
 
-**If you do, the file is properly formatted for NanoJPEG.** If DHT/DQT are missing, `avi_mjpg_mgr.c` will inject them automatically.
+**Standard libjpeg can handle JPEG files** whether DHT/DQT tables are present or not. The decoder is robust and handles all JPEG variants natively.
 
 ---
 
@@ -436,9 +439,13 @@ SD Card (S:/video.avi)
          ↓
    avi_mjpg_get_next_frame() - Read JPEG chunk
          ↓
-   Check/inject DHT/DQT tables
+   jpeg_mem_src() - Setup libjpeg memory source
          ↓
-   njDecode() - Decode to RGB565 buffer (PSRAM)
+   jpeg_read_header() / jpeg_start_decompress()
+         ↓
+   jpeg_read_scanlines() - Decode to RGB24 (PSRAM)
+         ↓
+   Convert RGB24 → RGB565
          ↓
    Return RGB565 pixel data
          ↓
