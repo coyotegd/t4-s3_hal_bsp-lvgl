@@ -261,6 +261,7 @@ void ui_home_create(lv_obj_t * parent) {
     // Timer
     if (status_timer) {
         lv_timer_del(status_timer);
+        status_timer = NULL;
     }
     status_timer = lv_timer_create(status_bar_timer_cb, 1000, NULL);
     status_bar_timer_cb(NULL); // Initial update
