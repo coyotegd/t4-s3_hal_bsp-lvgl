@@ -199,6 +199,11 @@ esp_err_t ota_mgr_start_update(const char *url, ota_progress_cb_t progress_cb, o
     if (!params) return ESP_ERR_NO_MEM;
 
     params->url = strdup(url);
+    if (!params->url) {
+        free(params);
+        return ESP_ERR_NO_MEM;
+    }
+    
     params->progress_cb = progress_cb;
     params->complete_cb = complete_cb;
     params->user_ctx = user_ctx;

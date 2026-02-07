@@ -43,6 +43,33 @@ static void ui_log(const char * fmt, ...) {
 
 static void wifi_timer_cb(lv_timer_t * t);
 
+// Cleanup function to free resources when network screen is destroyed
+static void ui_network_cleanup(lv_event_t * e) {
+    // Delete timer
+    if (s_wifi_timer) {
+        lv_timer_delete(s_wifi_timer);
+        s_wifi_timer = NULL;
+    }
+    
+    // Free scan results
+    if (s_scan_results) {
+        free(s_scan_results);
+        s_scan_results = NULL;
+    }
+    s_scan_count = 0;
+    s_scan_ready = false;
+    
+    // Clear UI object pointers
+    wifi_list = NULL;
+    ta_log = NULL;
+    modal_cont = NULL;
+    ta_pass = NULL;
+    kb = NULL;
+    lbl_status = NULL;
+    lbl_modal_title = NULL;
+    btn_scan = NULL;
+}
+
 // -- WiFi Callbacks --
 
 static int compare_rssi_desc(const void *a, const void *b) {
@@ -63,8 +90,12 @@ static void scan_result_cb(wifi_scan_item_t *networks, int count) {
             memcpy(s_scan_results, networks, sizeof(wifi_scan_item_t) * count);
             s_scan_count = count;
             qsort(s_scan_results, s_scan_count, sizeof(wifi_scan_item_t), compare_rssi_desc);
+            ui_log("Scan done. Found %d APs.", count);
+        } else {
+            ESP_LOGE(TAG, "Failed to allocate memory for scan results");
+            s_scan_count = 0;
+            ui_log("Scan done. Memory allocation failed.");
         }
-        ui_log("Scan done. Found %d APs.", count);
     } else {
         s_scan_count = 0;
         ui_log("Scan done. No APs found.");
@@ -135,6 +166,7 @@ static void btn_cancel_click_cb(lv_event_t * e) {
 }
 
 static void wifi_list_btn_cb(lv_event_t * e) {
+    // User data contains a pointer to a duplicated SSID string stored in the button
     const char * ssid = (const char *)lv_event_get_user_data(e);
     if (ssid) {
         strncpy(s_target_ssid, ssid, 32);
@@ -145,6 +177,16 @@ static void wifi_list_btn_cb(lv_event_t * e) {
         lv_label_set_text_fmt(lbl_modal_title, "Connect to %s", s_target_ssid);
         lv_textarea_set_text(ta_pass, "");
         lv_obj_add_state(ta_pass, LV_STATE_FOCUSED);
+    }
+}
+
+static void wifi_btn_cleanup_cb(lv_event_t * e) {
+    // Free the duplicated SSID string when button is deleted
+    lv_obj_t * btn = lv_event_get_target(e);
+    char * ssid = (char *)lv_obj_get_user_data(btn);
+    if (ssid) {
+        free(ssid);
+        lv_obj_set_user_data(btn, NULL);
     }
 }
 
@@ -166,7 +208,14 @@ static void wifi_timer_cb(lv_timer_t * t) {
              lv_obj_t * btn = lv_button_create(wifi_list);
              lv_obj_set_width(btn, LV_PCT(100));
              lv_obj_set_height(btn, LV_SIZE_CONTENT);
-             lv_obj_add_event_cb(btn, wifi_list_btn_cb, LV_EVENT_CLICKED, s_scan_results[i].ssid);
+             
+             // Duplicate SSID string to avoid dangling pointer when scan results are freed
+             char * ssid_copy = strdup(s_scan_results[i].ssid);
+             if (!ssid_copy) continue; // Skip on allocation failure
+             
+             lv_obj_set_user_data(btn, ssid_copy);
+             lv_obj_add_event_cb(btn, wifi_btn_cleanup_cb, LV_EVENT_DELETE, NULL);
+             lv_obj_add_event_cb(btn, wifi_list_btn_cb, LV_EVENT_CLICKED, ssid_copy);
 
              // Style: Match SD Media list (Transparent default, Dark Grey pressed)
              lv_obj_set_style_bg_opa(btn, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -234,6 +283,7 @@ void ui_network_create(lv_obj_t * parent) {
     lv_obj_set_flex_flow(network_cont, LV_FLEX_FLOW_ROW);
     lv_obj_add_flag(network_cont, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_event_cb(network_cont, network_swipe_event_cb, LV_EVENT_GESTURE, NULL);
+    lv_obj_add_event_cb(network_cont, ui_network_cleanup, LV_EVENT_DELETE, NULL);
     
     // Swipe & Title
     lv_obj_t * img_swipe = lv_image_create(network_cont);

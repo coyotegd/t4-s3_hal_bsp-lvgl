@@ -232,7 +232,7 @@ esp_err_t avi_mjpg_get_next_frame(avi_mjpg_handle_t handle, uint8_t **out_buffer
             if (!temp_rgb24) {
                 ESP_LOGE(TAG, "Failed to allocate temp RGB24 buffer");
                 jpeg_abort_decompress(&handle->cinfo);
-                continue;
+                return ESP_ERR_NO_MEM;
             }
 
             // Read scanlines

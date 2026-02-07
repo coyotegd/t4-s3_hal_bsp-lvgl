@@ -73,6 +73,13 @@ static void wifi_mgr_fetch_timezone_task(void *pvParameters) {
     };
     
     esp_http_client_handle_t client = esp_http_client_init(&config);
+    if (!client) {
+        ESP_LOGE(TAG, "Failed to initialize HTTP client");
+        free(response_buffer);
+        vTaskDelete(NULL);
+        return;
+    }
+    
     esp_err_t err = ESP_FAIL;
     int retry = 0;
     
@@ -144,9 +151,15 @@ static void event_handler(void* arg, esp_event_base_t event_base,
         esp_wifi_scan_get_ap_num(&number);
         
         wifi_ap_record_t *ap_info = (wifi_ap_record_t *)malloc(sizeof(wifi_ap_record_t) * number);
+        if (!ap_info) {
+            ESP_LOGE(TAG, "Failed to allocate memory for AP info");
+            if (s_scan_cb) s_scan_cb(NULL, 0);
+            return;
+        }
+        
         uint16_t ap_count = number;
         
-        if (ap_info && esp_wifi_scan_get_ap_records(&ap_count, ap_info) == ESP_OK) {
+        if (esp_wifi_scan_get_ap_records(&ap_count, ap_info) == ESP_OK) {
             ESP_LOGI(TAG, "Found %d APs", ap_count);
             
             // Limit to a reasonable number for the UI or just pass all
@@ -164,12 +177,15 @@ static void event_handler(void* arg, esp_event_base_t event_base,
                     s_scan_cb(items, ap_count);
                 }
                 free(items);
+            } else {
+                ESP_LOGE(TAG, "Failed to allocate memory for scan items");
+                if (s_scan_cb) s_scan_cb(NULL, 0);
             }
         } else {
              if (s_scan_cb) s_scan_cb(NULL, 0);
         }
         
-        if (ap_info) free(ap_info);
+        free(ap_info);
 
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
         ESP_LOGI(TAG, "WiFi Started");
