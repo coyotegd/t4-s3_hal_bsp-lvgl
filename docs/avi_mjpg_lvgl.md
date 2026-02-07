@@ -1,30 +1,27 @@
 # ESP32 + LVGL MJPEG Video Playback
 
-> **Using NanoJPEG for video playback on ESP32-S3**
+> **Using standard libjpeg for video playback on ESP32-S3**
 
-This document describes a precise, end-to-end workflow for converting animated media (GIF, MP4, etc.) into an ESP32-compatible AVI (MJPEG) file and displaying it using the NanoJPEG decoder library.
+This document describes a precise, end-to-end workflow for converting animated media (GIF, MP4, etc.) into an ESP32-compatible AVI (MJPEG) file and displaying it using the standard libjpeg decoder library.
 
 ### 🔄 The Evolution
 
 This project went through several iterations to find a working solution:
 
 1. **❌ LVGL's tjpgd** - Built-in decoder failed to handle MJPEG AVI frames reliably
-2. **⚠️ Espressif's libjpeg-turbo** - Worked great but caused CMake dependency conflicts
-3. **🚧 NanoJPEG** - Current attempt: lightweight, dependency-free, **BUT HAS COLOR FORMAT ISSUES**
+2. **⚠️ libjpeg-turbo (full)** - Worked great but caused CMake dependency conflicts
+3. **❌ NanoJPEG** - Attempted but failed - had decoding issues and color format problems
+4. **✅ Standard libjpeg** - Current solution: Uses libjpeg API from libjpeg-turbo repo (without turbo optimizations)
 
-### 🐛 Current Status: PARTIAL VICTORY
+### ✅ Current Status: WORKING
 
 ✅ **What's Working:**
 - AVI parsing and frame extraction
-- JPEG decoding to pixel data
+- JPEG decoding to RGB565 pixel data using standard libjpeg
 - Animation playback in LVGL
+- Proper color rendering
 
-❌ **What's Broken:**
-- **Color channels are swapped** - displays green instead of red
-- Likely RGB vs BGR byte order issue
-- Or RGB565 format mismatch
-
-**Key insight:** We're 90% there - frames decode and animate, but we need to fix the color format/byte ordering before claiming victory.
+**Key insight:** Using standard libjpeg API (from libjpeg-turbo repository with turbo features disabled) provides reliable JPEG decoding without CMake conflicts.
 
 ---
 
@@ -59,32 +56,24 @@ This project went through several iterations to find a working solution:
 - **ESP32-class MCUs** cannot decode MPEG / H.264 / inter-frame video codecs
 - **AVI files** may contain many codecs — most are unusable on ESP32
 - **LVGL's tjpgd decoder** has limited functionality and failed to decode MJPEG frames reliably
-- **Espressif's libjpeg-turbo** worked initially but caused CMake build conflicts with other components
+- **Full libjpeg-turbo** worked initially but caused CMake build conflicts with managed components
 
 ### The Journey
 
 1. ❌ **LVGL's tjpgd** - Failed to decode MJPEG AVI frames properly
-2. ⚠️ **Espressif's libjpeg-turbo** - Worked but caused CMake dependency conflicts
-3. 🚧 **NanoJPEG** - Current WIP: Decodes and animates, but colors are wrong (green instead of red)
+2. ⚠️ **Full libjpeg-turbo** - Worked but caused CMake dependency conflicts
+3. ❌ **NanoJPEG** - Attempted but failed - had decoding issues and color format problems
+4. ✅ **Standard libjpeg** - Success: Uses libjpeg API from libjpeg-turbo (with turbo features disabled)
 
 ### The Goal
 
-> Play animated content on ESP32 by extracting JPEG frames from an AVI container, decoding them to RGB565 using NanoJPEG, and displaying them in LVGL.
-
-### 🐛 Current Blocker
-
-**Color format mismatch** - Animation displays but colors are incorrect:
-- Red appears as green (color channel swap)
-- Possible causes:
-  - RGB vs BGR byte ordering
-  - RGB565 packing format mismatch
-  - Color component bit shift issues
+> Play animated content on ESP32 by extracting JPEG frames from an AVI container, decoding them to RGB565 using standard libjpeg, and displaying them in LVGL.
 
 ---
 
 ## 2. High-Level Strategy
 
-> **Convert all animated media into MJPEG AVI, where each frame is a fully-formed baseline JPEG. Extract frames, decode to RGB565 using NanoJPEG, and display as LVGL images.**
+> **Convert all animated media into MJPEG AVI, where each frame is a fully-formed baseline JPEG. Extract frames, decode to RGB565 using standard libjpeg, and display as LVGL images.**
 
 ### Architecture Overview
 
@@ -93,9 +82,7 @@ AVI File (SD Card)
     ↓
 Extract JPEG frame (avi_mjpg_mgr.c)
     ↓
-Inject missing DHT/DQT tables if needed
-    ↓
-Decode JPEG → RGB565 (nanojpeg.c)
+Decode JPEG → RGB565 (standard libjpeg)
     ↓
 Wrap RGB565 buffer in lv_img_dsc_t
     ↓
@@ -115,52 +102,37 @@ This approach works around LVGL's limited JPEG support by handling decoding exte
 - Limited format support
 - Difficult to debug failures
 
-### Why Not Espressif's libjpeg-turbo?
+### Why Not Full libjpeg-turbo?
 
-**Espressif's libjpeg-turbo component worked well** but caused problems:
+**Full libjpeg-turbo component worked well** but caused problems:
 - ✅ Excellent performance
 - ✅ Full JPEG compliance
 - ❌ CMake dependency conflicts with other managed components
 - ❌ Build system integration issues
 
-### ✅ Current Solution: NanoJPEG (Work In Progress)
+### Why Not NanoJPEG?
 
-**NanoJPEG is a lightweight, single-file JPEG decoder** that:
+**NanoJPEG was attempted** but ultimately failed:
 - ✅ No external dependencies
-- ✅ Simple integration (just `nanojpeg.c`)
-- ✅ Decodes to pixel data successfully
-- ✅ Small memory footprint
-- ⚠️ Requires complete JPEG headers (DHT/DQT)
-- 🐛 **Currently has color format issues** (RGB/BGR byte order problem)
+- ✅ Simple integration (single-file)
+- ❌ Decoding issues with MJPEG frames
+- ❌ Color format problems (RGB/BGR byte order issues)
+- ❌ Not reliable enough for production use
 
-### 🐛 Known Issue: Color Channel Swap
+### ✅ Current Solution: Standard libjpeg
 
-**Symptom:** Animation plays but colors are wrong - red appears as green
+**Standard libjpeg (from libjpeg-turbo repo, turbo features disabled)** is the working solution:
+- ✅ Reliable JPEG decoding
+- ✅ Full JPEG compliance
+- ✅ No CMake conflicts (built as local component)
+- ✅ Standard API (jpeglib.h)
+- ✅ Decodes to RGB565 successfully
+- ✅ Proper color rendering
 
-**Likely causes:**
-1. NanoJPEG outputs RGB but LVGL expects BGR (or vice versa)
-2. RGB565 packing order mismatch:
-   - RGB565: `RRRR RGGG GGGB BBBB`
-   - BGR565: `BBBB BGGG GGGR RRRR`
-3. Byte endianness issue in RGB565 conversion
-
-**Investigation needed:**
-- Check NanoJPEG's RGB565 output format
-- Verify LVGL's expected RGB565 format
-- May need to swap R/B channels after decode
-- Or use different color format (RGB888 → RGB565 conversion)
-
-### NanoJPEG Requirements
-
-Each frame must contain:
-- **SOI** (0xFFD8) - Start of Image
-- **DQT** - Quantization tables
-- **DHT** - Huffman tables  
-- **SOF0** - Frame header (baseline only)
-- **SOS** - Scan header
-- **EOI** (0xFFD9) - End of Image
-
-**Note:** The `avi_mjpg_mgr.c` component automatically injects missing DHT/DQT tables for MJPEG files that lack them.
+The project uses libjpeg-turbo 3.0.4 with these settings:
+- `WITH_TURBOJPEG=FALSE` - Disables turbo optimizations to avoid conflicts
+- `WITH_SIMD=FALSE` - No SIMD optimizations (not needed for ESP32)
+- Standard libjpeg API only (jpeglib.h)
 
 ---
 
@@ -216,7 +188,7 @@ ffmpeg -i output_mjpeg.avi -vframes 1 test.jpg
 hexdump -C test.jpg | head
 ```
 
-**You must see:**
+**You should see standard JPEG markers:**
 ```
 ff d8 ff e0   # SOI + APP0
 ...
@@ -224,7 +196,7 @@ ff db         # DQT (Quantization tables)
 ff c4         # DHT (Huffman tables)
 ```
 
-**If you do, the file is properly formatted for NanoJPEG.** If DHT/DQT are missing, `avi_mjpg_mgr.c` will inject them automatically.
+**Standard libjpeg handles all baseline JPEG files properly.**
 
 ---
 
@@ -237,11 +209,11 @@ avi_mjpg_open() - Parse RIFF/AVI headers
     ↓
 avi_mjpg_get_next_frame() - Extract JPEG chunk
     ↓
-Check for DHT/DQT headers
+jpeg_read_header() - Standard libjpeg
     ↓
-Inject standard tables if missing
+jpeg_start_decompress() - Decode to RGB
     ↓
-njDecode() - Decode JPEG → RGB565 pixels
+Convert RGB to RGB565 pixels
     ↓
 Return RGB565 buffer
     ↓
@@ -251,7 +223,7 @@ lv_image_set_src() - Display in LVGL
 ### Key Points
 
 - **AVI is only a container** — only MJPEG video chunks are processed
-- **Decoding happens on ESP32** using NanoJPEG (not LVGL's decoder)
+- **Decoding happens on ESP32** using standard libjpeg (not LVGL's decoder)
 - **Output is raw RGB565 pixels**, not JPEG data
 - **LVGL displays pre-decoded images**, avoiding tjpgd entirely
 
@@ -341,9 +313,11 @@ SD Card (S:/video.avi)
          ↓
    avi_mjpg_get_next_frame() - Read JPEG chunk
          ↓
-   Check/inject DHT/DQT tables
+   jpeg_read_header() - Standard libjpeg
          ↓
-   njDecode() - Decode to RGB565 buffer (PSRAM)
+   jpeg_start_decompress() - Decode to RGB
+         ↓
+   Convert RGB to RGB565 buffer (PSRAM)
          ↓
    Return RGB565 pixel data
          ↓
@@ -365,10 +339,12 @@ SD Card (S:/video.avi)
 **File:** `avi_mjpg_mgr.c`
 
 1. **Extract JPEG frame** from AVI container
-2. **Validate JPEG headers** (SOI, DQT, DHT, SOS, EOI)
-3. **Inject missing tables** if needed (standard DHT/DQT)
-4. **Decode using NanoJPEG** → RGB565 buffer in PSRAM
-5. **Return RGB565 buffer** to caller
+2. **Initialize libjpeg** (jpeg_create_decompress)
+3. **Read JPEG headers** (jpeg_read_header)
+4. **Start decompression** (jpeg_start_decompress)
+5. **Read scanlines to RGB** (jpeg_read_scanlines)
+6. **Convert RGB to RGB565** buffer in PSRAM
+7. **Return RGB565 buffer** to caller
 
 ### RGB565 Descriptor Format
 
@@ -439,17 +415,18 @@ ffmpeg -i input.gif \
 ## 11. What You Do NOT Need to Do
 
 ❌ Use LVGL's tjpgd decoder (bypassed)  
-❌ Fight with libjpeg-turbo CMake conflicts (avoided)  
-❌ Manually add JPEG headers (automatic injection)  
+❌ Fight with full libjpeg-turbo CMake conflicts (solved with local build)  
+❌ Deal with NanoJPEG limitations (not used)  
+❌ Manually add JPEG headers (standard libjpeg handles all)  
 ❌ Decode MPEG/H.264 on ESP32 (impossible)  
 ❌ Use FFmpeg libraries on-device (not needed)  
 
 ### What IS Happening Behind the Scenes
 
-✅ **NanoJPEG decodes JPEG → RGB565** in `avi_mjpg_mgr.c`  
-✅ **Automatic DHT/DQT injection** for incomplete MJPEG frames  
+✅ **Standard libjpeg decodes JPEG → RGB → RGB565** in `avi_mjpg_mgr.c`  
 ✅ **LVGL displays raw RGB565 pixels** (no decoding in LVGL)  
-✅ **PSRAM used for frame buffers** to avoid SRAM exhaustion
+✅ **PSRAM used for frame buffers** to avoid SRAM exhaustion  
+✅ **Local libjpeg-turbo build** (with turbo features disabled) avoids CMake conflicts
 
 ---
 
@@ -457,52 +434,19 @@ ffmpeg -i input.gif \
 
 ✅ **MJPEG AVI** is the only viable video format for ESP32  
 ✅ **ffmpeg** produces fully compliant JPEG frames  
-🚧 **NanoJPEG** decodes them (tjpgd failed, turbo_jpeg had conflicts)  
-🐛 **Color format issue remains** - animation works but colors are swapped  
-⏳ **Almost there** - 90% working, need to fix RGB/BGR byte ordering
+✅ **Standard libjpeg** decodes them reliably (tjpgd failed, NanoJPEG failed, full turbo had conflicts)  
+✅ **System is working** - animations play with proper colors  
+✅ **Local libjpeg-turbo build** (turbo features disabled) avoids dependency conflicts
 
 ### Lessons Learned
 
 1. **LVGL's tjpgd is unreliable** for MJPEG playback
-2. **Espressif's managed components** can cause CMake conflicts
-3. **Single-file libraries** (like NanoJPEG) are easier to integrate
-4. **Pre-decoding frames** avoids LVGL decoder limitations
-5. **PSRAM is essential** for video frame buffers on ESP32-S3
-6. **Color format debugging is critical** - RGB vs BGR, byte ordering matters
-
-### 🔧 TODO: Fix Color Channels
-
-**Current NanoJPEG RGB565 packing** (line 394 in `nanojpeg.c`):
-```c
-unsigned short p = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
-// Format: RRRRRGGGGGGBBBBB (RGB565)
-```
-
-**Possible solutions:**
-
-1. **Swap to BGR565:**
-   ```c
-   unsigned short p = ((b & 0xF8) << 8) | ((g & 0xFC) << 3) | (r >> 3);
-   ```
-
-2. **Byte swap (endianness):**
-   ```c
-   unsigned short p = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
-   *out++ = (p >> 8) | (p << 8);  // Swap bytes
-   ```
-
-3. **Check LVGL color format setting:**
-   - Verify `LV_COLOR_16_SWAP` is set correctly
-   - Check if display driver expects BGR instead of RGB
-
-4. **Debug with pure colors:**
-   - Create test pattern: pure red (0xF800), green (0x07E0), blue (0x001F)
-   - See what colors actually display
-
-**Investigation steps:**
-1. Check `rm690b0` display driver's expected format
-2. Try BGR565 packing in nanojpeg.c
-3. Test with single color frames to verify channel mapping
+2. **Full libjpeg-turbo managed components** can cause CMake conflicts
+3. **NanoJPEG had decoding and color issues** - not suitable for this use case
+4. **Standard libjpeg API** (from libjpeg-turbo with turbo disabled) works perfectly
+5. **Local component builds** avoid managed component conflicts
+6. **Pre-decoding frames** avoids LVGL decoder limitations
+7. **PSRAM is essential** for video frame buffers on ESP32-S3
 
 ---
 
@@ -513,65 +457,56 @@ unsigned short p = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
 - ✅ Minimal AVI RIFF parser (see `avi_mjpg_mgr.c`)
 - ✅ Frame timing using `lv_timer` (see `ui_avi.c`)
 - ✅ Use PSRAM for large frame buffers (see `lvgl_mgr.c`)
+- ✅ Standard libjpeg decoding with proper color rendering
 
-### � URGENT: Fix Color Format Issue
-
-**Problem:** Red displays as green (color channel swap)
-
-**Debug approach:**
-```c
-// In avi_mjpg_mgr.c or ui_avi.c, test with pure colors:
-uint16_t test_pixels[320*240];
-
-// Pure red (RGB565: 0xF800)
-for (int i = 0; i < 320*240; i++) test_pixels[i] = 0xF800;
-lv_image_set_src(obj, test_pixels);  // Should show RED
-
-// Pure green (RGB565: 0x07E0)
-for (int i = 0; i < 320*240; i++) test_pixels[i] = 0x07E0;
-lv_image_set_src(obj, test_pixels);  // Should show GREEN
-
-// Pure blue (RGB565: 0x001F)
-for (int i = 0; i < 320*240; i++) test_pixels[i] = 0x001F;
-lv_image_set_src(obj, test_pixels);  // Should show BLUE
-```
-
-If colors still wrong → try BGR565 values (swap R/B):
-- Red: `0x001F` (blue bits)
-- Blue: `0xF800` (red bits)
-
-**Likely fixes:**
-
-1. **Change nanojpeg.c line 394 to BGR565:**
-   ```c
-   // OLD: RGB565
-   unsigned short p = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
-   
-   // NEW: BGR565
-   unsigned short p = ((b & 0xF8) << 8) | ((g & 0xFC) << 3) | (r >> 3);
-   ```
-
-2. **Or swap bytes in output:**
-   ```c
-   unsigned short p = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
-   *out++ = __builtin_bswap16(p);  // Byte swap
-   ```
-
-3. **Check LVGL config** in `lv_conf.h`:
-   ```c
-   #define LV_COLOR_16_SWAP 0  // Try changing to 1
-   ```
-
-### 🚀 Enhancement Ideas (After Color Fix)
+### 🚀 Enhancement Ideas
 
 - Compare MJPEG vs PNG frame sequences
 - Add playback controls (rewind, seek, speed)
 - Implement playlist functionality
 - Add on-screen display (OSD) overlays
+- Optimize frame buffer management
+- Add audio support (if hardware permits)
 
 ---
 
-## 🔬 Debugging Reference
+## 🔬 Technical Reference
+
+### JPEG Decoding with Standard libjpeg
+
+The project uses standard libjpeg API from libjpeg-turbo repository:
+
+**Build Configuration:**
+- Source: libjpeg-turbo 3.0.4 (from GitHub)
+- `WITH_TURBOJPEG=FALSE` - Disables TurboJPEG API
+- `WITH_SIMD=FALSE` - No SIMD optimizations
+- Built as local component to avoid CMake conflicts
+- Links against `libjpeg.a` (static library)
+
+**API Usage in avi_mjpg_mgr.c:**
+```c
+#include "jpeglib.h"
+
+struct jpeg_decompress_struct cinfo;
+struct jpeg_error_mgr jerr;
+
+// Initialize
+jpeg_create_decompress(&cinfo);
+jpeg_mem_src(&cinfo, jpeg_data, jpeg_size);
+
+// Decode
+jpeg_read_header(&cinfo, TRUE);
+jpeg_start_decompress(&cinfo);
+
+// Read scanlines
+while (cinfo.output_scanline < cinfo.output_height) {
+    jpeg_read_scanlines(&cinfo, &row_pointer, 1);
+    // Convert RGB to RGB565
+}
+
+jpeg_finish_decompress(&cinfo);
+jpeg_destroy_decompress(&cinfo);
+```
 
 ### RGB565 Format Reference
 
@@ -588,24 +523,16 @@ Bit:  15 14 13 12 11 | 10 09 08 07 06 05 | 04 03 02 01 00
 - White: `0xFFFF`
 - Black: `0x0000`
 
-**BGR565 (same structure, swapped channels):**
-- Red:   `0x001F` (in blue position)
-- Green: `0x07E0` (same)
-- Blue:  `0xF800` (in red position)
-
-### Display Driver Check
+### Display Driver
 
 Your display controller: **RM690B0**
 
-Check in `rm690b0.c` for:
-- Color format settings (RGB vs BGR)
-- Byte order configuration
-- MADCTL register settings (0x36) - controls RGB/BGR order
+The display driver is configured to work with standard RGB565 format. The standard libjpeg decodes JPEG to RGB, which is then converted to RGB565 format in `avi_mjpg_mgr.c`.
 
 ---
 
 ## 📝 Notes
 
-This document intentionally avoids shortcuts. If you follow it verbatim, your MJPEG playback will work.
+This document describes the working MJPEG playback implementation using standard libjpeg.
 
-**The approach is conservative and hardware-aware by design.**
+**The system successfully decodes and displays MJPEG video on ESP32-S3 with proper color rendering.**
