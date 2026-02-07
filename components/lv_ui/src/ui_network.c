@@ -211,7 +211,11 @@ static void wifi_timer_cb(lv_timer_t * t) {
              
              // Duplicate SSID string to avoid dangling pointer when scan results are freed
              char * ssid_copy = strdup(s_scan_results[i].ssid);
-             if (!ssid_copy) continue; // Skip on allocation failure
+             if (!ssid_copy) {
+                 ESP_LOGE(TAG, "Failed to allocate memory for SSID: %s", s_scan_results[i].ssid);
+                 lv_obj_delete(btn); // Clean up the button we just created
+                 continue; // Skip this AP on allocation failure
+             }
              
              lv_obj_set_user_data(btn, ssid_copy);
              lv_obj_add_event_cb(btn, wifi_btn_cleanup_cb, LV_EVENT_DELETE, NULL);
