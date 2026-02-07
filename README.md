@@ -17,6 +17,8 @@ It features a robust **Hardware Abstraction Layer (HAL)** that handles the compl
 
 **Maintenance:** Both repositories are kept in sync - updates to the HAL, PM Settings, and core functionality are applied to both.
 
+**📘 Updating Child Repository:** When changes are made to this parent repository, the submodule reference in the child must be updated. See [Submodule Sync Guide](docs/SUBMODULE_SYNC_GUIDE.md) for detailed instructions on how to propagate parent changes to child repositories.
+
 ## 🎨 UI Architecture
 
 **Default Home Screen (ui_home):**
@@ -403,3 +405,32 @@ The `espressif__libjpeg-turbo` component uses CMake ExternalProject, which doesn
 - [LVGL Integration Journey](docs/LVGL_JOURNEY.md)
 - [RM690B0 Rotation Guide](docs/rm690b0_rotation_guide.md)
 - [AVI MJPEG Playback Implementation](components/lv_ui/src/README.md) - Journey from managed components to local build solution
+- [Submodule Sync Guide](docs/SUBMODULE_SYNC_GUIDE.md) - How to update child repositories when parent changes
+
+## 🔄 Maintaining Parent-Child Repository Sync
+
+This parent repository (HAL/BSP) is used as a git submodule in child repositories. When you make changes here:
+
+### Quick Start: Update Child Repository
+
+```bash
+# 1. Merge your parent changes to main branch first
+cd /path/to/t4-s3_hal_bsp-lvgl
+git checkout main
+git pull origin main
+
+# 2. Update the child repository submodule reference
+cd /path/to/t4-s3_base-apps
+git submodule update --remote external/hal_bsp
+git add external/hal_bsp
+git commit -m "Update hal_bsp submodule to latest version"
+git push origin main
+```
+
+**For detailed instructions and troubleshooting**, see the [Submodule Sync Guide](docs/SUBMODULE_SYNC_GUIDE.md).
+
+### Key Points:
+- Git submodules reference a **specific commit**, not a branch
+- `git clone --recursive` will only get the commit referenced in the child
+- You must explicitly update the submodule reference in the child after parent changes
+- Always merge parent to `main` before updating child submodule references
