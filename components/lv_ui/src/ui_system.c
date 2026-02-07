@@ -319,7 +319,7 @@ static void input_curr_cb(lv_event_t * e) {
     // Update PM Status and recompute currents under new ILIM
     uint16_t vindpm_now = sy6970_get_input_voltage_limit();
     if (lbl_usb_pg) {
-        lv_label_set_text_fmt(lbl_usb_pg, "USB Power:\nILIM %d mA, VINDPM %d mV\nLoad %d mA, Margin %d mA", val, vindpm_now, current_sys_load, current_margin_ma);
+        lv_label_set_text_fmt(lbl_usb_pg, "USB Power Adequate:\nILIM %d mA, VINDPM %d mV\nLoad %d mA, Margin %d mA", val, vindpm_now, current_sys_load, current_margin_ma);
     }
     apply_currents_from_policy();
 }
@@ -335,7 +335,7 @@ static void input_volt_cb(lv_event_t * e) {
     // Update PM Status to reflect new VINDPM
     uint16_t ilim_now = sy6970_get_input_current_limit();
     if (lbl_usb_pg) {
-        lv_label_set_text_fmt(lbl_usb_pg, "USB Power:\nILIM %d mA, VINDPM %d mV\nLoad %d mA, Margin %d mA", ilim_now, val, current_sys_load, current_margin_ma);
+        lv_label_set_text_fmt(lbl_usb_pg, "USB Power Adequate:\nILIM %d mA, VINDPM %d mV\nLoad %d mA, Margin %d mA", ilim_now, val, current_sys_load, current_margin_ma);
     }
 }
 
