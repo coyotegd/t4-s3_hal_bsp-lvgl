@@ -2,11 +2,11 @@
 
 ## Document Information
 
-**Document Version:** V3.5  
-**Driver Version:** V2.4  
-**App Version:** V1.26  
-**Release Date:** July 1, 2022  
-**Author:** Steven  
+**Document Version:** V3.5
+**Driver Version:** V2.4
+**App Version:** V1.26
+**Release Date:** July 1, 2022
+**Author:** Steven
 
 **Company Information:**
 
@@ -99,7 +99,20 @@ This document introduces the Hynitron touch chip driver framework architecture, 
 
 ### Compatible Chip Series
 
-| Series       | Supported Models                                  |\n| ------------ | ------------------------------------------------- |\n| **CST1XX**   | CST126, CST128, CST130, CST140, CST14055, CST148 |\n| **CST1XXSE** | CST128SE                                          |\n| **CST2XX**   | CST226, CST237, CST240                            |\n| **CST2XXSE** | CST226SE                                          |\n| **CST3XX**   | CST326, CST328, CST340, CST348                    |\n| **CST7XX**   | CST716, CST726, CST736                            |\n| **CST8XX**   | CST816, CST826, CST836U                           |\n| **CST9XX**   | CST912, CST918                                    |\n| **CST6XX**   | CST6928S                                          |\n| **CST644K**  | CST644K                                           |\n\n### Supported Platforms
+| Series       | Supported Models                                  |
+| ------------ | ------------------------------------------------- |
+| **CST1XX**   | CST126, CST128, CST130, CST140, CST14055, CST148  |
+| **CST1XXSE** | CST128SE                                          |
+| **CST2XX**   | CST226, CST237, CST240                            |
+| **CST2XXSE** | CST226SE                                          |
+| **CST3XX**   | CST326, CST328, CST340, CST348                    |
+| **CST7XX**   | CST716, CST726, CST736                            |
+| **CST8XX**   | CST816, CST826, CST836U                           |
+| **CST9XX**   | CST912, CST918                                    |
+| **CST6XX**   | CST6928S                                          |
+| **CST644K**  | CST644K                                           |
+
+### Supported Platforms
 
 - Android platforms: MTK, Qualcomm, Allwinner, Rockchip, Spreadtrum
 
@@ -211,7 +224,7 @@ i2c@f9927000 {
 
 - All parameters except key information are mandatory, otherwise DTS parsing will fail
 - If DTS cannot be modified, manually modify `hyn_parse_dt()` function with direct assignments
-- DTS needs platform-specific adjustments (see `/docs/hynitron-ts.txt`)
+- DTS needs platform-specific adjustments (a DTS example file is not included in this repository)
 - Mutual capacitance chips use 7-bit I2C address (default 0x1A or 0x5A), with 16-bit register addresses
 
 ### 5.2 Configure Function Modules and Project Info

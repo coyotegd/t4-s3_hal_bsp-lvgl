@@ -34,7 +34,7 @@ The interactive menu provides the following streamlined workflow:
 11. **Set Target** - Change chip target (e.g., esp32s3, esp32c3).
 12. **Erase All of Flash (even NVS)** - Wipes the entire chip, including non-volatile storage and OTA data.
 13. **Size Report** - Shows RAM and Flash usage with a **"Layman Analysis"** including progress bars and clear explanations.
-0. **Quit** - Exit the helper.
+14. **Quit** - Exit the helper.
 
 ## Overrides (Port & Baud)
 

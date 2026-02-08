@@ -345,7 +345,7 @@ The LilyGo T4-S3 is an ESP32-S3-based development board featuring:
 
 ## Pin Conflict Warnings
 
-⚠️ **I2C Bus Shared:** GPIO 6 (SDA) and GPIO 7 (SCL) are shared between:
+**Warning (I2C Bus Shared):** GPIO 6 (SDA) and GPIO 7 (SCL) are shared between:
 
 - Touch controller (CST226SE)
 - Battery management IC (SY6970)
@@ -353,11 +353,11 @@ The LilyGo T4-S3 is an ESP32-S3-based development board featuring:
 
 All devices must have unique I2C addresses.
 
-⚠️ **Critical Display Power:** GPIO 9 (V_EN) must be set HIGH before attempting to communicate with the display, or the display will not respond.
+**Warning (Critical Display Power):** GPIO 9 (V_EN) must be set HIGH before attempting to communicate with the display, or the display will not respond.
 
-⚠️ **MicroSD Conflicts:** GPIOs 1-4 are dedicated to MicroSD. If not using SD card, these can be repurposed, but requires hardware modification.
+**Warning (MicroSD Conflicts):** GPIOs 1-4 are dedicated to MicroSD. If not using SD card, these can be repurposed, but requires hardware modification.
 
-⚠️ **UART Conflict:** GPIO 43/44 (U0TXD/U0RXD) are used for USB-CDC and debug output. Using them for other purposes may interfere with serial console.
+**Warning (UART Conflict):** GPIO 43/44 (U0TXD/U0RXD) are used for USB-CDC and debug output. Using them for other purposes may interfere with serial console.
 
 ---
 
@@ -433,7 +433,7 @@ VDD3V3
   └─[R10 10kΩ]─── SCL (GPIO 7)
                   │
                   ├── CST226SE (Touch)
-                  ├── SY6970 (PMIC) 
+                  ├── SY6970 (PMIC)
                   └── Qwiic Connector (P2/P4)
 ```
 
@@ -525,7 +525,7 @@ When designing with this board:
 
 ---
 
-**Document Source:** Compiled from `t4_s3_schematic.txt` and `t4s3pins.txt`
+**Document Source:** Compiled from board documentation and schematic notes (the original text sources are not included in this repository)
 
 **Board:** LilyGo T4-S3 (2.41" AMOLED version)
 

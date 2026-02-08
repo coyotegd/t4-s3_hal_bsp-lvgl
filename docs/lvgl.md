@@ -2,6 +2,18 @@
 
 This document details the technical challenges and solutions encountered while porting LVGL 9 to the LilyGo T4-S3 (ESP32-S3) with the RM690B0 AMOLED display driver.
 
+## Markdown Note: Code Fences (Doc Hygiene)
+
+This file uses Markdown “code fences” (triple-backtick blocks) for snippets and commands.
+
+- A code fence starts with ``` (optionally with a language like `c`/`bash`) and must be closed with another ```.
+- If the closing fence is missing, most Markdown renderers will treat the remainder of the document as code, which looks like the doc is “corrupted”.
+
+Guidelines used here:
+
+- Prefer language tags: `c`, `cmake`, `bash`, `text`.
+- If you need to show literal triple-backticks inside a fenced block, wrap it in four backticks instead.
+
 ## 1. Hardware Context
 
 - **MCU**: ESP32-S3 (Octal PSRAM enabled)
@@ -86,6 +98,15 @@ static void lvgl_rounder_cb(lv_event_t *e) {
 
 - Settled on a configuration where the Display Driver handles the hardware rotation setup via `rm690b0_set_rotation`, ensuring `MADCTL` is correct for 0/90/180/270 degrees.
 - Touch coordinates are mapped to the display resolution *after* receiving them, applying specific swaps matching the visual rotation.
+
+### E. JPEG/MJPEG Integration (Build Wiring)
+
+If you enable LVGL's JPEG support (or build LVGL with its libjpeg-turbo wrapper enabled), LVGL can end up compiling a wrapper source that includes libjpeg-turbo headers.
+
+- Public headers (e.g. `jpeglib.h`) come from the managed `espressif__libjpeg-turbo` component's install include directory.
+- Some LVGL versions/configs also include **internal** libjpeg-turbo headers (e.g. `jpegint.h`, `jconfigint.h`). These are not installed as part of the public API, so they must be provided explicitly via include paths.
+
+In this repo, the dependency/include propagation is done project-side in `main/CMakeLists.txt` (so managed components remain untouched). For the end-to-end MJPEG playback workflow and troubleshooting notes, see `docs/avi_mjpeg_lvgl.md`.
 
 ## 3. Architecture Highlights
 

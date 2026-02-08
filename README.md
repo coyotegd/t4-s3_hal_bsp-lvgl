@@ -4,7 +4,7 @@ This project is a complete (except Bluetooth implementation), working starter te
 
 It features a robust **Hardware Abstraction Layer (HAL)** that handles the complex low-level drivers for the display, touch screen, and power management IC (PMIC), allowing you to focus on building your application.
 
-## � Repository Structure
+## 📂 Repository Structure
 
 **This is the parent HAL/BSP repository.** It contains the core hardware abstraction layer and board support package.
 
@@ -49,8 +49,8 @@ Child repositories (like [t4-s3_base-apps](https://github.com/coyotegd/t4-s3_bas
 ## 📸 Gallery
 
 ![UI Home Screen](docs/images/ui_home.png)
-![UI Home Screen](docs/images/ui_media.png)
-![UI Home Screen](docs/images/ui_pm_set.png)
+![UI Media Screen](docs/images/ui_media.png)
+![UI PM Settings Screen](docs/images/ui_pm_set.png)
 
 ## ✨ Features
 
@@ -265,10 +265,10 @@ Fault:                 None (LED off) no USB
 The system includes a video player for `.avi` files stored on the SD card.
 
 - **Frame Rate:** Video playback is optimized for **~15 FPS**. Increasing the frame rate beyond this provides no visual benefit on this screen/interface and only consumes extra resources.
-- **Codec:** The player uses an **older MPEG codec**, not the latest standards (like H.264). Please ensure video files are encoded using compatible legacy MPEG formats.
+- **Codec:** The player expects **MJPEG inside an AVI container** (Motion JPEG: each frame is a standalone JPEG). Inter-frame codecs like H.264 are not supported.
 - **Documentation:** See [docs/avi_mjpeg_lvgl.md](docs/avi_mjpeg_lvgl.md) for detailed implementation guide, FFmpeg conversion commands, and API reference.
 
-## � Over-The-Air (OTA) Updates
+## 📡 Over-The-Air (OTA) Updates
 
 The system supports wireless firmware updates via the **System OTA** menu.
 
@@ -280,7 +280,7 @@ The system supports wireless firmware updates via the **System OTA** menu.
 - **Partitioning:** Uses an A/B partition scheme (`ota_0`, `ota_1`) with an `otadata` manager to switch safe slots automatically.
 - **Safety:** Automatically verifies image header before writing and reboots upon success.
 
-## �📂 Project Structure
+## 📂 Project Structure
 
 ## 🧩 Hardware Details & Pin Map
 
@@ -383,48 +383,28 @@ git submodule update --init --recursive
 
 ---
 
-### 🎯 Updated Portable Settings (February 2026)
+### VS Code Workspace Settings
 
-**This repository now uses fully portable workspace settings!** All user-specific paths have been removed from `.vscode/settings.json`.
+This repo includes [.vscode/settings.json](.vscode/settings.json) for convenience.
 
-**What's included (workspace-portable):**
+- Some settings are workspace-portable (e.g. `idf.buildPath`, `clangd.arguments`).
+- Some settings may be machine-specific (e.g. a fixed `idf.port`, `idf.currentSetup`, USB adapter location).
 
-```json
-{
-  "idf.buildPath": "${workspaceFolder}/build",
-  "clangd.arguments": ["--compile-commands-dir=${workspaceFolder}/build"],
-  "idf.customExtraVars": { "IDF_TARGET": "esp32s3" }
-}
-```
+If you plan to share changes, consider removing machine-specific values before committing so others can clone/build without editing settings.
 
-**What's auto-configured by ESP-IDF extension:**
-
-- ESP-IDF installation path
-- Toolchain paths
-- Python environment
-- Serial port (select when flashing)
-- Clangd path
-
-**After cloning:**
-
-1. Open in VS Code
-2. Reload window (`Ctrl+Shift+P` → "Reload Window")
-3. Extension auto-configures for your system
-4. Build and flash!
-
-## � Technical Notes
+## 🔬 Technical Notes
 
 ### LVGL JPEG Support Configuration
 
-This project includes custom build configuration for LVGL's libjpeg support (`CONFIG_LV_USE_LIBJPEG_TURBO=y`):
+This project enables LVGL's libjpeg-turbo wrapper (`CONFIG_LV_USE_LIBJPEG_TURBO=y`) and wires libjpeg-turbo in via managed components.
 
-**Modified Files:**
+To keep managed components pristine, the build glue is done **project-side** in [main/CMakeLists.txt](main/CMakeLists.txt):
 
-- `managed_components/lvgl__lvgl/env_support/cmake/esp.cmake` - Adds libjpeg dependency and include paths to LVGL
-- `components/espressif__libjpeg-turbo/CMakeLists.txt` - Installs `jpegint.h` header (required by LVGL but not included in standard install)
+- Depends on the managed component `espressif/libjpeg-turbo` (see [main/idf_component.yml](main/idf_component.yml)).
+- Links the LVGL component target against `idf::espressif__libjpeg-turbo` so LVGL can find `jpeglib.h`.
+- Adds include paths for internal headers LVGL may include (`jpegint.h`, `jconfigint.h`).
 
-**Why these changes?**
-The `espressif__libjpeg-turbo` component uses CMake ExternalProject, which doesn't automatically propagate include directories through normal ESP-IDF dependency mechanisms. These modifications ensure LVGL can find the libjpeg headers at compile time.
+If this ever regresses, the missing-header error usually tells you what include path is needed. The troubleshooting flow is documented in [docs/avi_mjpeg_lvgl.md](docs/avi_mjpeg_lvgl.md).
 
 **Note:** This uses standard libjpeg API (not TurboJPEG), as the TurboJPEG API is not ESP32-S3 compatible.
 

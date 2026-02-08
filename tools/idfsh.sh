@@ -401,7 +401,7 @@ PY
  11) Set Target
  12) Erase All of Flash (even NVS)
  13) Size Report
-  0) Quit
+ 14) Quit
 MENU
     read -r -p "Select an option: " choice
     case "$choice" in
@@ -413,7 +413,7 @@ MENU
      11) do_set_target ;;
      12) do_erase_flash ;;
      13) do_size ;;
-      0) echo "[idfsh] Bye."; break ;;
+      14|0) echo "[idfsh] Bye."; break ;;
       *) echo "[idfsh] Invalid choice." ;;
     esac
   done

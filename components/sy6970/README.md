@@ -5,7 +5,8 @@ This component provides a driver for the Silergy SY6970 Single Cell Li-Ion DC/DC
 ## Hardware Connection
 
 **ACTUAL HARDWARE (from schematic):**
-```
+
+```text
 VSYS → R47 (1K) → LED1 (Red LED) → STAT pin (pin 4 of SY6970) → Open-drain output
 ```
 
@@ -23,9 +24,10 @@ The SY6970 indicates charging status via the hardware-controlled STAT pin LED:
 
 ### Fault Detection
 
-When the LED blinks at 1Hz, one or more fault conditions are active. **All faults blink identically at 1Hz** - you must read **REG_0C (Fault Status Register)** via I2C to determine the specific fault:
+When the LED blinks at 1Hz, one or more fault conditions are active. **All faults blink identically at 1Hz** - you must read **REG_0C (Fault Status Register)** via I2C to determine the specific fault.
 
 **Fault Types (REG_0C bits):**
+
 1. **WDT_Expired** (bit 7) - Watchdog timer expired
 2. **BOOST_Fault** (bit 6) - Boost converter fault
 3. **CHG_Input_Fault** (bits 5:4 = 0x01) - Charge input fault
@@ -33,12 +35,14 @@ When the LED blinks at 1Hz, one or more fault conditions are active. **All fault
 5. **CHG_Timer_Expired** (bits 5:4 = 0x03) - Charge safety timer expired
 6. **BAT_OVP** (bit 3) - Battery overvoltage protection
 7. **NTC Temperature Faults** (bits 2:0):
+
    - **NTC_Warm** (0x02) - Battery temperature warm
    - **NTC_Cool** (0x03) - Battery temperature cool
    - **NTC_Cold** (0x05) - Battery temperature cold
    - **NTC_Hot** (0x06) - Battery temperature hot
 
 **Software API for fault reading:**
+
 ```c
 // Read fault register (returns bitmask)
 uint8_t faults = sy6970_get_faults();
@@ -50,6 +54,7 @@ const char* fault_desc = sy6970_decode_faults(faults);
 ### Software Control
 
 Software can only enable/disable the STAT pin output via `STAT_DIS` bit (REG_07[6]):
+
 ```c
 // Enable STAT LED (hardware controls based on charge/fault state)
 sy6970_enable_stat_led(true);
@@ -80,28 +85,38 @@ The component is configured with "Practical Realistic Defaults" designed for saf
 ## Advanced Features & Persistence
 
 ### NVS Persistence
+
 This driver is integrated with Non-Volatile Storage (NVS). Settings changed via the API (or UI) are:
+
 1. Applied immediately to the SY6970 registers.
 2. Saved to NVS (`storage` partition).
 3. **Restored automatically on boot** via `ui_pmic_restore_settings()`.
 
 ### Hot Reload (UI)
+
 The "Defaults" feature in the UI performs a unique "Hot Reload":
+
 1. Resets NVS values to the defaults table above.
 2. Re-initializes the SY6970 registers.
 3. **Destroys and Re-creates** the Settings UI page on the fly to reflect the new values immediately without a reboot.
 
 ### OTG (On-The-Go) / Boost Mode
+
 The chip can reverse operation to provide 5V out on the VBUS (USB) pin from the battery.
+
 - **Control**: `sy6970_enable_otg(bool enable)`
 - **Voltage**: Configurable via `sy6970_set_boost_voltage()`.
 
 ### HIZ Mode (High Impedance)
+
 Disconnects the VBUS input electrically while maintaining data lines (physically). The system runs purely on battery even if plugged in.
+
 - Useful for "Disable USB Power" features.
 
 ### Shipping Mode (Hard Shutdown)
+
 Disables the BATFET, effectively disconnecting the battery from the system.
+
 - **Use**: Long-term storage or forcing a hard reset.
 - **Wake**: Plug in USB power to reset the BATFET.
 
@@ -130,10 +145,9 @@ sy6970_enable_otg(true);
 
 The **Input Voltage Limit (VINDPM)** register (REG0D) has a specific behavior that differs slightly from some interpretations of the datasheet map.
 
-*   **Formula**: `Voltage = 2.6V + (RegisterValue[6:0] * 100mV)`
-*   **Absolute Minimum**: The hardware enforces a floor of approximately **3.9V** (Register Value 13 / `0x0D`).
-*   **Behavior**: If you attempt to write a value that results in a voltage lower than 3.9V (e.g., trying to write calculated value 10 for 3.6V), the chip will **clamp** the setting to the minimum (13 / `0x0D`).
-    *   *Example*: Writing `0x0A` (calculated as 3.6V via offset) results in a readback of `0x8D` (3.9V).
-*   **Driver Implementation**: The driver correctly handles this by using the `2.6V` base offset in calculations, ensuring that requests for standard USB voltages (e.g., 4.4V, 4.5V) are mapped to correct register values (e.g., 4.4V -> Register 18 / `0x12`).
-*   **Bit 7**: The driver sets Bit 7 (`0x80`) to force **Absolute VINDPM Threshold** mode.
-
+- **Formula**: `Voltage = 2.6V + (RegisterValue[6:0] * 100mV)`
+- **Absolute Minimum**: The hardware enforces a floor of approximately **3.9V** (Register Value 13 / `0x0D`).
+- **Behavior**: If you attempt to write a value that results in a voltage lower than 3.9V (e.g., trying to write calculated value 10 for 3.6V), the chip will **clamp** the setting to the minimum (13 / `0x0D`).
+  - *Example*: Writing `0x0A` (calculated as 3.6V via offset) results in a readback of `0x8D` (3.9V).
+- **Driver Implementation**: The driver correctly handles this by using the `2.6V` base offset in calculations, ensuring that requests for standard USB voltages (e.g., 4.4V, 4.5V) are mapped to correct register values (e.g., 4.4V -> Register 18 / `0x12`).
+- **Bit 7**: The driver sets Bit 7 (`0x80`) to force **Absolute VINDPM Threshold** mode.

@@ -88,16 +88,16 @@ Previously, we had included fallback header injection code (DHT/DQT tables) for 
 
 ## The Result
 
-✅ **Working again** with modern CMake 3.31+  
-✅ **No managed component dependency** issues  
-✅ **AVI MJPEG playback works** at ~15 FPS (same as before)  
-✅ **Cleaner code** (removed 180 lines of redundant header injection)  
+✅ **Working again** with modern CMake 3.31+
+✅ **No managed component dependency** issues
+✅ **AVI MJPEG playback works** at ~15 FPS (same as before)
+✅ **Cleaner code** (removed 180 lines of redundant header injection)
 ✅ **Binary size:** 1.9 MB (54% free space)
 
 ## Lessons Learned
 
-1. **Managed components** are convenient but can break with toolchain updates  
-2. **TurboJPEG API** is incompatible with ESP-IDF (setjmp/longjmp wrapping)  
-3. **Standard libjpeg API** is portable and fully ESP-IDF compatible  
-4. **ExternalProject_Add** enables building third-party libraries from source  
+1. **Managed components** are convenient but can break with toolchain updates
+2. **TurboJPEG API** is incompatible with ESP-IDF (setjmp/longjmp wrapping)
+3. **Standard libjpeg API** is portable and fully ESP-IDF compatible
+4. **ExternalProject_Add** enables building third-party libraries from source
 5. **Local component overrides** provide full control when managed components fail

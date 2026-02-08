@@ -4,32 +4,46 @@
 
 This document describes a precise, end-to-end workflow for converting animated media (GIF, MP4, etc.) into an ESP32-compatible AVI (MJPEG) file and displaying it using the standard libjpeg decoder library.
 
-## 🔄 The Evolution
+## Background
 
-This project went through several iterations to find a working solution:
+This project tried a few decoder options before settling on the libjpeg API provided by the `espressif__libjpeg-turbo` component:
 
-1. **❌ LVGL's tjpgd** - Built-in decoder failed to handle MJPEG AVI frames reliably
-2. **❌ libjpeg-turbo** - Initially worked but caused CMake dependency conflicts
-3. **❌ tjpgd (ESP-IDF component)** - Limited functionality, incomplete JPEG support
-4. **❌ NanoJPEG** - Lightweight but had unresolvable color format issues
-5. **✅ Standard libjpeg** - Final solution using `espressif__libjpeg-turbo` managed component
+1. LVGL's built-in tjpgd (limited; issues with MJPEG AVI frames in this project)
+2. tjpgd as an ESP-IDF component (limited JPEG feature support)
+3. NanoJPEG (small, but RGB565/color handling was problematic here)
+4. libjpeg API via `espressif__libjpeg-turbo` (current approach)
 
-## ✅ Current Status: FULLY WORKING
+## Status
 
-✅ **What's Working:**
+This document describes the intended workflow and the current code structure for AVI (MJPEG) playback. Build integration details depend on how your project wires component dependencies (so if you see a missing `jpeglib.h`, treat it as a build/dependency issue rather than an AVI parsing issue).
 
-- AVI parsing and frame extraction
-- JPEG decoding to RGB565 pixel data
-- Animation playback in LVGL
-- Proper color rendering (no channel swapping)
-- CMake build integration resolved
-- No linting errors
+## Markdown Note: Code Fences (Doc Hygiene)
 
-**Key insight:** Standard libjpeg via the `espressif__libjpeg-turbo` managed component provides full JPEG compliance without build conflicts when properly configured.
+This is *not* part of the firmware build, but it matters for keeping these instructions readable and easy to diff/merge.
+
+**What is a “code fence”?**
+
+A code fence is a fenced code block in Markdown, typically using triple backticks:
+
+````text
+```bash
+some command
+```
+````
+
+### Why it can look “corrupted”
+
+If a fence is left unclosed (missing the closing ```), Markdown renderers treat the rest of the file as code. That makes headings/lists disappear and can make copied commands include stray characters.
+
+### House rules used in this repo
+
+- Always close fences.
+- Always include a language tag when practical (`bash`, `c`, `cmake`, `text`).
+- If you need to show literal triple-backticks inside a fenced block, use a *longer* fence (four backticks) around it.
 
 ---
 
-## ⚡ Quick Start
+## Quick Start
 
 **If you just want to play AVI files in THIS PROJECT, jump to [Section 7: Using the Built-In AVI Player](#7-using-the-built-in-avi-player-this-project)**
 
@@ -64,16 +78,16 @@ This project went through several iterations to find a working solution:
 
 ### The Journey
 
-1. ❌ **LVGL's tjpgd** - Failed to decode MJPEG AVI frames properly
-2. ❌ **libjpeg-turbo (initial attempt)** - Worked but caused CMake dependency conflicts
-3. ❌ **NanoJPEG** - Lightweight but had unresolvable color format issues
-4. ✅ **Standard libjpeg (final solution)** - Using `espressif__libjpeg-turbo` managed component with resolved build configuration
+1. **LVGL's tjpgd** - Failed to decode MJPEG AVI frames properly
+2. **libjpeg-turbo (initial attempt)** - Worked but caused CMake dependency conflicts
+3. **NanoJPEG** - Lightweight but had unresolvable color format issues
+4. **libjpeg API via `espressif__libjpeg-turbo`** - Current approach
 
 ### The Goal
 
 > Play animated content on ESP32 by extracting JPEG frames from an AVI container, decoding them to RGB565 using standard libjpeg, and displaying them in LVGL.
 
-### ✅ Solution Achieved
+### Solution Summary
 
 **Standard libjpeg integration** - Full JPEG decoding with proper color handling:
 
@@ -123,22 +137,20 @@ This approach uses industry-standard libjpeg for reliable JPEG decoding, bypassi
 
 **NanoJPEG is a lightweight single-file decoder** but had critical issues:
 
-- ⚠️ Required complete JPEG headers (DHT/DQT)
-- ❌ Unresolvable color format issues (RGB/BGR channel swapping)
-- ❌ Limited debugging capabilities
-- ❌ Non-standard RGB565 packing
+- Requires complete JPEG headers (DHT/DQT)
+- Unresolvable color format issues (RGB/BGR channel swapping)
+- Limited debugging capabilities
+- Non-standard RGB565 packing
 
-### ✅ Final Solution: Standard libjpeg
+### Final Solution: Standard libjpeg
 
-**Standard libjpeg via `espressif__libjpeg-turbo` managed component:**
+**Standard libjpeg via `espressif__libjpeg-turbo` component:**
 
-- ✅ Full JPEG compliance (all variants supported)
-- ✅ Industry-standard, battle-tested decoder
-- ✅ Excellent performance with optimizations
-- ✅ Proper color space handling (no channel issues)
-- ✅ CMake conflicts resolved through proper configuration
-- ✅ Decodes to RGB888, then converts to RGB565
-- ✅ No linting errors
+- Full JPEG compliance (all variants supported)
+- Industry-standard, battle-tested decoder
+- Good performance with optimizations
+- Proper color space handling (no channel issues)
+- Decodes to RGB888, then converts to RGB565
 
 ### Integration Details
 
@@ -156,6 +168,28 @@ idf_component_register(
 ```c
 #include "jpeglib.h"  // Standard libjpeg interface
 ```
+
+### Build Integration Notes (Managed Components)
+
+This project uses ESP-IDF Component Manager managed components for both LVGL and libjpeg-turbo.
+
+- `espressif__libjpeg-turbo` provides the public libjpeg headers (like `jpeglib.h`) under the component's build/install include directory.
+- LVGL may also build its own libjpeg-turbo wrapper (`lv_libjpeg_turbo.c`). Depending on the LVGL version/config, that wrapper may include **internal** libjpeg-turbo headers (like `jpegint.h`) which are *not* part of the public installed header set.
+
+To keep managed components pristine, this repo wires the needed include paths from the project side:
+
+- Project-side glue lives in `main/CMakeLists.txt` (function `_t4s3_create_libjpeg_alias()`).
+- It links the LVGL component target against `idf::espressif__libjpeg-turbo` and adds internal include dirs when needed.
+
+If this ever regresses again, the error message usually tells you which include path is missing:
+
+- `fatal error: jpeglib.h: No such file or directory`
+  - Ensure the managed dependency exists (e.g. `main/idf_component.yml` depends on `espressif/libjpeg-turbo`).
+  - Ensure the LVGL component target links against `idf::espressif__libjpeg-turbo`.
+- `fatal error: jpegint.h: No such file or directory`
+  - Add the internal source include dir: `managed_components/espressif__libjpeg-turbo/libjpeg-turbo/src`.
+- `fatal error: jconfigint.h: No such file or directory`
+  - Add the libjpeg-turbo build dir include: `build/esp-idf/espressif__libjpeg-turbo/libjpeg-build`.
 
 **Key advantages:**
 
@@ -191,7 +225,7 @@ ffmpeg -i input.gif \
 | `-an`               | Removes audio (ESP32 unsupported)               |
 | `-f avi`            | RIFF container with MJPEG                       |
 
-### ✅ Result
+### Result
 
 - Every frame is an **independent JPEG image**
 - All required metadata is **embedded per frame**
@@ -299,21 +333,21 @@ Add this to your `main/main.c`:
 
 void app_main(void) {
     // ... after bsp_init() and lv_ui_init() ...
-    
+
     lvgl_mgr_lock();
-    
+
     // Create AVI player widget
     lv_obj_t * avi_player = ui_avi_create(lv_screen_active());
     lv_obj_center(avi_player);  // Center on screen
-    
+
     // Load file from SD card (S: prefix = /sdcard)
     ui_avi_set_src(avi_player, "S:/fallingcube.avi");
-    
+
     // Start playback
     ui_avi_play(avi_player);
-    
+
     lvgl_mgr_unlock();
-    
+
     // ... rest of code ...
 }
 ```
@@ -404,8 +438,8 @@ lv_img_dsc_t {
 
 **LVGL receives:**
 
-- ✅ Pre-decoded RGB565 pixel data
-- ❌ NOT JPEG compressed data
+- Pre-decoded RGB565 pixel data
+- Not JPEG compressed data
 
 **LVGL will:**
 
@@ -421,10 +455,10 @@ lv_img_dsc_t {
 
 | Resolution | Status                |
 | ---------- | --------------------- |
-| 240×240    | ✅ Safe               |
-| 320×240    | ✅ Recommended        |
-| 480×320    | ⚠️ Risky              |
-| 600×400    | ❌ Usually too large  |
+| 240×240    | Safe                  |
+| 320×240    | Recommended           |
+| 480×320    | Risky                 |
+| 600×400    | Usually too large     |
 
 ### 9.2 Memory Math
 
@@ -449,36 +483,35 @@ ffmpeg -i input.gif \
   output_mjpeg.avi
 ```
 
-**💡 Tip:** 10–12 FPS is ideal for ESP32.
+Tip: 10–12 FPS is ideal for ESP32.
 
 ---
 
 ## 11. What You Do NOT Need to Do
 
-❌ Use LVGL's tjpgd decoder (bypassed)  
-❌ Manually add JPEG headers (libjpeg handles all variants)  
-❌ Decode MPEG/H.264 on ESP32 (impossible)  
-❌ Use FFmpeg libraries on-device (not needed)  
-❌ Debug color format issues (libjpeg handles correctly)
+- Use LVGL's tjpgd decoder (bypassed)
+- Manually add JPEG headers (libjpeg handles all variants)
+- Decode MPEG/H.264 on ESP32 (not feasible)
+- Use FFmpeg libraries on-device (not needed)
+- Debug color format issues (libjpeg handles correctly)
 
 ### What IS Happening Behind the Scenes
 
-✅ **Standard libjpeg decodes JPEG → RGB888** in `avi_mjpg_mgr.c`  
-✅ **Automatic format detection** - handles all JPEG variants  
-✅ **RGB888 → RGB565 conversion** with proper color handling  
-✅ **LVGL displays raw RGB565 pixels** (no decoding in LVGL)  
-✅ **PSRAM used for frame buffers** to avoid SRAM exhaustion  
-✅ **CMake integration** through `espressif__libjpeg-turbo` managed component
+- **Standard libjpeg decodes JPEG → RGB888** in `avi_mjpg_mgr.c`
+- **Automatic format detection** - handles all JPEG variants
+- **RGB888 → RGB565 conversion** with proper color handling
+- **LVGL displays raw RGB565 pixels** (no decoding in LVGL)
+- **PSRAM used for frame buffers** to avoid SRAM exhaustion
+- **CMake integration** through `espressif__libjpeg-turbo`
 
 ---
 
 ## 12. Final Takeaway
 
-✅ **MJPEG AVI** is the only viable video format for ESP32  
-✅ **ffmpeg** produces fully compliant JPEG frames  
-✅ **Standard libjpeg** decodes them perfectly (via `espressif__libjpeg-turbo`)  
-✅ **Proper color handling** - no channel swapping or format issues  
-✅ **Production ready** - full implementation with no linting errors
+- **MJPEG AVI** is the only viable video format for ESP32
+- **ffmpeg** produces fully compliant JPEG frames
+- **Standard libjpeg** decodes them (via `espressif__libjpeg-turbo`)
+- **Proper color handling** - no channel swapping or format issues
 
 ### Lessons Learned
 
@@ -491,29 +524,28 @@ ffmpeg -i input.gif \
 
 ### Implementation Summary
 
-**Working configuration:**
+**Configuration summary:**
 
-- Component: `espressif__libjpeg-turbo` (managed component)
+- Component: `espressif__libjpeg-turbo`
 - Integration: Standard `jpeglib.h` API
 - Decoding: JPEG → RGB888 → RGB565
 - Memory: PSRAM for frame buffers
 - Display: Pre-decoded RGB565 pixels to LVGL
-- Status: Production-ready, no known issues
+- Status: Depends on build integration and memory constraints
 
 ---
 
 ## 13. Optional Next Steps
 
-### ✅ Already Implemented
+### Already Implemented
 
-- ✅ Minimal AVI RIFF parser (see `avi_mjpg_mgr.c`)
-- ✅ Frame timing using `lv_timer` (see `ui_avi.c`)
-- ✅ Use PSRAM for large frame buffers (see `lvgl_mgr.c`)
-- ✅ Standard libjpeg integration via `espressif__libjpeg-turbo`
-- ✅ Proper RGB888 → RGB565 conversion with correct color handling
-- ✅ No linting errors, production-ready code
+- Minimal AVI RIFF parser (see `avi_mjpg_mgr.c`)
+- Frame timing using `lv_timer` (see `ui_avi.c`)
+- Use PSRAM for large frame buffers (see `lvgl_mgr.c`)
+- Standard libjpeg integration via `espressif__libjpeg-turbo`
+- Proper RGB888 → RGB565 conversion with correct color handling
 
-### 🚀 Enhancement Ideas
+### Enhancement Ideas
 
 - Compare MJPEG vs PNG frame sequences
 - Add playback controls (rewind, seek, speed)
@@ -522,7 +554,7 @@ ffmpeg -i input.gif \
 
 ---
 
-## 🔬 Debugging Reference
+## Debugging Reference
 
 ### RGB565 Format Reference
 
