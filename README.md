@@ -155,16 +155,16 @@ The system provides comprehensive power management through the **PM Settings** p
 
 When the device boots for the first time (or after NVS is erased), it uses these practical defaults:
 
-| Setting | Default Value | Rationale |
-|---------|---------------|-----------|
-| **Battery Capacity** | 2000 mAh | Common capacity for portable devices |
-| **USB Source Type** | BC1.2 PA 1.5A | Most modern USB ports/chargers support this |
-| **Input Current Limit** | 1500 mA | Based on BC1.2 standard |
-| **System Load** | 350 mA | ESP32-S3 + AMOLED display + WiFi |
-| **Safety Margin** | 100 mA | Prevents USB voltage collapse |
-| **Fast Charge Current** | 1000 mA | 0.5C for 2000 mAh battery |
-| **Pre-Charge Current** | 200 mA | 0.1C for 2000 mAh battery |
-| **Termination Current** | 100 mA | 0.05C for 2000 mAh battery |
+| Setting                 | Default Value | Rationale                                    |
+| ----------------------- | ------------- | -------------------------------------------- |
+| **Battery Capacity**    | 2000 mAh      | Common capacity for portable devices         |
+| **USB Source Type**     | BC1.2 PA 1.5A | Most modern USB ports/chargers support this  |
+| **Input Current Limit** | 1500 mA       | Based on BC1.2 standard                      |
+| **System Load**         | 350 mA        | ESP32-S3 + AMOLED display + WiFi             |
+| **Safety Margin**       | 100 mA        | Prevents USB voltage collapse                |
+| **Fast Charge Current** | 1000 mA       | 0.5C for 2000 mAh battery                    |
+| **Pre-Charge Current**  | 200 mA        | 0.1C for 2000 mAh battery                    |
+| **Termination Current** | 100 mA        | 0.05C for 2000 mAh battery                   |
 
 **Result:** On first boot, the device charges at **1000 mA** (practical and safe for most setups).
 
@@ -173,10 +173,12 @@ When the device boots for the first time (or after NVS is erased), it uses these
 The **PM Defaults** button in PM Settings applies intelligent defaults that **adapt to your current hardware selection**:
 
 **What it preserves:**
+
 - Your selected **Battery Capacity** (user-defined mAh)
 - Your selected **USB Source Type** (e.g., USB 3.0, BC1.2, High-Power PA)
 
 **What it resets:**
+
 - **System Load**: 350 mA
 - **Safety Margin**: 100 mA
 - **Charging Policy**: 0.5C fast charge, 0.1C pre-charge, 0.05C termination
@@ -184,11 +186,13 @@ The **PM Defaults** button in PM Settings applies intelligent defaults that **ad
 **Why this matters:**
 
 If you have a **1500 mAh battery** and click "PM Defaults":
+
 - Fast Charge → 750 mA (0.5C for 1500 mAh)
 - Pre-Charge → 150 mA (0.1C)
 - Termination → 75 mA (0.05C)
 
 If you have a **3000 mAh battery** and click "PM Defaults":
+
 - Fast Charge → 1500 mA (0.5C for 3000 mAh, clamped by USB source)
 - Pre-Charge → 300 mA (0.1C)
 - Termination → 150 mA (0.05C)
@@ -197,19 +201,19 @@ If you have a **3000 mAh battery** and click "PM Defaults":
 
 The system automatically calculates safe charging currents using this formula:
 
-```
+```text
 Available Headroom = Input Current Limit - System Load - Safety Margin
 Fast Charge Current = min(0.5C × Battery Capacity, Available Headroom)
 ```
 
 **Example scenarios:**
 
-| USB Source | ILIM | System Load | Margin | Available | Battery (2000 mAh) | Result |
-|------------|------|-------------|--------|-----------|-------------------|--------|
-| USB 2.0 (0.5A) | 500 mA | 350 mA | 100 mA | 50 mA | 0.5C = 1000 mA | **64 mA** (limited by source) |
-| USB 3.0 (0.9A) | 900 mA | 350 mA | 100 mA | 450 mA | 0.5C = 1000 mA | **448 mA** (limited by source) |
-| BC1.2 PA (1.5A) | 1500 mA | 350 mA | 100 mA | 1050 mA | 0.5C = 1000 mA | **1000 mA** ✓ (full 0.5C) |
-| High-Power PA (3A) | 3000 mA | 350 mA | 100 mA | 2550 mA | 0.5C = 1000 mA | **1000 mA** ✓ (full 0.5C) |
+| USB Source         | ILIM    | System Load | Margin | Available | Battery (2000 mAh) | Result        |
+| ------------------ | ------- | ----------- | ------ | --------- | ------------------ | ------------- |
+| USB 2.0 (0.5A)     | 500 mA  | 350 mA      | 100 mA | 50 mA     | 0.5C = 1000 mA     | **64 mA**     |
+| USB 3.0 (0.9A)     | 900 mA  | 350 mA      | 100 mA | 450 mA    | 0.5C = 1000 mA     | **448 mA**    |
+| BC1.2 PA (1.5A)    | 1500 mA | 350 mA      | 100 mA | 1050 mA   | 0.5C = 1000 mA     | **1000 mA** ✓ |
+| High-Power PA (3A) | 3000 mA | 350 mA      | 100 mA | 2550 mA   | 0.5C = 1000 mA     | **1000 mA** ✓ |
 
 **Key takeaway:** The system automatically limits charging current based on your USB source to prevent overloading it. If "Limited by source" appears on PM Status, select a more powerful USB source in PM Settings.
 
@@ -217,7 +221,7 @@ Fast Charge Current = min(0.5C × Battery Capacity, Available Headroom)
 
 The **PM Status** page displays actual values using a clean table layout:
 
-```
+```text
 System Volts:          4500 mV
 Battery Volts:         3850 mV
 Charge Status:         Fast Charge
@@ -238,6 +242,7 @@ Fault:                 None (LED off) no USB
 ### User Workflow
 
 **Initial Setup:**
+
 1. Boot device (uses BC1.2 1.5A defaults)
 2. Navigate to **PM Settings**
 3. Select your actual **Battery Capacity**
@@ -261,6 +266,7 @@ The system includes a video player for `.avi` files stored on the SD card.
 
 - **Frame Rate:** Video playback is optimized for **~15 FPS**. Increasing the frame rate beyond this provides no visual benefit on this screen/interface and only consumes extra resources.
 - **Codec:** The player uses an **older MPEG codec**, not the latest standards (like H.264). Please ensure video files are encoded using compatible legacy MPEG formats.
+- **Documentation:** See [docs/avi_mjpeg_lvgl.md](docs/avi_mjpeg_lvgl.md) for detailed implementation guide, FFmpeg conversion commands, and API reference.
 
 ## � Over-The-Air (OTA) Updates
 
@@ -278,34 +284,57 @@ The system supports wireless firmware updates via the **System OTA** menu.
 
 ## 🧩 Hardware Details & Pin Map
 
-| Signal | GPIO | Notes |
-| :--- | :--- | :--- |
-| **CS** | 11 | Chip Select |
-| **SCK** | 15 | Clock |
-| **D0** | 14 | Data 0 |
-| **D1** | 10 | Data 1 |
-| **D2** | 16 | Data 2 |
-| **D3** | 12 | Data 3 |
-| **RST** | 13 | Reset |
-| **TE** | 18 | Tearing Effect |
-| **PMIC_EN** | 9 | **CRITICAL:** Power Enable (Must be HIGH) |
-| **I2C_SDA** | 6 | PMIC/Touch I2C |
-| **I2C_SCL** | 7 | PMIC/Touch I2C |
+**Quick Reference:**
+
+| Signal      | GPIO | Notes                                      |
+| ----------- | ---- | ------------------------------------------ |
+| **CS**      | 11   | Display Chip Select                        |
+| **SCK**     | 15   | Display Clock                              |
+| **D0**      | 14   | Display Data 0 (SDA in single-line mode)   |
+| **D1**      | 10   | Display Data 1                             |
+| **D2**      | 16   | Display Data 2                             |
+| **D3**      | 12   | Display Data 3                             |
+| **RST**     | 13   | Display Reset                              |
+| **TE**      | 18   | Display Tearing Effect                     |
+| **PMIC_EN** | 9    | **CRITICAL:** Power Enable (Must be HIGH)  |
+| **I2C_SDA** | 6    | PMIC/Touch I2C Data                        |
+| **I2C_SCL** | 7    | PMIC/Touch I2C Clock                       |
+
+**Complete Hardware Documentation:** See [docs/t4s3_pinout_guide.md](docs/t4s3_pinout_guide.md) for comprehensive pinout information including:
+
+- All GPIO assignments by component (Display, Touch, SD Card, Flash, PMIC)
+- Power distribution and voltage rails
+- Expansion header pinout (2×15 pins)
+- Component reference (ICs, connectors, buttons)
+- Pin conflict warnings and shared buses
+- Firmware configuration examples
 
 ## 💡 The Technical "Struggle" (Solved)
 
 This project solves several tricky hardware behaviors of the T4-S3:
 
-1. **Missing D/C Pin (RM690B0):** The display uses a custom QSPI wrapper protocol instead of standard SPI/8080.
-2. **GPIO 9 Power Enable:** The display and PMIC power rail is controlled by GPIO 9. It must be pulled HIGH or the screen stays black.
-3. **PMIC Watchdog:** The SY6970 watchdog is disabled on boot to prevent random resets.
+1. **Missing D/C Pin (RM690B0):** The display uses a custom QSPI wrapper protocol instead of standard SPI/8080. See [docs/rm690b0.md](docs/rm690b0.md) for protocol details.
+2. **GPIO 9 Power Enable:** The display and PMIC power rail is controlled by GPIO 9. It must be pulled HIGH or the screen stays black. See [docs/t4s3_pinout_guide.md](docs/t4s3_pinout_guide.md#pin-conflict-warnings).
+3. **PMIC Watchdog:** The SY6970 watchdog is disabled on boot to prevent random resets. See [docs/sy6970.md](docs/sy6970.md) for register configuration.
 4. **No Battery Detection:** Uses a voltage volatility algorithm to detect if the device is running solely on USB (voltage fluctuates) vs Battery (voltage stable).
 
 ## 📚 Documentation
 
-- [LVGL Integration Journey](docs/LVGL_JOURNEY.md)
-- [RM690B0 Rotation Guide](docs/rm690b0_rotation_guide.md)
-- [AVI MJPEG Playback Implementation](components/lv_ui/src/README.md) - Journey from managed components to local build solution
+### Hardware Documentation
+
+- **[Complete Pinout Guide](docs/t4s3_pinout_guide.md)** - Comprehensive pin assignments, power distribution, and component reference
+- **[RM690B0 Display Driver](docs/rm690b0.md)** - AMOLED display implementation, QSPI protocol, rotation handling, and command reference
+- **[CST226SE Touch Driver](docs/cst226se.md)** - Hynitron capacitive touch controller configuration and debugging
+- **[SY6970 PMIC Guide](docs/sy6970.md)** - Battery management IC documentation, I2C register map, and charging algorithms
+
+### Software Integration
+
+- **[LVGL Integration](docs/lvgl.md)** - LVGL 9 setup, display/touch driver integration, and performance tuning
+- **[AVI/MJPEG Video Playback](docs/avi_mjpeg_lvgl.md)** - Video decoder implementation, FFmpeg conversion guide, and API reference
+
+### Hardware Datasheets
+
+- **[Board Schematic](docs/T4-S3-240719.pdf)** - Official LilyGo T4-S3 schematic (PDF)
 
 ## 🔧 Troubleshooting: Hardcoded Paths in Cloned Repos
 
@@ -390,6 +419,7 @@ git submodule update --init --recursive
 This project includes custom build configuration for LVGL's libjpeg support (`CONFIG_LV_USE_LIBJPEG_TURBO=y`):
 
 **Modified Files:**
+
 - `managed_components/lvgl__lvgl/env_support/cmake/esp.cmake` - Adds libjpeg dependency and include paths to LVGL
 - `components/espressif__libjpeg-turbo/CMakeLists.txt` - Installs `jpegint.h` header (required by LVGL but not included in standard install)
 
@@ -398,8 +428,11 @@ The `espressif__libjpeg-turbo` component uses CMake ExternalProject, which doesn
 
 **Note:** This uses standard libjpeg API (not TurboJPEG), as the TurboJPEG API is not ESP32-S3 compatible.
 
-## �📚 Additional Documentation
+## 🤝 Contributing
 
-- [LVGL Integration Journey](docs/LVGL_JOURNEY.md)
-- [RM690B0 Rotation Guide](docs/rm690b0_rotation_guide.md)
-- [AVI MJPEG Playback Implementation](components/lv_ui/src/README.md) - Journey from managed components to local build solution
+Contributions are welcome! Please:
+
+1. Check existing documentation in [docs/](docs/) before asking questions
+2. Test changes on actual hardware when possible
+3. Update relevant documentation for hardware or driver changes
+4. Follow the existing code style and HAL patterns
