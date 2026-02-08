@@ -2,3 +2,6 @@ build/
 components/components/
 sdkconfig
 sdkconfig.old
+
+# ESP-IDF managed component output (generated locally)
+managed_components/espressif__libjpeg-turbo/
