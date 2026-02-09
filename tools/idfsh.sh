@@ -273,7 +273,7 @@ idfsh() {
     
     # Capture idf.py size output for parsing (but don't display it raw)
     local size_out
-    size_out=$(( cd "$PROJECT_DIR" && idf.py size ) 2>&1 || true)
+    size_out=$( ( cd "$PROJECT_DIR" && idf.py size ) 2>&1 || true)
 
     # --- Helper: Draw Bar ---
     draw_bar() {
@@ -310,7 +310,7 @@ idfsh() {
         echo "    - Used for global variables."
         echo "    - You are using $dram_used bytes out of $dram_total bytes."
         echo "    - Remaining $dram_avail bytes available for Stack & Heap."
-        echo "    VISUAL: $(draw_bar $dram_used $dram_total)"
+        echo "    VISUAL: $(draw_bar "$dram_used" "$dram_total")"
         echo "    > Summary: Keep 'Free' high. If it hits 0, the app crashes."
     fi
 
@@ -358,7 +358,7 @@ PY
         echo "[2] Flash (Storage Space)"
         echo "    - Your App size:  $used bytes"
         echo "    - Partition limit: $part bytes"
-        echo "    VISUAL: $(draw_bar $used $part)"
+        echo "    VISUAL: $(draw_bar "$used" "$part")"
         echo "    > Status: ${status}"
       fi
     else
