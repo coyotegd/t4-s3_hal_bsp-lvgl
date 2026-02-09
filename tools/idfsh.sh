@@ -271,12 +271,9 @@ idfsh() {
     ensure_idf || return 1
     local build_dir="$PROJECT_DIR/build"
     
-    echo "--------------------------------------------------------"
-    echo "RAW SIZE OUTPUT:"
+    # Capture idf.py size output for parsing (but don't display it raw)
     local size_out
     size_out=$(( cd "$PROJECT_DIR" && idf.py size ) 2>&1 || true)
-    echo "$size_out"
-    echo "--------------------------------------------------------"
 
     # --- Helper: Draw Bar ---
     draw_bar() {
@@ -305,8 +302,10 @@ idfsh() {
         dram_avail=$(echo "$dram_line" | awk -F'(' '{print $2}' | awk '{print $1}')
         dram_total=$(( dram_used + dram_avail ))
         
+        echo "========================================================"
+        echo "SIZE REPORT - RAM & Flash Usage Analysis"
+        echo "========================================================"
         echo
-        echo "LAYMAN ANALYSIS:"
         echo "[1] RAM (Temporary Memory)"
         echo "    - Used for global variables."
         echo "    - You are using $dram_used bytes out of $dram_total bytes."
@@ -363,16 +362,15 @@ PY
         echo "    > Status: ${status}"
       fi
     else
+      echo "========================================================"
+      echo "SIZE REPORT - RAM & Flash Usage Analysis"
+      echo "========================================================"
       echo "[idfsh] Size check: missing app bin or partition table; build the project first."
     fi
 
-    echo "--------------------------------------------------------"
-
-    # Optional: chip info via esptool (if port available)
-    if command -v esptool.py >/dev/null 2>&1 && [[ -n "$ESPPORT" ]]; then
-      echo "[idfsh] Chip info (via esptool):"
-      esptool.py --port "$ESPPORT" chip_id || true
-    fi
+    echo "========================================================"
+    echo "TIP: Run 'idf.py size' for detailed component breakdown"
+    echo "========================================================"
   }
 
   do_reconfigure() {
